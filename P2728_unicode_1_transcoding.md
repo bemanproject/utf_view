@@ -53,9 +53,12 @@ requirements that I think are important; I hope you'll agree:
 # The shortest Unicode primer imaginable
 
 There are multiple encoding types defined in Unicode: UTF-8, UTF-16, and
-UTF-32. A *code unit* is the lowest-level datum-type in your Unicode
-data. Examples are a `char` in UTF-8 and a `uint32_t` in UTF-32. A *code
-point* is a 32-bit integral value that represents a single Unicode
+UTF-32.
+
+A *code unit* is the lowest-level datum-type in your Unicode data. Examples
+are a `char` in UTF-8 and a `uint32_t` in UTF-32.
+
+A *code point* is a 32-bit integral value that represents a single Unicode
 value. Examples are U+0041 "A" "LATIN CAPITAL LETTER A" and U+0308 "¨"
 "COMBINING DIAERESIS".
 
@@ -300,3 +303,94 @@ if first is a `utf_32_to_8_iterator`, the resulting view will use
 
 # Performance
 
+The performance situation for UTF transcoding is complicated, and so bears
+some discussion. All the charts below were generated using Google Benchmark,
+built with GCC on Linux.
+
+## UTF-8 to UTF-16
+
+Here are the relative timings for UTF-8 to UTF-16 transcoding, using various
+methods (smaller is better). The input was around half a megabyte of text from
+Wikipedia. "Iterators" is using `std::copy` from `utf_8_to_16_iterator` to a
+pointer; "Algorithm `std::back_inserter`" is using `transcode_to_utf16()` in
+the SIMD code path, and outputting to a `std::back_insert_iterator`;
+"Algorithm using SIMD" is using `transcode_to_utf16()` from pointer to pointer
+in the SIMD-using code path; "Algorithm no SIMD" is using
+`transcode_to_utf16()` from pointer to pointer in the non-SIMD code path; and
+"ICU" is is using `UnicodeString::fromUTF8()`.
+
+```<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="500" height="150">
+    <rect width="160.13028" height="20" y="0" fill="#32a852"></rect>
+    <text x="165.13028" y="10.0" dy=".35em" fill="black">Iterators</text>
+    <rect width="90.00108" height="20" y="25" fill="#3f6078"></rect>
+    <text x="95.00108" y="35.0" dy=".35em" fill="black">Algorithm std::back_inserter</text>
+    <rect width="56.72772" height="20" y="50" fill="#ad3939"></rect>
+    <text x="61.72772" y="60.0" dy=".35em" fill="black">Algorithm using SIMD</text>
+    <rect width="70.77636" height="20" y="75" fill="#ad9e39"></rect>
+    <text x="75.77636" y="85.0" dy=".35em" fill="black">Algorithm no SIMD</text>
+    <rect width="57.12672" height="20" y="100" fill="#ba45cc"></rect>
+    <text x="62.12672" y="110.0" dy=".35em" fill="black">ICU</text>
+    <rect width="300" height="20" y="125" fill="white"></rect>
+    <line x1="1" y1="129" x2="300" y2="129" stroke="black" fill="black"></line>
+    <line x1="1" y1="124" x2="1" y2="134" stroke="black" fill="black"></line>
+    <line x1="300" y1="124" x2="300" y2="134" stroke="black" fill="black"></line>
+    <text x="0" y="144.0" dy=".35em" fill="black">0 ns</text>
+    <text x="300" y="144.0" dy=".35em" text-anchor="end" fill="black">2500000 ns</text>
+</svg>```{=html}
+
+The ICU performance is shown as something of a baseline, given the ubiquity of
+ICU's use in Unicode-aware programs. Note that ICU does not have convenient
+APIs for doing transcoding to any format but UTF-16.
+
+There are some take-always from this chart (and in fact all the other
+transcoding data):
+
+- The use of SIMD instructions is helpful, but not critical.
+- The use of back-inserters is quite bad for performance.
+- The transcoding iterators are terrible for performance.
+- All the above only apply to transcode-only operations; more complicated
+  operations that involve a transcoding step are often fairly insensitive to
+  transcoding performance.
+- The fastest API proposed is as fast as the equivalent ICU API.
+
+A major reason for the performance differences is that the fastest algorithms
+are able to write out chunks of their results all in one go (up to 16 at once
+in the SIMD paths of the transcode algorithms). Needing to branch on each
+output code unit as in the "Iterators" and "Algorithm `std::back_inserter`"
+cases is much slower. One implication of this is that if you're doing a lot of
+work with each code unit or code point produced, you're probably doing a lot
+of branching in the work, and so the gains of using the high-performance
+methods above will be lost. Specifically, passing transcoding iterators to
+complicated Unicode algorithms like the Bidirectional Algorithm do not result
+in much (if any) performance loss.
+
+## UTF-8 to UTF-32
+
+These are relative timings for UTF-8 to UTF-32 transcoding. It is in the same
+scale as the chart above.
+
+```<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="500" height="125">
+    <rect width="99.09804" height="20" y="0" fill="#32a852"></rect>
+    <text x="104.09804" y="10.0" dy=".35em" fill="black">Iterators</text>
+    <rect width="100.27296" height="20" y="25" fill="#3f6078"></rect>
+    <text x="105.27296" y="35.0" dy=".35em" fill="black">Algorithm std::back_inserter</text>
+    <rect width="40.50972" height="20" y="50" fill="#ad3939"></rect>
+    <text x="45.50972" y="60.0" dy=".35em" fill="black">Algorithm using SIMD</text>
+    <rect width="54.67824" height="20" y="75" fill="#ad9e39"></rect>
+    <text x="59.67824" y="85.0" dy=".35em" fill="black">Algorithm no SIMD</text>
+    <rect width="300" height="20" y="100" fill="white"></rect>
+    <line x1="1" y1="104" x2="300" y2="104" stroke="black" fill="black"></line>
+    <line x1="1" y1="99" x2="1" y2="109" stroke="black" fill="black"></line>
+    <line x1="300" y1="99" x2="300" y2="109" stroke="black" fill="black"></line>
+    <text x="0" y="119.0" dy=".35em" fill="black">0 ns</text>
+    <text x="300" y="119.0" dy=".35em" text-anchor="end" fill="black">2500000 ns</text>
+</svg>```{=html}
+
+Again, you can see very similar relationships among the different transcoding
+methods, except that the iterator method is a lot faster.
+
+Note that the SIMD algorithm is quite fast. It — and all the SIMD code — was
+originally developed by Bob Steagall, and presented at C++Now in 2018. Thanks,
+Bob!
