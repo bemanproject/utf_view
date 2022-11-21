@@ -187,6 +187,381 @@ process_input(std::uc::as_utf16(input));
 
 # Proposed design
 
+Add concepts that describe parameters to transcoding APIs.
+
+```cpp
+namespace std::uc {
+
+  enum class format { utf8 = 1, utf16 = 2, utf32 = 4 };
+
+  template<integral T>
+    requires (sizeof(T) == 1 || sizeof(T) == 2 || sizeof(T) == 4)
+      constexpr format @*format-of*@() // @*exposition only*@
+      {
+          constexpr format formats[] = {
+              format::utf8,
+              format::utf8,
+              format::utf16,
+              format::utf32,
+              format::utf32};
+          return formats[sizeof(T)];
+      }
+
+  template<typename T, format F>
+    concept code_unit = integral<T> && sizeof(T) == (int)F;
+
+  template<typename T>
+    concept utf8_code_unit = code_unit<T, format::utf8>;
+
+  template<typename T>
+    concept utf16_code_unit = code_unit<T, format::utf16>;
+
+  template<typename T>
+    concept utf32_code_unit = code_unit<T, format::utf32>;
+
+  template<typename T, format F>
+    concept code_unit_iter =
+      bidirectional_iterator<T> && code_unit<iter_value_t<T>, F>;
+
+  template<typename T, format F>
+    concept code_unit_pointer =
+      is_pointer_v<T> && code_unit<iter_value_t<T>, F>;
+
+  template<typename T>
+    concept utf8_iter = code_unit_iter<T, format::utf8>;
+  template<typename T>
+    concept utf8_pointer = code_unit_pointer<T, format::utf8>;
+
+  template<typename T>
+    concept utf16_iter = code_unit_iter<T, format::utf16>;
+  template<typename T>
+    concept utf16_pointer = code_unit_pointer<T, format::utf16>;
+
+  template<typename T>
+    concept utf32_iter = code_unit_iter<T, format::utf32>;
+  template<typename T>
+    concept utf32_pointer = code_unit_pointer<T, format::utf32>;
+
+  template<typename T>
+    concept code_point = utf32_code_unit<T>;
+  template<typename T>
+    concept code_point_iter = utf32_iter<T>;
+
+  template<typename T>
+    concept utf_iter = utf8_iter<T> || utf16_iter<T> || utf32_iter<T>;
+
+  template<typename T>
+    concept utf_range_like =
+      utf8_range<remove_reference_t<T>> ||
+      utf16_range<remove_reference_t<T>> ||
+      utf32_range<remove_reference_t<T>> ||
+      utf8_pointer<remove_reference_t<T>> ||
+      utf16_pointer<remove_reference_t<T>> ||
+      utf32_pointer<remove_reference_t<T>>;
+}
+```
+
+Add a standard null-terminated sequence sentinel:
+
+```cpp
+namespace std::uc {
+  struct null_sentinel_t
+  {
+    constexpr null_sentinel_t base() const { return {}; }
+
+    template<typename T>
+      requires utf8_code_unit<T> || utf16_code_unit<T> || utf32_code_unit<T>
+        friend constexpr auto operator==(T * p, null_sentinel_t);
+  };
+
+  inline constexpr null_sentinel_t null_sentinel;
+}
+```
+
+Add constants and utility functions that query the state of UTF sequences
+(well-formedness, etc.):
+
+```cpp
+namespace std::uc {
+  inline constexpr uint16_t high_surrogate_base = 0xd7c0;
+  inline constexpr uint16_t low_surrogate_base = 0xdc00;
+  inline constexpr uint32_t high_surrogate_min = 0xd800;
+  inline constexpr uint32_t high_surrogate_max = 0xdbff;
+  inline constexpr uint32_t low_surrogate_min = 0xdc00;
+  inline constexpr uint32_t low_surrogate_max = 0xdfff;
+  inline constexpr uint32_t replacement_character = 0xfffd;
+
+  // Returns is_high_surrogate(c) || is_low_surrogate(c).
+  constexpr bool is_surrogate(uint32_t c);
+
+  // Returns true iff c is a Unicode high surrogate.
+  constexpr bool is_high_surrogate(uint32_t c);
+
+  // Returns true iff c is a Unicode low surrogate.
+  constexpr bool is_low_surrogate(uint32_t c);
+
+  // Returns true iff c is a Unicode reserved noncharacter.
+  constexpr bool is_reserved_noncharacter(uint32_t c);
+
+  // Returns true iff c is a valid Unicode scalar value.
+  constexpr bool is_scalar_value(uint32_t c);
+
+  // Returns true iff c is a Unicode scalar value not in the reserved
+  // range.
+  constexpr bool is_unreserved_scalar_value(uint32_t c);
+
+  // Returns true iff c is a UTF-8 lead code unit (which must be followed
+  // by 1-3 following units).
+  constexpr bool is_lead_code_unit(unsigned char c);
+
+  // Returns true iff c is a UTF-8 continuation (non-lead) code unit.
+  constexpr bool is_continuation(unsigned char c);
+
+  // Given the first (and possibly only) code unit of a UTF-8-encoded code
+  // point, returns the number of bytes occupied by that code point (in the
+  // range [1, 4]).  Returns a value < 0 if first_unit is not a valid
+  // initial UTF-8 code unit.
+  constexpr int utf8_code_units(unsigned char first_unit);
+
+  // Given the first (and possibly only) code unit of a UTF-16-encoded code
+  // point, returns the number of code units occupied by that code point
+  // (in the range [1, 2]).  Returns a value < 0 if first_unit is
+  // not a valid initial UTF-16 code unit.
+  constexpr int utf16_code_units(uint16_t first_unit);
+
+  // Returns the first code unit in [first, last) that is not properly
+  // UTF-8 encoded, or last if no such code unit is found.
+  template<utf8_iter I, sentinel_for<I> S = I>
+    requires random_access_iterator<I>
+      constexpr I find_invalid_encoding(I first, S last);
+
+  // Returns the first code unit in [first, last) that is not properly
+  // UTF-16 encoded, or last if no such code unit is found.
+  template<utf16_iter I, sentinel_for<I> S = I>
+    requires random_access_iterator<I>
+      constexpr I find_invalid_encoding(I first, S last);
+
+  // Returns true iff [first, last) is properly UTF-8 encoded.
+  template<utf8_iter I>
+    requires random_access_iterator<I>
+      constexpr bool is_encoded(I first, I last);
+
+  // Returns true iff [first, last) is properly UTF-16 encoded
+  template<utf16_iter I>
+    requires random_access_iterator<I>
+      constexpr bool is_encoded(I first, I last);
+
+  // Returns true iff [first, last) is empty or the initial UTF-8 code
+  // units in [first, last) form a valid Unicode code point.
+  template<utf8_iter I>
+    requires random_access_iterator<I>
+      constexpr bool starts_encoded(I first, I last);
+
+  // Returns true iff [first, last) is empty or the initial UTF-16 code
+  // units in [first, last) form a valid Unicode code point.
+  template<utf16_iter I>
+    requires random_access_iterator<I>
+      constexpr bool starts_encoded(I first, I last);
+
+  // Returns true iff [first, last) is empty or the final UTF-8 code
+  // units in [first, last) form a valid Unicode code point.
+  template<utf8_iter I>
+    requires random_access_iterator<I>
+      constexpr bool ends_encoded(I first, I last);
+
+  // Returns true iff [first, last) is empty or the final UTF-16 code
+  // units in [first, last) form a valid Unicode code point.
+  template<utf16_iter I>
+    requires random_access_iterator<I>
+      constexpr bool ends_encoded(I first, I last);
+}
+```
+
+Add transcode algorithms:
+
+```cpp
+namespace std::uc {
+
+  // An alias for in_out_result returned by algorithms that perform a
+  // transcoding copy.
+  template<typename Iter, typename OutIter>
+  using transcode_result = in_out_result<Iter, OutIter>;
+
+  // -> UTF-8
+
+  template<
+    input_iterator I,
+    sentinel_for<I> S,
+    output_iterator<uint8_t> O>
+    requires (utf16_code_unit<iter_value_t<I>> ||
+              utf32_code_unit<iter_value_t<I>>)
+  transcode_result<I, O> transcode_to_utf8(I first, S last, O out);
+
+  // equivalent to transcode_to_utf8(p, null_sentinel, out);
+  template<typename Ptr, output_iterator<uint8_t> O>
+    requires (utf16_pointer<Ptr> || utf32_pointer<Ptr>)
+  transcode_result<Ptr, O> transcode_to_utf8(Ptr p, O out);
+
+  template<ranges::input_range R, output_iterator<uint8_t> O>
+    requires (utf16_code_unit<ranges::range_value_t<R>> ||
+              utf32_code_unit<ranges::range_value_t<R>>)
+  transcode_result<ranges::borrowed_iterator_t<R>, O>
+  transcode_to_utf8(R && r, O out);
+
+  // -> UTF-16
+
+  template<
+    input_iterator I,
+    sentinel_for<I> S,
+    output_iterator<uint16_t> O>
+    requires (utf8_code_unit<iter_value_t<I>> ||
+              utf32_code_unit<iter_value_t<I>>)
+  transcode_result<I, O> transcode_to_utf16(I first, S last, O out);
+
+  // equivalent to transcode_to_utf16(p, null_sentinel, out);
+  template<typename Ptr, output_iterator<uint16_t> O>
+    requires (utf8_pointer<Ptr> || utf32_pointer<Ptr>)
+  transcode_result<Ptr, O> transcode_to_utf16(Ptr p, O out);
+
+  template<ranges::input_range R, output_iterator<uint16_t> O>
+    requires (utf8_code_unit<ranges::range_value_t<R>> ||
+              utf32_code_unit<ranges::range_value_t<R>>)
+  transcode_result<ranges::borrowed_iterator_t<R>, O>
+  transcode_to_utf16(R && r, O out);
+
+  // -> UTF-32
+
+  template<
+    input_iterator I,
+    sentinel_for<I> S,
+    output_iterator<uint32_t> O>
+    requires (utf8_code_unit<iter_value_t<I>> ||
+              utf16_code_unit<iter_value_t<I>>)
+  transcode_result<I, O> transcode_to_utf32(I first, S last, O out);
+
+  // equivalent to transcode_to_utf32(p, null_sentinel, out);
+  template<typename Ptr, output_iterator<uint32_t> O>
+    requires (utf8_pointer<Ptr> || utf16_pointer<Ptr>)
+  transcode_result<Ptr, O> transcode_to_utf32(Ptr p, O out);
+
+  template<ranges::input_range R, output_iterator<uint32_t> O>
+    requires (utf8_code_unit<ranges::range_value_t<R>> ||
+              utf16_code_unit<ranges::range_value_t<R>>)
+  transcode_result<ranges::borrowed_iterator_t<R>, O>
+  transcode_to_utf32(R && r, O out);
+
+}
+```
+
+Optional: Add the array overloads of the transcode algorithms:
+
+These are not strictly necessary, and only cover one corner case.  They cover
+the transcoding of a non-null-terminated array.  I'm not sure they're worth
+it.  Without these, the call `transcode_to_utfN(arr, out)` will choose the
+`transcode_to_utfN()` pointer overload, due to array-to-pointer decay.  So,
+having these overloads increases safety.
+
+```cpp
+  template<size_t N, typename Char, output_iterator<uint8_t> O>
+    requires (utf16_code_unit<Char> || utf32_code_unit<Char>)
+    transcode_result<Char *, O> transcode_to_utf8(Char (&arr)[N], O out);
+
+  template<size_t N, typename Char, output_iterator<uint16_t> O>
+    requires (utf8_code_unit<Char> || utf32_code_unit<Char>)
+    transcode_result<Char *, O> transcode_to_utf16(Char (&arr)[N], O out);
+
+  template<size_t N, typename Char, output_iterator<uint32_t> O>
+    requires (utf8_code_unit<Char> || utf16_code_unit<Char>)
+    transcode_result<Char *, O> transcode_to_utf32(Char (&arr)[N], O out);
+```
+
+Add the transcoding iterators (first, the basic ones).  I'm using
+[P2727](https://isocpp.org/files/papers/P2727R0.html)'s `iterator_interface`
+here for simplicity.
+
+```cpp
+    // An error handler type that can be used with the converting iterators;
+    // provides the Unicode replacement character on errors.
+    struct use_replacement_character
+    {
+        constexpr uint32_t operator()(char const *) const
+        { return replacement_character; }
+    };
+
+    // UTF-32 -> UTF-8
+    template<
+        utf32_iter I,
+        sentinel_for<I> S = I,
+        transcoding_error_handler ErrorHandler = use_replacement_character>
+    struct utf_32_to_8_iterator
+        : iterator_interface<utf_32_to_8_iterator<I, S, ErrorHandler>,
+                             bidirectional_iterator_tag,
+                             char,
+                             char>
+    {
+        constexpr utf_32_to_8_iterator();
+          explicit constexpr utf_32_to_8_iterator(I first, I it, S last);
+        template<typename I2, typename S2>
+          requires convertible_to<I2, I> && convertible_to<S2, S>
+            constexpr utf_32_to_8_iterator(
+              utf_32_to_8_iterator<I2, S2, ErrorHandler> const & other);
+
+        constexpr I begin() const { return first_; }
+        constexpr S end() const { return last_; }
+
+        constexpr char operator*() const { return buf_[index_]; }
+
+        constexpr I base() const { return it_; }
+
+        constexpr utf_32_to_8_iterator & operator++();
+        constexpr utf_32_to_8_iterator & operator--();
+
+        template<
+          typename I1,
+          typename S1,
+          typename I2,
+          typename S2,
+          typename ErrorHandler2>
+        friend constexpr bool operator==(
+          utf_32_to_8_iterator<I1, S1, ErrorHandler2> const & lhs,
+          utf_32_to_8_iterator<I2, S2, ErrorHandler2> const & rhs)
+            requires requires { lhs.base() == rhs.base(); };
+
+        friend bool operator==(utf_32_to_8_iterator lhs, utf_32_to_8_iterator rhs)
+          { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
+
+        using base_type =
+          detail::trans_iter<utf_32_to_8_iterator<I, S, ErrorHandler>, char>;
+        using base_type::operator++;
+        using base_type::operator--;
+
+    private:
+        I first_;                 // @*exposition only*@
+        I it_;                    // @*exposition only*@
+        S last_;                  // @*exposition only*@
+        int index_;               // @*exposition only*@
+        array<char, 5> buf_;      // @*exposition only*@
+
+        template<
+          utf32_iter I2,
+          sentinel_for<I2> S2,
+          transcoding_error_handler ErrorHandler2>
+        friend struct utf_32_to_8_iterator;
+
+#endif
+    };
+
+    template<typename I, typename S, typename ErrorHandler>
+      constexpr bool operator==(
+        utf_32_to_8_iterator<I, S, ErrorHandler> lhs, S rhs)
+          requires requires { lhs.base() == rhs; };
+
+
+
+
+
+```
+
 TODO
 
 ## Design notes
@@ -205,7 +580,7 @@ convenience-vs-compatibility-vs-performance tradeoffs.  Explicitly, they are:
   the standard algorithms), use the transcoding iterators.
 - If you want streamability or the convenience of constructing ranges with a
   single `as_utfN()` function call, use the transcoding views.
-  
+
 All the transcoding iterators allow you access to the underlying iterator via
 `.base()`, following the convention of the iterator adaptors already in the
 standard.
