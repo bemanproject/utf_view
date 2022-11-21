@@ -8,7 +8,7 @@ audience:
 author:
   - name: Zach Laine
     email: <whatwasthataddress@gmail.com>
-toc: false
+toc: true
 monofont: "DejaVu Sans Mono"
 
 ---
@@ -187,7 +187,7 @@ process_input(std::uc::as_utf16(input));
 
 # Proposed design
 
-Add concepts that describe parameters to transcoding APIs.
+## Add concepts that describe parameters to transcoding APIs
 
 ```cpp
 namespace std::uc {
@@ -207,50 +207,50 @@ namespace std::uc {
           return formats[sizeof(T)];
       }
 
-  template<typename T, format F>
+  template<class T, format F>
     concept code_unit = integral<T> && sizeof(T) == (int)F;
 
-  template<typename T>
+  template<class T>
     concept utf8_code_unit = code_unit<T, format::utf8>;
 
-  template<typename T>
+  template<class T>
     concept utf16_code_unit = code_unit<T, format::utf16>;
 
-  template<typename T>
+  template<class T>
     concept utf32_code_unit = code_unit<T, format::utf32>;
 
-  template<typename T, format F>
+  template<class T, format F>
     concept code_unit_iter =
       bidirectional_iterator<T> && code_unit<iter_value_t<T>, F>;
 
-  template<typename T, format F>
+  template<class T, format F>
     concept code_unit_pointer =
       is_pointer_v<T> && code_unit<iter_value_t<T>, F>;
 
-  template<typename T>
+  template<class T>
     concept utf8_iter = code_unit_iter<T, format::utf8>;
-  template<typename T>
+  template<class T>
     concept utf8_pointer = code_unit_pointer<T, format::utf8>;
 
-  template<typename T>
+  template<class T>
     concept utf16_iter = code_unit_iter<T, format::utf16>;
-  template<typename T>
+  template<class T>
     concept utf16_pointer = code_unit_pointer<T, format::utf16>;
 
-  template<typename T>
+  template<class T>
     concept utf32_iter = code_unit_iter<T, format::utf32>;
-  template<typename T>
+  template<class T>
     concept utf32_pointer = code_unit_pointer<T, format::utf32>;
 
-  template<typename T>
+  template<class T>
     concept code_point = utf32_code_unit<T>;
-  template<typename T>
+  template<class T>
     concept code_point_iter = utf32_iter<T>;
 
-  template<typename T>
+  template<class T>
     concept utf_iter = utf8_iter<T> || utf16_iter<T> || utf32_iter<T>;
 
-  template<typename T>
+  template<class T>
     concept utf_range_like =
       utf8_range<remove_reference_t<T>> ||
       utf16_range<remove_reference_t<T>> ||
@@ -261,7 +261,7 @@ namespace std::uc {
 }
 ```
 
-Add a standard null-terminated sequence sentinel:
+## Add a standard null-terminated sequence sentinel
 
 ```cpp
 namespace std::uc {
@@ -269,7 +269,7 @@ namespace std::uc {
   {
     constexpr null_sentinel_t base() const { return {}; }
 
-    template<typename T>
+    template<class T>
       requires utf8_code_unit<T> || utf16_code_unit<T> || utf32_code_unit<T>
         friend constexpr auto operator==(T * p, null_sentinel_t);
   };
@@ -278,8 +278,7 @@ namespace std::uc {
 }
 ```
 
-Add constants and utility functions that query the state of UTF sequences
-(well-formedness, etc.):
+## Add constants and utility functions that query the state of UTF sequences (well-formedness, etc.)
 
 ```cpp
 namespace std::uc {
@@ -377,14 +376,13 @@ namespace std::uc {
 }
 ```
 
-Add transcode algorithms:
+## Add transcode algorithms
 
 ```cpp
 namespace std::uc {
-
   // An alias for in_out_result returned by algorithms that perform a
   // transcoding copy.
-  template<typename Iter, typename OutIter>
+  template<class Iter, class OutIter>
   using transcode_result = in_out_result<Iter, OutIter>;
 
   // -> UTF-8
@@ -398,7 +396,7 @@ namespace std::uc {
   transcode_result<I, O> transcode_to_utf8(I first, S last, O out);
 
   // equivalent to transcode_to_utf8(p, null_sentinel, out);
-  template<typename Ptr, output_iterator<uint8_t> O>
+  template<class Ptr, output_iterator<uint8_t> O>
     requires (utf16_pointer<Ptr> || utf32_pointer<Ptr>)
   transcode_result<Ptr, O> transcode_to_utf8(Ptr p, O out);
 
@@ -418,7 +416,7 @@ namespace std::uc {
   transcode_result<I, O> transcode_to_utf16(I first, S last, O out);
 
   // equivalent to transcode_to_utf16(p, null_sentinel, out);
-  template<typename Ptr, output_iterator<uint16_t> O>
+  template<class Ptr, output_iterator<uint16_t> O>
     requires (utf8_pointer<Ptr> || utf32_pointer<Ptr>)
   transcode_result<Ptr, O> transcode_to_utf16(Ptr p, O out);
 
@@ -438,7 +436,7 @@ namespace std::uc {
   transcode_result<I, O> transcode_to_utf32(I first, S last, O out);
 
   // equivalent to transcode_to_utf32(p, null_sentinel, out);
-  template<typename Ptr, output_iterator<uint32_t> O>
+  template<class Ptr, output_iterator<uint32_t> O>
     requires (utf8_pointer<Ptr> || utf16_pointer<Ptr>)
   transcode_result<Ptr, O> transcode_to_utf32(Ptr p, O out);
 
@@ -450,33 +448,40 @@ namespace std::uc {
 }
 ```
 
-Optional: Add the array overloads of the transcode algorithms:
+## Optional: Add the array overloads of the transcode algorithms
 
 These are not strictly necessary, and only cover one corner case.  They cover
 the transcoding of a non-null-terminated array.  I'm not sure they're worth
 it.  Without these, the call `transcode_to_utfN(arr, out)` will choose the
-`transcode_to_utfN()` pointer overload, due to array-to-pointer decay.  So,
-having these overloads increases safety.
+`transcode_to_utfN()` pointer overload, due to array-to-pointer decay.  Since
+the array is not null-terminated, we get UB.  So, having these overloads
+increases safety.
 
 ```cpp
-  template<size_t N, typename Char, output_iterator<uint8_t> O>
+namespace std::uc {
+  template<size_t N, class Char, output_iterator<uint8_t> O>
     requires (utf16_code_unit<Char> || utf32_code_unit<Char>)
       transcode_result<Char *, O> transcode_to_utf8(Char (&arr)[N], O out);
 
-  template<size_t N, typename Char, output_iterator<uint16_t> O>
+  template<size_t N, class Char, output_iterator<uint16_t> O>
     requires (utf8_code_unit<Char> || utf32_code_unit<Char>)
       transcode_result<Char *, O> transcode_to_utf16(Char (&arr)[N], O out);
 
-  template<size_t N, typename Char, output_iterator<uint32_t> O>
+  template<size_t N, class Char, output_iterator<uint32_t> O>
     requires (utf8_code_unit<Char> || utf16_code_unit<Char>)
       transcode_result<Char *, O> transcode_to_utf32(Char (&arr)[N], O out);
+}
 ```
 
-Add the transcoding iterators (first, the basic ones).  I'm using
-[P2727](https://isocpp.org/files/papers/P2727R0.html)'s `iterator_interface`
-here for simplicity.
+## Add the transcoding iterators
+
+###  First, the basic ones
+
+I'm using [P2727](https://isocpp.org/files/papers/P2727R0.html)'s
+`iterator_interface` here for simplicity.
 
 ```cpp
+namespace std::uc {
   // An error handler type that can be used with the converting iterators;
   // provides the Unicode replacement character on errors.
   struct use_replacement_character
@@ -496,7 +501,7 @@ here for simplicity.
   {
     constexpr utf_32_to_8_iterator();
     explicit constexpr utf_32_to_8_iterator(I first, I it, S last);
-    template<typename I2, typename S2>
+    template<class I2, class S2>
       requires convertible_to<I2, I> && convertible_to<S2, S>
         constexpr utf_32_to_8_iterator(
           utf_32_to_8_iterator<I2, S2, ErrorHandler> const & other);
@@ -512,11 +517,11 @@ here for simplicity.
     constexpr utf_32_to_8_iterator & operator--();
 
     template<
-      typename I1,
-      typename S1,
-      typename I2,
-      typename S2,
-      typename ErrorHandler2>
+      class I1,
+      class S1,
+      class I2,
+      class S2,
+      class ErrorHandler2>
     friend constexpr bool operator==(
       utf_32_to_8_iterator<I1, S1, ErrorHandler2> const & lhs,
       utf_32_to_8_iterator<I2, S2, ErrorHandler2> const & rhs)
@@ -548,7 +553,7 @@ here for simplicity.
     friend struct utf_32_to_8_iterator;
   };
 
-  template<typename I, typename S, typename ErrorHandler>
+  template<class I, class S, class ErrorHandler>
     constexpr bool operator==(
       utf_32_to_8_iterator<I, S, ErrorHandler> lhs, S rhs)
         requires requires { lhs.base() == rhs; };
@@ -565,7 +570,7 @@ here for simplicity.
   {
     constexpr utf_8_to_32_iterator();
     explicit constexpr utf_8_to_32_iterator(I first, I it, S last);
-    template<typename I2, typename S2>
+    template<class I2, class S2>
       requires convertible_to<I2, I> && convertible_to<S2, S>
         constexpr utf_8_to_32_iterator(
           utf_8_to_32_iterator<I2, S2, ErrorHandler> const & other);
@@ -609,17 +614,17 @@ here for simplicity.
     friend struct utf_8_to_32_iterator;
   };
 
-  template<typename I, typename S, typename ErrorHandler>
+  template<class I, class S, class ErrorHandler>
   constexpr auto operator==(
     utf_8_to_32_iterator<I, S, ErrorHandler> const & lhs, Sentinel rhs)
       requires requires { lhs.base() == rhs; };
 
   template<
-    typename I1,
-    typename S1,
-    typename I2,
-    typename S2,
-    typename ErrorHandler>
+    class I1,
+    class S1,
+    class I2,
+    class S2,
+    class ErrorHandler>
   constexpr auto operator==(
     utf_8_to_32_iterator<I1, S1, ErrorHandler> const & lhs,
     utf_8_to_32_iterator<I2, S2, ErrorHandler> const & rhs)
@@ -637,7 +642,7 @@ here for simplicity.
   {
     constexpr utf_32_to_16_iterator();
     explicit constexpr utf_32_to_16_iterator(I first, I it, S last);
-    template<typename I2, typename S2>
+    template<class I2, class S2>
       requires convertible_to<I2, I> && convertible_to<S2, S>
         constexpr utf_32_to_16_iterator(
           utf_32_to_16_iterator<I2, S2, ErrorHandler> const & other);
@@ -654,11 +659,11 @@ here for simplicity.
     constexpr utf_32_to_16_iterator & operator--();
 
     template<
-      typename I1,
-      typename S1,
-      typename I2,
-      typename S2,
-      typename ErrorHandler2>
+      class I1,
+      class S1,
+      class I2,
+      class S2,
+      class ErrorHandler2>
     friend constexpr auto operator==(
       utf_32_to_16_iterator<I1, S1, ErrorHandler2> const & lhs,
       utf_32_to_16_iterator<I2, S2, ErrorHandler2> const & rhs)
@@ -691,7 +696,7 @@ here for simplicity.
     friend struct utf_32_to_16_iterator;
   };
 
-  template<typename I, typename S, typename ErrorHandler>
+  template<class I, class S, class ErrorHandler>
   constexpr auto operator==(
     utf_32_to_16_iterator<I, S, ErrorHandler> const & lhs, Sentinel rhs)
       requires requires { lhs.base() == rhs; };
@@ -708,7 +713,7 @@ here for simplicity.
   {
     constexpr utf_16_to_32_iterator();
     explicit constexpr utf_16_to_32_iterator(I first, I it, S last);
-    template<typename I2, typename S2>
+    template<class I2, class S2>
       requires convertible_to<I2, I> && convertible_to<S2, S>
         constexpr utf_16_to_32_iterator(
           utf_16_to_32_iterator<I2, S2, ErrorHandler> const & other);
@@ -753,17 +758,17 @@ here for simplicity.
     friend struct utf_16_to_32_iterator;
   };
 
-  template<typename I, typename S, typename ErrorHandler>
+  template<class I, class S, class ErrorHandler>
   constexpr auto operator==(
     utf_16_to_32_iterator<I, S, ErrorHandler> const & lhs, Sentinel rhs)
       requires requires { lhs.base() == rhs; };
 
   template<
-    typename I1,
-    typename S1,
-    typename I2,
-    typename S2,
-    typename ErrorHandler>
+    class I1,
+    class S1,
+    class I2,
+    class S2,
+    class ErrorHandler>
   constexpr auto operator==(
     utf_16_to_32_iterator<I1, S1, ErrorHandler> const & lhs,
     utf_16_to_32_iterator<I2, S2, ErrorHandler> const & rhs)
@@ -781,7 +786,7 @@ here for simplicity.
   {
     constexpr utf_16_to_8_iterator()l
     explicit constexpr utf_16_to_8_iterator(I first, I it, S last);
-    template<typename I2, typename S2>
+    template<class I2, class S2>
       requires convertible_to<I2, I> && convertible_to<S2, S>
         constexpr utf_16_to_8_iterator(utf_16_to_8_iterator<I2, S2> const & other);
 
@@ -796,11 +801,11 @@ here for simplicity.
     constexpr utf_16_to_8_iterator & operator--();
 
     template<
-      typename I1,
-      typename S1,
-      typename I2,
-      typename S2,
-      typename ErrorHandler2>
+      class I1,
+      class S1,
+      class I2,
+      class S2,
+      class ErrorHandler2>
     friend constexpr auto operator==(
       utf_16_to_8_iterator<I1, S1, ErrorHandler2> const & lhs,
       utf_16_to_8_iterator<I2, S2, ErrorHandler2> const & rhs)
@@ -832,17 +837,17 @@ here for simplicity.
     friend struct utf_16_to_8_iterator;
   };
 
-  template<typename I, typename S, typename ErrorHandler>
+  template<class I, class S, class ErrorHandler>
   constexpr auto operator==(
     utf_16_to_8_iterator<I, S, ErrorHandler> const & lhs, Sentinel rhs)
       requires requires { lhs.base() == rhs; };
 
   template<
-    typename I1,
-    typename S1,
-    typename I2,
-    typename S2,
-    typename ErrorHandler>
+    class I1,
+    class S1,
+    class I2,
+    class S2,
+    class ErrorHandler>
   constexpr auto operator==(
     utf_16_to_8_iterator<I1, S1, ErrorHandler> const & lhs,
     utf_16_to_8_iterator<I2, S2, ErrorHandler> const & rhs)
@@ -850,7 +855,7 @@ here for simplicity.
 
   template<
     utf8_iter I,
-    std::sentinel_for<I> S,
+    sentinel_for<I> S,
     transcoding_error_handler ErrorHandler>
   struct utf_8_to_16_iterator
     : iterator_interface<utf_8_to_16_iterator<I, S, ErrorHandler>,
@@ -860,8 +865,8 @@ here for simplicity.
   {
     constexpr utf_8_to_16_iterator();
     explicit constexpr utf_8_to_16_iterator(I first, I it, S last);
-    template<typename I2, typename S2>
-      requires std::convertible_to<I2, I> && std::convertible_to<S2, S>
+    template<class I2, class S2>
+      requires convertible_to<I2, I> && convertible_to<S2, S>
         constexpr utf_8_to_16_iterator(
           utf_8_to_16_iterator<I2, S2, ErrorHandler> const & other);
 
@@ -876,11 +881,11 @@ here for simplicity.
     constexpr utf_8_to_16_iterator & operator--();
 
     template<
-      typename I1,
-      typename S1,
-      typename I2,
-      typename S2,
-      typename ErrorHandler2>
+      class I1,
+      class S1,
+      class I2,
+      class S2,
+      class ErrorHandler2>
     friend constexpr auto operator==(
       utf_8_to_16_iterator<I1, S1, ErrorHandler2> const & lhs,
       utf_8_to_16_iterator<I2, S2, ErrorHandler2> const & rhs)
@@ -901,22 +906,499 @@ here for simplicity.
   private:
     utf_8_to_32_iterator<I, S> it_;  // @*exposition only*@
     int index_;                      // @*exposition only*@
-    std::array<uint16_t, 4> buf_;    // @*exposition only*@
+    array<uint16_t, 4> buf_;         // @*exposition only*@
 
     template<
       utf8_iter I2,
-      std::sentinel_for<I2> S2,
+      sentinel_for<I2> S2,
       transcoding_error_handler ErrorHandler2>
     friend struct utf_8_to_16_iterator;
   };
 
-  template<typename I, typename S, typename ErrorHandler>
+  template<class I, class S, class ErrorHandler>
     constexpr auto operator==(
       utf_8_to_16_iterator<I, S, ErrorHandler> const & lhs, Sentinel rhs)
         requires requires { lhs.base() == rhs; };
+}
 ```
 
-TODO
+### Add out and insert transcoding iterators
+
+```cpp
+namespace std::uc {
+  template<class D, class I>
+  struct @*trans-ins-iter*@             // @*exposition only*@
+  {
+    using value_type = void;
+    using difference_type = ptrdiff_t;
+    using pointer = void;
+    using reference = void;
+    using iterator_category = output_iterator_tag;
+
+    @*trans-ins-iter*@() {}
+    @*trans-ins-iter*@(I it) : it_(it) {}
+    D & operator*() { return derived(); }
+    D & operator++() { return derived(); }
+    D operator++(int) { return derived(); }
+    I base() const { return it_; }
+
+  protected:
+    I & iter() { return it_; }
+
+  private:
+    D & derived() { return static_cast<D &>(*this); }
+    I it_;
+  };
+
+  // UTF-32 -> UTF-8
+
+  template<output_iterator<uint8_t> Iter>
+  struct utf_32_to_8_out_iterator
+    : @*trans-ins-iter*@<utf_32_to_8_out_iterator<Iter>, Iter>
+  {
+    utf_32_to_8_out_iterator() {}
+    explicit utf_32_to_8_out_iterator(Iter it);
+
+    utf_32_to_8_out_iterator & operator=(uint32_t cp);
+  };
+
+  template<class Cont>
+  struct utf_32_to_8_insert_iterator
+    : @*trans-ins-iter*@<utf_32_to_8_insert_iterator<Cont>, insert_iterator<Cont>>
+  {
+    utf_32_to_8_insert_iterator() {}
+    utf_32_to_8_insert_iterator(Cont & c, typename Cont::iterator it);
+
+    utf_32_to_8_insert_iterator & operator=(uint32_t cp);
+  };
+
+  template<class Cont>
+  struct utf_32_to_8_front_insert_iterator
+    : @*trans-ins-iter*@<utf_32_to_8_front_insert_iterator<Cont>, front_insert_iterator<Cont>>
+  {
+    utf_32_to_8_front_insert_iterator() {}
+    explicit utf_32_to_8_front_insert_iterator(Cont & c);
+
+    utf_32_to_8_front_insert_iterator & operator=(uint32_t cp);
+  };
+
+  template<class Cont>
+  struct utf_32_to_8_back_insert_iterator
+    : @*trans-ins-iter*@<utf_32_to_8_back_insert_iterator<Cont>, back_insert_iterator<Cont>>
+  {
+    utf_32_to_8_back_insert_iterator() {}
+    explicit utf_32_to_8_back_insert_iterator(Cont & c);
+
+    utf_32_to_8_back_insert_iterator & operator=(uint32_t cp);
+  };
+
+  // UTF-8 -> UTF-32
+
+  template<output_iterator<uint32_t> Iter>
+  struct utf_8_to_32_out_iterator
+    : @*trans-ins-iter*@<utf_8_to_32_out_iterator<Iter>, Iter>
+  {
+    utf_8_to_32_out_iterator() {}
+    explicit utf_8_to_32_out_iterator(Iter it);
+
+    utf_8_to_32_out_iterator & operator=(uint16_t cu);
+  };
+
+  template<class Cont>
+  struct utf_8_to_32_insert_iterator
+    : @*trans-ins-iter*@<utf_8_to_32_insert_iterator<Cont>, insert_iterator<Cont>>
+  {
+    utf_8_to_32_insert_iterator() {}
+    utf_8_to_32_insert_iterator(Cont & c, typename Cont::iterator it);
+
+    utf_8_to_32_insert_iterator & operator=(uint16_t cu);
+  };
+
+  template<class Cont>
+  struct utf_8_to_32_front_insert_iterator
+    : @*trans-ins-iter*@<utf_8_to_32_front_insert_iterator<Cont>, front_insert_iterator<Cont>>
+  {
+    utf_8_to_32_front_insert_iterator() {}
+    explicit utf_8_to_32_front_insert_iterator(Cont & c);
+
+    utf_8_to_32_front_insert_iterator & operator=(uint16_t cu);
+  };
+
+  template<class Cont>
+  struct utf_8_to_32_back_insert_iterator
+    : @*trans-ins-iter*@<utf_8_to_32_back_insert_iterator<Cont>, back_insert_iterator<Cont>>
+  {
+    utf_8_to_32_back_insert_iterator() {}
+    explicit utf_8_to_32_back_insert_iterator(Cont & c);
+
+    utf_8_to_32_back_insert_iterator & operator=(uint16_t cu);
+  };
+
+  // UTF-32 -> UTF-16
+
+  template<output_iterator<uint16_t> Iter>
+  struct utf_32_to_16_out_iterator
+    : @*trans-ins-iter*@<utf_32_to_16_out_iterator<Iter>, Iter>
+  {
+    utf_32_to_16_out_iterator() {}
+    explicit utf_32_to_16_out_iterator(Iter it);
+
+    utf_32_to_16_out_iterator & operator=(uint32_t cp);
+  };
+
+  template<class Cont>
+  struct utf_32_to_16_insert_iterator
+    : @*trans-ins-iter*@<utf_32_to_16_insert_iterator<Cont>, insert_iterator<Cont>>
+  {
+    utf_32_to_16_insert_iterator() {}
+    utf_32_to_16_insert_iterator(Cont & c, typename Cont::iterator it);
+
+    utf_32_to_16_insert_iterator & operator=(uint32_t cp);
+  };
+
+  template<class Cont>
+  struct utf_32_to_16_front_insert_iterator
+    : @*trans-ins-iter*@<utf_32_to_16_front_insert_iterator<Cont>, front_insert_iterator<Cont>>
+  {
+    utf_32_to_16_front_insert_iterator() {}
+    explicit utf_32_to_16_front_insert_iterator(Cont & c);
+
+    utf_32_to_16_front_insert_iterator & operator=(uint32_t cp);
+  };
+
+  template<class Cont>
+  struct utf_32_to_16_back_insert_iterator
+    : @*trans-ins-iter*@<utf_32_to_16_back_insert_iterator<Cont>, back_insert_iterator<Cont>>
+  {
+    utf_32_to_16_back_insert_iterator() {}
+    explicit utf_32_to_16_back_insert_iterator(Cont & c);
+
+    utf_32_to_16_back_insert_iterator & operator=(uint32_t cp);
+  };
+
+  // UTF-16 -> UTF-32
+
+  template<output_iterator<uint32_t> Iter>
+  struct utf_16_to_32_out_iterator
+    : @*trans-ins-iter*@<utf_16_to_32_out_iterator<Iter>, Iter>
+  {
+    utf_16_to_32_out_iterator() {}
+    explicit utf_16_to_32_out_iterator(Iter it);
+
+    utf_16_to_32_out_iterator & operator=(uint16_t cu);
+  };
+
+  template<class Cont>
+  struct utf_16_to_32_insert_iterator
+    : @*trans-ins-iter*@<utf_16_to_32_insert_iterator<Cont>, insert_iterator<Cont>>
+  {
+    utf_16_to_32_insert_iterator() {}
+    utf_16_to_32_insert_iterator(Cont & c, typename Cont::iterator it);
+
+    utf_16_to_32_insert_iterator & operator=(uint16_t cu);
+  };
+
+  template<class Cont>
+  struct utf_16_to_32_front_insert_iterator
+    : @*trans-ins-iter*@<utf_16_to_32_front_insert_iterator<Cont>, front_insert_iterator<Cont>>
+  {
+    utf_16_to_32_front_insert_iterator() {}
+    explicit utf_16_to_32_front_insert_iterator(Cont & c);
+
+    utf_16_to_32_front_insert_iterator & operator=(uint16_t cu);
+  };
+
+  template<class Cont>
+  struct utf_16_to_32_back_insert_iterator
+    : @*trans-ins-iter*@<utf_16_to_32_back_insert_iterator<Cont>, back_insert_iterator<Cont>>
+  {
+    utf_16_to_32_back_insert_iterator() {}
+    explicit utf_16_to_32_back_insert_iterator(Cont & c);
+
+    utf_16_to_32_back_insert_iterator & operator=(uint16_t cu);
+  };
+
+  // UTF-16 -> UTF-8
+
+  template<output_iterator<uint8_t> Iter>
+  struct utf_16_to_8_out_iterator
+    : @*trans-ins-iter*@<utf_16_to_8_out_iterator<Iter>, Iter>
+  {
+    utf_16_to_8_out_iterator() {}
+    explicit utf_16_to_8_out_iterator(Iter it);
+
+    utf_16_to_8_out_iterator & operator=(uint16_t cu);
+  };
+
+  template<class Cont>
+  struct utf_16_to_8_insert_iterator
+    : @*trans-ins-iter*@<utf_16_to_8_insert_iterator<Cont>, insert_iterator<Cont>>
+  {
+    utf_16_to_8_insert_iterator() {}
+    utf_16_to_8_insert_iterator(Cont & c, typename Cont::iterator it);
+
+    utf_16_to_8_insert_iterator & operator=(uint16_t cu);
+  };
+
+  template<class Cont>
+  struct utf_16_to_8_front_insert_iterator
+    : @*trans-ins-iter*@<utf_16_to_8_front_insert_iterator<Cont>, front_insert_iterator<Cont>>
+  {
+    utf_16_to_8_front_insert_iterator() {}
+    explicit utf_16_to_8_front_insert_iterator(Cont & c);
+
+    utf_16_to_8_front_insert_iterator & operator=(uint16_t cu);
+  };
+
+  template<class Cont>
+  struct utf_16_to_8_back_insert_iterator
+    : @*trans-ins-iter*@<utf_16_to_8_back_insert_iterator<Cont>, back_insert_iterator<Cont>>
+  {
+    utf_16_to_8_back_insert_iterator() {}
+    explicit utf_16_to_8_back_insert_iterator(Cont & c);
+
+    utf_16_to_8_back_insert_iterator & operator=(uint16_t cu);
+  };
+
+  // UTF-8 -> UTF-16
+
+  template<output_iterator<uint16_t> Iter>
+  struct utf_8_to_16_out_iterator
+      : @*trans-ins-iter*@<utf_8_to_16_out_iterator<Iter>, Iter>
+  {
+    utf_8_to_16_out_iterator() {}
+    explicit utf_8_to_16_out_iterator(Iter it);
+
+    utf_8_to_16_out_iterator & operator=(uint16_t cu);
+  };
+
+  template<class Cont>
+  struct utf_8_to_16_insert_iterator
+    : @*trans-ins-iter*@<utf_8_to_16_insert_iterator<Cont>, insert_iterator<Cont>>
+  {
+    utf_8_to_16_insert_iterator() {}
+    utf_8_to_16_insert_iterator(Cont & c, typename Cont::iterator it);
+
+    utf_8_to_16_insert_iterator & operator=(uint16_t cu);
+  };
+
+  template<class Cont>
+  struct utf_8_to_16_front_insert_iterator
+    : @*trans-ins-iter*@<utf_8_to_16_front_insert_iterator<Cont>, front_insert_iterator<Cont>>
+  {
+    utf_8_to_16_front_insert_iterator() {}
+    explicit utf_8_to_16_front_insert_iterator(Cont & c);
+
+    utf_8_to_16_front_insert_iterator & operator=(uint16_t cu);
+  };
+
+  template<class Cont>
+  struct utf_8_to_16_back_insert_iterator
+    : @*trans-ins-iter*@<utf_8_to_16_back_insert_iterator<Cont>, back_insert_iterator<Cont>>
+  {
+    utf_8_to_16_back_insert_iterator() {}
+    explicit utf_8_to_16_back_insert_iterator(Cont & c);
+
+    utf_8_to_16_back_insert_iterator & operator=(uint16_t cu);
+  };
+}
+```
+
+### Add factory functions for all the transcoding iterators
+
+```cpp
+namespace std::uc {
+  template<output_iterator<uint8_t> O>
+  utf_32_to_8_out_iterator<O> utf_32_to_8_out(O it);
+
+  template<output_iterator<uint32_t> O>
+  utf_8_to_32_out_iterator<O> utf_8_to_32_out(O it);
+
+  template<output_iterator<uint16_t> O>
+  utf_32_to_16_out_iterator<O> utf_32_to_16_out(O it);
+
+  template<output_iterator<uint32_t> O>
+  utf_16_to_32_out_iterator<O> utf_16_to_32_out(O it);
+
+  template<output_iterator<uint8_t> O>
+  utf_16_to_8_out_iterator<O> utf_16_to_8_out(O it);
+
+  template<output_iterator<uint16_t> O>
+  utf_8_to_16_out_iterator<O> utf_8_to_16_out(O it);
+
+  template<bidirectional_iterator I, sentinel_for<I> S>
+  auto utf8_iterator(I first, I it, S last);
+
+  template<bidirectional_iterator I, sentinel_for<I> S>
+  auto utf16_iterator(I first, I it, S last);
+
+  template<bidirectional_iterator I, sentinel_for<I> S>
+  auto utf32_iterator(I first, I it, S last);
+
+  template<class Cont>
+    requires requires { typename Cont::iterator; } && utf_iter<typename Cont::iterator>
+  auto from_utf8_inserter(Cont & c, typename Cont::iterator it);
+
+  template<class Cont>
+    requires requires { typename Cont::iterator; } && utf_iter<typename Cont::iterator>
+  auto from_utf16_inserter(Cont & c, typename Cont::iterator it);
+
+  template<class Cont>
+    requires requires { typename Cont::iterator; } && utf_iter<typename Cont::iterator>
+  auto from_utf32_inserter(Cont & c, typename Cont::iterator it);
+
+  template<class Cont>
+    requires requires { typename Cont::iterator; } && utf_iter<typename Cont::iterator>
+  auto from_utf8_back_inserter(Cont & c);
+
+  template<class Cont>
+    requires requires { typename Cont::iterator; } && utf_iter<typename Cont::iterator>
+  auto from_utf16_back_inserter(Cont & c);
+
+  template<class Cont>
+    requires requires { typename Cont::iterator; } && utf_iter<typename Cont::iterator>
+  auto from_utf32_back_inserter(Cont & c);
+
+  template<class Cont>
+    requires requires { typename Cont::iterator; } && utf_iter<typename Cont::iterator>
+  auto from_utf8_front_inserter(Cont & c);
+
+  template<class Cont>
+    requires requires { typename Cont::iterator; } && utf_iter<typename Cont::iterator>
+  auto from_utf16_front_inserter(Cont & c);
+
+  template<class Cont>
+    requires requires { typename Cont::iterator; } && utf_iter<typename Cont::iterator>
+  auto from_utf32_front_inserter(Cont & c);
+}
+```
+
+## Add transcoding views
+
+### Add the views proper
+
+```cpp
+namespace std::uc {
+  template<utf8_iter I, sentinel_for<I> S = I>
+  struct utf8_view : view_interface<utf8_view<I, S>>
+  {
+    using iterator = I;
+    using sentinel = S;
+
+    constexpr utf8_view() {}
+    constexpr utf8_view(iterator first, sentinel last);
+
+    constexpr iterator begin() const;
+    constexpr sentinel end() const;
+
+    friend constexpr bool operator==(utf8_view lhs, utf8_view rhs)
+      { return lhs.begin() == rhs.begin() && lhs.end() == rhs.end(); }
+    friend constexpr bool operator!=(utf8_view lhs, utf8_view rhs)
+      { return !(lhs == rhs); }
+
+    friend ostream & operator<<(ostream & os, utf8_view v);
+#if defined(_MSC_VER)
+    friend wostream & operator<<(wostream & os, utf8_view v);
+#endif
+
+  private:
+    using iterator_t = @*unspecified*@;          // @*exposition only*@
+    using sentinel_t = @*unspecified*@;          // @*exposition only*@
+
+    iterator_t first_;                       // @*exposition only*@
+    [[no_unique_address]] sentinel_t last_;  // @*exposition only*@
+  };
+
+  template<utf16_iter I, sentinel_for<I> S = I>
+  struct utf16_view : view_interface<utf16_view<I, S>>
+  {
+    using iterator = I;
+    using sentinel = S;
+
+    constexpr utf16_view() {}
+    constexpr utf16_view(iterator first, sentinel last);
+
+    constexpr iterator begin() const;
+    constexpr sentinel end() const;
+
+    friend constexpr bool operator==(utf16_view lhs, utf16_view rhs)
+      { return lhs.begin() == rhs.begin() && lhs.end() == rhs.end(); }
+    friend constexpr bool operator!=(utf16_view lhs, utf16_view rhs)
+      { return !(lhs == rhs); }
+
+    friend ostream & operator<<(ostream & os, utf16_view v);
+#if defined(_MSC_VER)
+    friend wostream & operator<<(wostream & os, utf16_view v);
+#endif
+
+  private:
+    using iterator_t = @*unspecified*@;          // @*exposition only*@
+    using sentinel_t = @*unspecified*@;          // @*exposition only*@
+
+    iterator_t first_;                       // @*exposition only*@
+    [[no_unique_address]] sentinel_t last_;  // @*exposition only*@
+  };
+
+  template<utf32_iter I, sentinel_for<I> S = I>
+  struct utf32_view : view_interface<utf32_view<I, S>>
+  {
+    using iterator = I;
+    using sentinel = S;
+
+    constexpr utf32_view() {}
+    constexpr utf32_view(iterator first, sentinel last);
+
+    constexpr iterator begin() const;
+    constexpr sentinel end() const;
+
+    friend constexpr bool operator==(utf32_view lhs, utf32_view rhs)
+      { return lhs.begin() == rhs.begin() && lhs.end() == rhs.end(); }
+    friend constexpr bool operator!=(utf32_view lhs, utf32_view rhs)
+      { return !(lhs == rhs); }
+
+    friend ostream & operator<<(ostream & os, utf32_view v);
+#if defined(_MSC_VER)
+    friend wostream & operator<<(wostream & os, utf32_view v);
+#endif
+
+  private:
+    using iterator_t = @*unspecified*@;          // @*exposition only*@
+    using sentinel_t = @*unspecified*@;          // @*exposition only*@
+
+    iterator_t first_;                       // @*exposition only*@
+    [[no_unique_address]] sentinel_t last_;  // @*exposition only*@
+  };
+}
+```
+
+### Add `as_utfN()`
+
+Each `as_utfN()` factory function takes an iterator/sentinel pair, or a
+range-like (meaning an iterator/sentinel pair or a null-terminated pointer),
+and returns a `utfN_view` that may do transcoding (if the inputs are not
+UTF-N) or may not do transcoding (if the inputs are UTF-N).
+
+```cpp
+namespace std::uc {
+  template<utf_iter I, std::sentinel_for<I> S>
+    constexpr @*unspecified*@ as_utf8(I first, S last);
+
+  template<utf_range_like R>
+    constexpr @*unspecified*@ as_utf8(R && r);
+
+  template<utf_iter I, std::sentinel_for<I> S>
+    constexpr @*unspecified*@ as_utf16(I first, S last);
+
+  template<utf_range_like R>
+    constexpr @*unspecified*@ as_utf16(R && r);
+
+  template<utf_iter I, std::sentinel_for<I> S>
+    constexpr @*unspecified*@ as_utf32(I first, S last);
+
+  template<utf_range_like R>
+    constexpr @*unspecified*@ as_utf32(R && r);
+}
+```
 
 ## Design notes
 
@@ -1032,7 +1514,23 @@ if first is a `utf_32_to_8_iterator`, the resulting view will use
 
 # Implementation experience
 
-TODO
+All the interfaces proposed here have been implemented, and re-implemented,
+several times over the last 5 years or so.  They are part of a proposed (but
+not yet accepted!) Boost library,
+[Boost.Text](https://github.com/tzlaine/text).
+
+The library has hundreds of stars, though I'm not sure how many users that
+equates to.  All of the interfaces proposed here are among the best-exercised
+in the library.  There are comprehensive tests for all the proposed entities,
+and those entities are used as the foundation upon which all the other library
+entities are composed.
+
+Though there are a lot of individual entities proposed here, at one time or
+another I have need each one of them, though maybe not in every UTF-N -> UTF-M
+permutation.  Those transcoding permutations are there mostly for
+completeness.  I have only ever needed UTF-8 <-> UTF->32 in any of my work
+that uses Unicode.  Frequent Windows users will also need to convert to and
+from UTF-16 sometimes, because that is the UTF that the OS APIs use.
 
 # Performance
 
