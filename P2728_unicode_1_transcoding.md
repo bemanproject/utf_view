@@ -3,6 +3,7 @@ title: "Unicode in the Library, Part 1: UTF Transcoding"
 document: P2728R0
 date: 2022-11-20
 audience:
+  - SG-16 Unicode
   - LEWG-I
   - LEWG
 author:
@@ -517,10 +518,8 @@ namespace std::uc {
     constexpr utf_32_to_8_iterator & operator--();
 
     template<
-      class I1,
-      class S1,
-      class I2,
-      class S2,
+      class I1, class S1,
+      class I2, class S2,
       class ErrorHandler2>
     friend constexpr bool operator==(
       utf_32_to_8_iterator<I1, S1, ErrorHandler2> const & lhs,
@@ -531,7 +530,7 @@ namespace std::uc {
     friend bool operator==(utf_32_to_8_iterator lhs, utf_32_to_8_iterator rhs)
       { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
 
-    using @*base-type*@ =                                              // @*exposition only*@
+    using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_32_to_8_iterator<I, S, ErrorHandler>,
                          bidirectional_iterator_tag,
                          uint32_t,
@@ -588,7 +587,7 @@ namespace std::uc {
     friend bool operator==(utf_8_to_32_iterator lhs, utf_8_to_32_iterator rhs)
       { return lhs.base() == rhs.base(); }
 
-    using @*base-type*@ =                                              // @*exposition only*@
+    using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_8_to_32_iterator<I, S, ErrorHandler>,
                          bidirectional_iterator_tag,
                          uint32_t,
@@ -597,9 +596,9 @@ namespace std::uc {
     using @*base-type*@::operator--;
 
   private:
-    I first_;      // @*exposition only*@
-    I it_;         // @*exposition only*@
-    S last_;       // @*exposition only*@
+    I first_;                 // @*exposition only*@
+    I it_;                    // @*exposition only*@
+    S last_;                  // @*exposition only*@
 
     template<
       utf8_iter I2,
@@ -620,10 +619,8 @@ namespace std::uc {
       requires requires { lhs.base() == rhs; };
 
   template<
-    class I1,
-    class S1,
-    class I2,
-    class S2,
+    class I1, class S1,
+    class I2, class S2,
     class ErrorHandler>
   constexpr auto operator==(
     utf_8_to_32_iterator<I1, S1, ErrorHandler> const & lhs,
@@ -659,10 +656,8 @@ namespace std::uc {
     constexpr utf_32_to_16_iterator & operator--();
 
     template<
-      class I1,
-      class S1,
-      class I2,
-      class S2,
+      class I1, class S1,
+      class I2, class S2,
       class ErrorHandler2>
     friend constexpr auto operator==(
       utf_32_to_16_iterator<I1, S1, ErrorHandler2> const & lhs,
@@ -674,7 +669,7 @@ namespace std::uc {
       utf_32_to_16_iterator lhs, utf_32_to_16_iterator rhs)
     { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
 
-    using @*base-type*@ =                                              // @*exposition only*@
+    using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_32_to_16_iterator<I, S, ErrorHandler>,
                          bidirectional_iterator_tag,
                          uint16_t,
@@ -732,7 +727,7 @@ namespace std::uc {
       utf_16_to_32_iterator lhs, utf_16_to_32_iterator rhs)
     { return lhs.base() == rhs.base(); }
 
-    using @*base-type*@ =                                              // @*exposition only*@
+    using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_16_to_32_iterator<I, S, ErrorHandler>,
                          bidirectional_iterator_tag,
                          uint32_t,
@@ -741,9 +736,9 @@ namespace std::uc {
     using @*base-type*@::operator--;
 
   private:
-    I first_;    // @*exposition only*@
-    I it_;       // @*exposition only*@
-    S last_;     // @*exposition only*@
+    I first_;                 // @*exposition only*@
+    I it_;                    // @*exposition only*@
+    S last_;                  // @*exposition only*@
 
     template<
       utf32_iter I2,
@@ -764,10 +759,8 @@ namespace std::uc {
       requires requires { lhs.base() == rhs; };
 
   template<
-    class I1,
-    class S1,
-    class I2,
-    class S2,
+    class I1, class S1,
+    class I2, class S2,
     class ErrorHandler>
   constexpr auto operator==(
     utf_16_to_32_iterator<I1, S1, ErrorHandler> const & lhs,
@@ -801,10 +794,8 @@ namespace std::uc {
     constexpr utf_16_to_8_iterator & operator--();
 
     template<
-      class I1,
-      class S1,
-      class I2,
-      class S2,
+      class I1, class S1,
+      class I2, class S2,
       class ErrorHandler2>
     friend constexpr auto operator==(
       utf_16_to_8_iterator<I1, S1, ErrorHandler2> const & lhs,
@@ -815,7 +806,7 @@ namespace std::uc {
     friend bool operator==(utf_16_to_8_iterator lhs, utf_16_to_8_iterator rhs)
     { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
 
-    using @*base-type*@ =                                              // @*exposition only*@
+    using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_16_to_8_iterator<I, S, ErrorHandler>,
                          bidirectional_iterator_tag,
                          char,
@@ -824,11 +815,11 @@ namespace std::uc {
     using @*base-type*@::operator--;
 
   private:
-    I first_;             // @*exposition only*@
-    I it_;                // @*exposition only*@
-    S last_;              // @*exposition only*@
-    int index_;           // @*exposition only*@
-    array<char, 5> buf_;  // @*exposition only*@
+    I first_;                 // @*exposition only*@
+    I it_;                    // @*exposition only*@
+    S last_;                  // @*exposition only*@
+    int index_;               // @*exposition only*@
+    array<char, 5> buf_;      // @*exposition only*@
 
     template<
       utf16_iter I2,
@@ -843,10 +834,8 @@ namespace std::uc {
       requires requires { lhs.base() == rhs; };
 
   template<
-    class I1,
-    class S1,
-    class I2,
-    class S2,
+    class I1, class S1,
+    class I2, class S2,
     class ErrorHandler>
   constexpr auto operator==(
     utf_16_to_8_iterator<I1, S1, ErrorHandler> const & lhs,
@@ -881,10 +870,8 @@ namespace std::uc {
     constexpr utf_8_to_16_iterator & operator--();
 
     template<
-      class I1,
-      class S1,
-      class I2,
-      class S2,
+      class I1, class S1,
+      class I2, class S2,
       class ErrorHandler2>
     friend constexpr auto operator==(
       utf_8_to_16_iterator<I1, S1, ErrorHandler2> const & lhs,
@@ -895,7 +882,7 @@ namespace std::uc {
     friend bool operator==(utf_8_to_16_iterator lhs, utf_8_to_16_iterator rhs)
       { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
 
-    using @*base-type*@ =                                              // @*exposition only*@
+    using @*base-type*@ =                // @*exposition only*@
       iterator_interface<utf_8_to_16_iterator<I, S, ErrorHandler>,
                          bidirectional_iterator_tag,
                          uint16_t,
@@ -1380,19 +1367,19 @@ UTF-N) or may not do transcoding (if the inputs are UTF-N).
 
 ```cpp
 namespace std::uc {
-  template<utf_iter I, std::sentinel_for<I> S>
+  template<utf_iter I, sentinel_for<I> S>
     constexpr @*unspecified*@ as_utf8(I first, S last);
 
   template<utf_range_like R>
     constexpr @*unspecified*@ as_utf8(R && r);
 
-  template<utf_iter I, std::sentinel_for<I> S>
+  template<utf_iter I, sentinel_for<I> S>
     constexpr @*unspecified*@ as_utf16(I first, S last);
 
   template<utf_range_like R>
     constexpr @*unspecified*@ as_utf16(R && r);
 
-  template<utf_iter I, std::sentinel_for<I> S>
+  template<utf_iter I, sentinel_for<I> S>
     constexpr @*unspecified*@ as_utf32(I first, S last);
 
   template<utf_range_like R>
@@ -1434,7 +1421,7 @@ input.  This is what all these interfaces do, unless you configure one of the
 iterators as mentioned above.
 
 Code units are just numbers.  All of these interfaces treat integral types as
-code units of various sizes (as least the ones that are 8-, 16-, or 32-bit).
+code units of various sizes (at least the ones that are 8-, 16-, or 32-bit).
 Signedness is ignored.
 
 A null-terminated pointer `p` to an 8-, 16-, or 32-bit string of code units is
