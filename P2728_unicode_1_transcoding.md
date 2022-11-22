@@ -78,7 +78,7 @@ Some times the contexts are in alignment, and sometimes they are in conflict.
 We need multiple ways to do transcoding to cover all of those contexts.  Let's
 make things more concrete:
 
-## Case 1: Trascode a buffer as fast as possible
+## Case 1: Transcode a buffer as fast as possible
 
 We care primarily about performance in this use case, so everything is a
 pointer.  Also, our wire-communications layer knows nothing about the UTFs, so
