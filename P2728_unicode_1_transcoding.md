@@ -136,7 +136,7 @@ auto const result = std::uc::transcode_to_utf16(input, input_as_utf16.data());
 input_as_utf16.resize(result.out - input_as_utf16.data()); // Trim unused space.
 ```
 
-## Case 3: Transcode an object in as conveniently as possible
+## Case 3: Transcode an object as conveniently as possible
 
 This solution is similar to Case 2, but marginally more convenient.  There are
 other cases, like accepting output from `std` algorithms, that indicate use of
