@@ -51,6 +51,17 @@ requirements that I think are important; I hope you'll agree:
   ubiquity of such strings means that they should be treated as first-class
   strings.
   
+## A note about P1629
+
+[@P1629R1] from JeanHeyd Meneide is a much more ambitious proposal that aims
+to standardize a general-purpose text encoding conversion mechanism.  This
+proposal is not at odds with P1629; the two proposals have largely orthogonal
+aims.  This proposal only concerns itself with UTF interconversions, which is
+all that is required for Unicode support.  P1629 is concerned with those
+conversions, plus a lot more.  Accepting both proposals would not cause
+problems; in fact, the APIs proposed here could be used to implement parts of
+the P1629 design.
+
 # The shortest Unicode primer imaginable
 
 There are multiple encoding types defined in Unicode: UTF-8, UTF-16, and
