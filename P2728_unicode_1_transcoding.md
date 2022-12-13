@@ -262,6 +262,22 @@ namespace std::uc {
   template<class T>
     concept utf_iter = utf8_iter<T> || utf16_iter<T> || utf32_iter<T>;
 
+  template<typename T, format F>
+    concept code_unit_range = ranges::bidirectional_range<T> &&
+      code_unit<ranges::range_value_t<T>, F>;
+
+  template<class T>
+    concept utf8_range = code_unit_range<T, format::utf8>;
+
+  template<class T>
+    concept utf16_range = code_unit_range<T, format::utf16>;
+
+  template<class T>
+    concept utf32_range = code_unit_range<T, format::utf32>;
+
+  template<class T>
+    concept code_point_range = utf32_range<T>;
+
   template<class T>
     concept utf_range_like =
       utf8_range<remove_reference_t<T>> ||
