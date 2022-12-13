@@ -999,7 +999,7 @@ namespace std::uc {
     utf_8_to_32_out_iterator() {}
     explicit utf_8_to_32_out_iterator(Iter it);
 
-    utf_8_to_32_out_iterator & operator=(uint16_t cu);
+    utf_8_to_32_out_iterator & operator=(uint8_t cu);
   };
 
   template<class Cont>
@@ -1167,7 +1167,7 @@ namespace std::uc {
     utf_8_to_16_out_iterator() {}
     explicit utf_8_to_16_out_iterator(Iter it);
 
-    utf_8_to_16_out_iterator & operator=(uint16_t cu);
+    utf_8_to_16_out_iterator & operator=(uint8_t cu);
   };
 
   template<class Cont>
