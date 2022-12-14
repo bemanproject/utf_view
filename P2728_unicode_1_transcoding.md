@@ -202,6 +202,12 @@ process_input(std::uc::as_utf16(input));
 
 # Proposed design
 
+## Dependencies
+
+This proposal depends on the existence of
+[P2727](https://isocpp.org/files/papers/P2727R0.html)
+"std::iterator_interface".
+
 ## Add concepts that describe parameters to transcoding APIs
 
 ```cpp
