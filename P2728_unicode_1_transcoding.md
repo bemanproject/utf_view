@@ -227,6 +227,9 @@ namespace std::uc {
   template<class T>
     concept utf32_code_unit = code_unit<T, format::utf32>;
 
+  template<typename T>
+    concept utf_code_unit = utf8_code_unit<T> || utf16_code_unit<T> || utf32_code_unit<T>;
+
   template<class T, format F>
     concept code_unit_iter =
       bidirectional_iterator<T> && code_unit<iter_value_t<T>, F>;
