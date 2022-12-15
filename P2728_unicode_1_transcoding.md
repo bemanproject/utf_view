@@ -1321,10 +1321,28 @@ namespace std::uc {
 }
 ```
 
+### Add `utfN_view` specializations of `formatter`
+
+These should be added to the list of "the debug-enabled string type
+specializations" in [format.formatter.spec].  This allows all three kinds of
+UTF views to be used in `std::format()` and `std::print()`.  The intention is
+that each one will transcode to UTF-8 if the formatter's `charT` is `char`, or
+to UTF-16 if the formatter's `charT` is `wchar_t` -- if transcoding is
+necessary at all.
+
+```cpp
+template<class I, class S>
+  struct formatter<uc::utf8_view<I, S>, charT>;
+template<class I, class S>
+  struct formatter<uc::utf16_view<I, S>, charT>;
+template<class I, class S>
+  struct formatter<uc::utf32_view<I, S>, charT>;
+```
+
 ## Design notes
 
 None of the proposed interfaces is subject to change in future versions of
-Unicode; each is from the guaranteed-stable subset.  Just sayin'.
+Unicode; each relates to the guaranteed-stable subset.  Just sayin'.
 
 None of the proposed interfaces allocates.
 
