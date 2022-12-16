@@ -1383,6 +1383,12 @@ character (`0xfffd`) in the output when broken UTF encoding is seen in the
 input.  This is what all these interfaces do, unless you configure one of the
 iterators as mentioned above.
 
+The production of replacement characters as error-handling strategy is good
+for memory compactness and safety.  It allows use to store all our text as
+UTF-8 (or, less compactly, as UTF-16), and then process code points as
+transcoding views.  If an error occurs, the transcoding views will simply
+produce a replacement character; ther is no danger of UB.
+
 Code units are just numbers.  All of these interfaces treat integral types as
 code units of various sizes (at least the ones that are 8-, 16-, or 32-bit).
 Signedness is ignored.
