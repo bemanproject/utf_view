@@ -1290,6 +1290,17 @@ namespace std::uc {
     [[no_unique_address]] sentinel_t last_;  // @*exposition only*@
   };
 }
+
+namespace std::ranges {
+  template<class I, class S>
+    inline constexpr bool enable_borrowed_range<uc::utf8_view<I, S>> = true;
+
+  template<class I, class S>
+    inline constexpr bool enable_borrowed_range<uc::utf16_view<I, S>> = true;
+
+  template<class I, class S>
+    inline constexpr bool enable_borrowed_range<uc::utf32_view<I, S>> = true;
+}
 ```
 
 ### Add `as_utfN()`
