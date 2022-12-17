@@ -442,7 +442,7 @@ namespace std::uc {
 
   template<input_iterator I, sentinel_for<I> S, output_iterator<char> O>
     requires(utf16_code_unit<iter_value_t<I>> || utf32_code_unit<iter_value_t<I>>)
-    transcode_result<I, O> transcode_to_utf8(I first, S last, O out)
+    transcode_result<I, O> transcode_to_utf8(I first, S last, O out);
 
   template<typename R, output_iterator<uint32_t> O>
     requires(utf16_input_range_like<R> || utf32_input_range_like<R>)
@@ -452,7 +452,7 @@ namespace std::uc {
 
   template<input_iterator I, sentinel_for<I> S, output_iterator<char> O>
     requires(utf8_code_unit<iter_value_t<I>> || utf32_code_unit<iter_value_t<I>>)
-    transcode_result<I, O> transcode_to_utf16(I first, S last, O out)
+    transcode_result<I, O> transcode_to_utf16(I first, S last, O out);
 
   template<typename R, output_iterator<uint32_t> O>
     requires(utf8_input_range_like<R> || utf32_input_range_like<R>)
@@ -462,7 +462,7 @@ namespace std::uc {
 
   template<input_iterator I, sentinel_for<I> S, output_iterator<char> O>
     requires(utf8_code_unit<iter_value_t<I>> || utf16_code_unit<iter_value_t<I>>)
-    transcode_result<I, O> transcode_to_utf32(I first, S last, O out)
+    transcode_result<I, O> transcode_to_utf32(I first, S last, O out);
 
   template<typename R, output_iterator<uint32_t> O>
     requires(utf8_input_range_like<R> || utf16_input_range_like<R>)
@@ -1350,6 +1350,10 @@ template<class I, class S>
   struct formatter<uc::utf32_view<I, S>, charT>;
 ```
 
+## Add a feature test macro
+
+Add the feature test macro `__cpp_lib_unicode_transcoding`.
+
 ## Design notes
 
 None of the proposed interfaces is subject to change in future versions of
@@ -1468,6 +1472,59 @@ UTF-32. You also do not need to care about whether first and last are raw
 pointers, some other kind of iterator, or transcoding iterators. For example,
 if first is a `utf_32_to_8_iterator`, the resulting view will use
 `first.base()` for its begin-iterator.
+
+Sometimes, an interface might accept any UTF-N iterator, and then transcode
+internally to UTF-32:
+
+```c++
+template<input_iterator I, sentinel_for<I> S, output_iterator<char> O>
+  requires(utf8_code_unit<iter_value_t<I>> || utf16_code_unit<iter_value_t<I>>)
+transcode_result<I, O> transcode_to_utf32(I first, S last, O out);
+```
+
+For such interfaces, it can be difficult in the general case to form an
+iterator of type `I` to return to the user:
+
+```c++
+template<input_iterator I, sentinel_for<I> S, output_iterator<char> O>
+    requires(utf8_code_unit<iter_value_t<I>> || utf16_code_unit<iter_value_t<I>>)
+transcode_result<I, O> transcode_to_utf32(I first, S last, O out) {
+    // Get the input as UTF-32.
+    auto r = uc::as_utf32(first, last);
+
+    // Do transcoding.
+    auto copy_result = ranges::copy(r, out);
+
+    // Return an in_out_result.
+    return result<I, O>{/* ??? */, copy_result.out};
+}
+```
+
+What should we write for `/* ??? */`?  That is, how do we get back from the
+UTF-32 iterator `r.begin()` to an `I` iterator?  It's harder than it first
+seems; consider the case where `I` is
+`std::uc::utf_16_to_32_iterator<std::uc::utf_8_to_16_iterator<std::string::iterator>>`.
+The solution is for the unpacking algorithm to remember the structure of
+whatever iterator it unpacks, and then rebuild the structure when returning
+the result.  To demonstrate, here is the implementation of from
+`transcode_to_utf32` from Boost.Text:
+
+```c++
+template<std::input_iterator I, std::sentinel_for<I> S, std::output_iterator<uint32_t> O>
+    requires(utf8_code_unit<std::iter_value_t<I>> || utf16_code_unit<std::iter_value_t<I>>)
+transcode_result<I, O> transcode_to_utf32(I first, S last, O out)
+{
+    auto const r = detail::unpack_iterator_and_sentinel(first, last);
+    auto unpacked =
+        detail::transcode_to_32<false>(r.tag_, r.f_, r.l_, -1, out);
+    return {r.repack_(unpacked.in), unpacked.out};
+}
+```
+
+If this all sounds way too complicated, it's not that bad at all.  Here's the
+unpacking/repacking implementation from Boost.Text:
+[unpack.hpp](https://github.com/tzlaine/text/blob/master/include/boost/text/detail/unpack.hpp).
+
 
 # Implementation experience
 
