@@ -471,9 +471,8 @@ namespace std::uc {
 }
 ```
 
-`@*uc-result-iterator*@<T>` is to `T` when
-`is_pointer_v<remove_reference_t<T>>` is `true`, and
-`ranges::borrowed_iterator_t<T>` otherwise.
+`@*uc-result-iterator*@<T>` is `T` if `is_pointer_v<remove_reference_t<T>>` is
+`true`, and `ranges::borrowed_iterator_t<T>` otherwise.
 
 ## Add the transcoding iterators
 
