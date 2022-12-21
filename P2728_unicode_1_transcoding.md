@@ -436,7 +436,7 @@ namespace std::uc {
   using transcode_result = in_out_result<Iter, OutIter>;
   
   template<class T>
-    using @*uc-result-iterator*@ = @*see below*@; // @*exposition only*@
+    using @*range-like-result-iterator*@ = @*see below*@; // @*exposition only*@
 
   // -> UTF-8
 
@@ -446,7 +446,7 @@ namespace std::uc {
 
   template<typename R, output_iterator<uint32_t> O>
     requires(utf16_input_range_like<R> || utf32_input_range_like<R>)
-      transcode_result<@*uc-result-iterator*@<R>, O> transcode_to_utf8(R&& r, O out);
+      transcode_result<@*range-like-result-iterator*@<R>, O> transcode_to_utf8(R&& r, O out);
 
   // -> UTF-16
 
@@ -456,7 +456,7 @@ namespace std::uc {
 
   template<typename R, output_iterator<uint32_t> O>
     requires(utf8_input_range_like<R> || utf32_input_range_like<R>)
-      transcode_result<@*uc-result-iterator*@<R>, O> transcode_to_utf16(R&& r, O out);
+      transcode_result<@*range-like-result-iterator*@<R>, O> transcode_to_utf16(R&& r, O out);
 
   // -> UTF-32
 
@@ -466,12 +466,12 @@ namespace std::uc {
 
   template<typename R, output_iterator<uint32_t> O>
     requires(utf8_input_range_like<R> || utf16_input_range_like<R>)
-      transcode_result<@*uc-result-iterator*@<R>, O> transcode_to_utf32(R&& r, O out);
+      transcode_result<@*range-like-result-iterator*@<R>, O> transcode_to_utf32(R&& r, O out);
 
 }
 ```
 
-`@*uc-result-iterator*@<T>` is `T` if `is_pointer_v<remove_reference_t<T>>` is
+`@*range-like-result-iterator*@<T>` is `T` if `is_pointer_v<remove_reference_t<T>>` is
 `true`, and `ranges::borrowed_iterator_t<T>` otherwise.
 
 ## Add the transcoding iterators
