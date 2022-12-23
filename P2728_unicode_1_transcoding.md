@@ -87,7 +87,7 @@ There are several contexts to consider here:
 
 - Coding convenience, terseness, and clarity.
 - Performance.
-- Compatability with other APIs.
+- Compatibility with other APIs.
 
 Some times the contexts are in alignment, and sometimes they are in conflict.
 We need multiple ways to do transcoding to cover all of those contexts.  Let's
@@ -227,7 +227,7 @@ namespace std::uc {
   template<class T>
     concept utf32_code_unit = code_unit<T, format::utf32>;
 
-  template<typename T>
+  template<class T>
     concept utf_code_unit = utf8_code_unit<T> || utf16_code_unit<T> || utf32_code_unit<T>;
 
   template<class T, format F>
@@ -425,7 +425,7 @@ namespace std::uc {
 
 ## Add transcode algorithms
 
-These algorithms take an iteralor/sentinel pair, a range, or a null-terminated
+These algorithms take an iterator/sentinel pair, a range, or a null-terminated
 string, and transcode the input to the output iterator.
 
 ```cpp
@@ -444,7 +444,7 @@ namespace std::uc {
     requires(utf16_code_unit<iter_value_t<I>> || utf32_code_unit<iter_value_t<I>>)
     transcode_result<I, O> transcode_to_utf8(I first, S last, O out);
 
-  template<typename R, output_iterator<uint32_t> O>
+  template<class R, output_iterator<uint32_t> O>
     requires(utf16_input_range_like<R> || utf32_input_range_like<R>)
       transcode_result<@*range-like-result-iterator*@<R>, O> transcode_to_utf8(R&& r, O out);
 
@@ -454,7 +454,7 @@ namespace std::uc {
     requires(utf8_code_unit<iter_value_t<I>> || utf32_code_unit<iter_value_t<I>>)
     transcode_result<I, O> transcode_to_utf16(I first, S last, O out);
 
-  template<typename R, output_iterator<uint32_t> O>
+  template<class R, output_iterator<uint32_t> O>
     requires(utf8_input_range_like<R> || utf32_input_range_like<R>)
       transcode_result<@*range-like-result-iterator*@<R>, O> transcode_to_utf16(R&& r, O out);
 
@@ -464,7 +464,7 @@ namespace std::uc {
     requires(utf8_code_unit<iter_value_t<I>> || utf16_code_unit<iter_value_t<I>>)
     transcode_result<I, O> transcode_to_utf32(I first, S last, O out);
 
-  template<typename R, output_iterator<uint32_t> O>
+  template<class R, output_iterator<uint32_t> O>
     requires(utf8_input_range_like<R> || utf16_input_range_like<R>)
       transcode_result<@*range-like-result-iterator*@<R>, O> transcode_to_utf32(R&& r, O out);
 
@@ -819,7 +819,7 @@ namespace std::uc {
   constexpr auto operator==(
     const utf_16_to_8_iterator<I1, S1, ErrorHandler>& lhs,
     const utf_16_to_8_iterator<I2, S2, ErrorHandler>& rhs)
-      requires reauires { lhs.base() == rhs.base(); };
+      requires requires { lhs.base() == rhs.base(); };
 
   template<
     utf8_iter I,
@@ -1390,7 +1390,7 @@ The production of replacement characters as error-handling strategy is good
 for memory compactness and safety.  It allows use to store all our text as
 UTF-8 (or, less compactly, as UTF-16), and then process code points as
 transcoding views.  If an error occurs, the transcoding views will simply
-produce a replacement character; ther is no danger of UB.
+produce a replacement character; there is no danger of UB.
 
 Code units are just numbers.  All of these interfaces treat integral types as
 code units of various sizes (at least the ones that are 8-, 16-, or 32-bit).
@@ -1409,7 +1409,7 @@ correctly. Note that this is not a safety issue, but a correctness one.  For
 example, say we have a string `s` of UTF-8 code units that we would like to
 iterate over to produce UTF-32 code points. If the last code unit in `s` is
 `0xe0`, we should expect two more code units to follow. They are not present,
-though, becuase `0xe0` is the last code unit. Now consider how you would
+though, because `0xe0` is the last code unit. Now consider how you would
 implement `operator++()` for an iterator `iter` that transcodes from UTF-8 to
 UTF-32. If you advance far enough to get the next UTF-32 code point in each
 call to `operator++()`, you may run off the end of `s` when you find `0xe0`
