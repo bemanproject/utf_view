@@ -36,7 +36,7 @@ I'm proposing interfaces to do transcoding that meet certain design
 requirements that I think are important; I hope you'll agree:
 
 - Ranges are the future.  We should have range-friendly ways of doing
-  transcoding.  This includes support for sentinels.
+  transcoding.  This includes support for sentinels and lazy views.
 - Iterators are the present.  We should support generic programming, whether
   it is done in terms of pointers, a particular iterator, or an iterator type
   specified as a template parameter.
