@@ -442,7 +442,7 @@ namespace std::uc {
 
   template<input_iterator I, sentinel_for<I> S, output_iterator<char> O>
     requires(utf16_code_unit<iter_value_t<I>> || utf32_code_unit<iter_value_t<I>>)
-    constexpr transcode_result<I, O> transcode_to_utf8(I first, S last, O out);
+      constexpr transcode_result<I, O> transcode_to_utf8(I first, S last, O out);
 
   template<class R, output_iterator<uint32_t> O>
     requires(utf16_input_range_like<R> || utf32_input_range_like<R>)
@@ -653,7 +653,7 @@ namespace std::uc {
           { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
 
     friend constexpr bool operator==(utf_32_to_16_iterator lhs, utf_32_to_16_iterator rhs)
-    { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
+      { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
 
     using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_32_to_16_iterator<I, S, ErrorHandler>,
@@ -706,7 +706,7 @@ namespace std::uc {
     constexpr utf_16_to_32_iterator& operator--();
 
     friend constexpr bool operator==(utf_16_to_32_iterator lhs, utf_16_to_32_iterator rhs)
-    { return lhs.base() == rhs.base(); }
+      { return lhs.base() == rhs.base(); }
 
     using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_16_to_32_iterator<I, S, ErrorHandler>,
@@ -781,7 +781,7 @@ namespace std::uc {
           { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
 
     friend constexpr bool operator==(utf_16_to_8_iterator lhs, utf_16_to_8_iterator rhs)
-    { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
+      { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
 
     using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_16_to_8_iterator<I, S, ErrorHandler>,
