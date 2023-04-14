@@ -79,7 +79,7 @@ value. Examples are U+0041 "A" "LATIN CAPITAL LETTER A" and U+0308 "¨"
 "COMBINING DIAERESIS".
 
 A code point may be consist of multiple code units.  For instance, 3 UTF-8
-code units in sequence may encode a particular code unit.
+code units in sequence may encode a particular code point.
 
 # Use cases
 
@@ -112,7 +112,7 @@ while (true) {
     char * buf_last = read_into_utf8_buffer(read_first, utf8_buf + buf_size);
     
     if (buf_last == read_first)
-        continue;
+        break;
 
     // find the last whole UTF-8 sequence, so we don't feed partial sequences
     // to the algorithm below.
