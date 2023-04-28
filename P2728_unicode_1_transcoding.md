@@ -72,7 +72,7 @@ There are multiple encoding types defined in Unicode: UTF-8, UTF-16, and
 UTF-32.
 
 A *code unit* is the lowest-level datum-type in your Unicode data. Examples
-are a `char` in UTF-8 and a `uint32_t` in UTF-32.
+are a `char` in UTF-8 and a `char32_t` in UTF-32.
 
 A *code point* is a 32-bit integral value that represents a single Unicode
 value. Examples are U+0041 "A" "LATIN CAPITAL LETTER A" and U+0308 "¨"
@@ -329,32 +329,32 @@ Instead of making people writing generic code have to special-case the use of
 
 ```cpp
 namespace std::uc {
-  inline constexpr uint16_t high_surrogate_base = 0xd7c0;
-  inline constexpr uint16_t low_surrogate_base = 0xdc00;
-  inline constexpr uint32_t high_surrogate_min = 0xd800;
-  inline constexpr uint32_t high_surrogate_max = 0xdbff;
-  inline constexpr uint32_t low_surrogate_min = 0xdc00;
-  inline constexpr uint32_t low_surrogate_max = 0xdfff;
-  inline constexpr uint32_t replacement_character = 0xfffd;
+  inline constexpr char16_t high_surrogate_base = 0xd7c0;
+  inline constexpr char16_t low_surrogate_base = 0xdc00;
+  inline constexpr char32_t high_surrogate_min = 0xd800;
+  inline constexpr char32_t high_surrogate_max = 0xdbff;
+  inline constexpr char32_t low_surrogate_min = 0xdc00;
+  inline constexpr char32_t low_surrogate_max = 0xdfff;
+  inline constexpr char32_t replacement_character = 0xfffd;
 
   // Returns is_high_surrogate(c) || is_low_surrogate(c).
-  constexpr bool is_surrogate(uint32_t c);
+  constexpr bool is_surrogate(char32_t c);
 
   // Returns true iff c is a Unicode high surrogate.
-  constexpr bool is_high_surrogate(uint32_t c);
+  constexpr bool is_high_surrogate(char32_t c);
 
   // Returns true iff c is a Unicode low surrogate.
-  constexpr bool is_low_surrogate(uint32_t c);
+  constexpr bool is_low_surrogate(char32_t c);
 
   // Returns true iff c is a Unicode reserved noncharacter.
-  constexpr bool is_reserved_noncharacter(uint32_t c);
+  constexpr bool is_reserved_noncharacter(char32_t c);
 
   // Returns true iff c is a valid Unicode scalar value.
-  constexpr bool is_scalar_value(uint32_t c);
+  constexpr bool is_scalar_value(char32_t c);
 
   // Returns true iff c is a Unicode scalar value not in the reserved
   // range.
-  constexpr bool is_unreserved_scalar_value(uint32_t c);
+  constexpr bool is_unreserved_scalar_value(char32_t c);
 
   // Returns true iff c is a UTF-8 lead code unit (which must be followed
   // by 1-3 following units).
@@ -373,7 +373,7 @@ namespace std::uc {
   // point, returns the number of code units occupied by that code point
   // (in the range [1, 2]).  Returns a value < 0 if first_unit is
   // not a valid initial UTF-16 code unit.
-  constexpr int utf16_code_units(uint16_t first_unit);
+  constexpr int utf16_code_units(char16_t first_unit);
 
   // Returns the first code unit in [first, last) that is not properly
   // UTF-8 encoded, or last if no such code unit is found.
@@ -440,31 +440,31 @@ namespace std::uc {
 
   // -> UTF-8
 
-  template<input_iterator I, sentinel_for<I> S, output_iterator<char> O>
+  template<input_iterator I, sentinel_for<I> S, output_iterator<char8_t> O>
     requires(utf16_code_unit<iter_value_t<I>> || utf32_code_unit<iter_value_t<I>>)
       constexpr transcode_result<I, O> transcode_to_utf8(I first, S last, O out);
 
-  template<class R, output_iterator<uint32_t> O>
+  template<class R, output_iterator<char32_t> O>
     requires(utf16_input_range_like<R> || utf32_input_range_like<R>)
       constexpr transcode_result<@*range-like-result-iterator*@<R>, O> transcode_to_utf8(R&& r, O out);
 
   // -> UTF-16
 
-  template<input_iterator I, sentinel_for<I> S, output_iterator<char> O>
+  template<input_iterator I, sentinel_for<I> S, output_iterator<char8_t> O>
     requires(utf8_code_unit<iter_value_t<I>> || utf32_code_unit<iter_value_t<I>>)
       constexpr transcode_result<I, O> transcode_to_utf16(I first, S last, O out);
 
-  template<class R, output_iterator<uint32_t> O>
+  template<class R, output_iterator<char32_t> O>
     requires(utf8_input_range_like<R> || utf32_input_range_like<R>)
       constexpr transcode_result<@*range-like-result-iterator*@<R>, O> transcode_to_utf16(R&& r, O out);
 
   // -> UTF-32
 
-  template<input_iterator I, sentinel_for<I> S, output_iterator<char> O>
+  template<input_iterator I, sentinel_for<I> S, output_iterator<char8_t> O>
     requires(utf8_code_unit<iter_value_t<I>> || utf16_code_unit<iter_value_t<I>>)
       constexpr transcode_result<I, O> transcode_to_utf32(I first, S last, O out);
 
-  template<class R, output_iterator<uint32_t> O>
+  template<class R, output_iterator<char32_t> O>
     requires(utf8_input_range_like<R> || utf16_input_range_like<R>)
       constexpr transcode_result<@*range-like-result-iterator*@<R>, O> transcode_to_utf32(R&& r, O out);
 
@@ -486,7 +486,7 @@ namespace std::uc {
   // An error handler type that can be used with the converting iterators;
   // provides the Unicode replacement character on errors.
   struct use_replacement_character {
-    constexpr uint32_t operator()(const char*) const { return replacement_character; }
+    constexpr char32_t operator()(const char*) const { return replacement_character; }
   };
 
   template<
@@ -494,7 +494,7 @@ namespace std::uc {
     sentinel_for<I> S = I,
     transcoding_error_handler ErrorHandler = use_replacement_character>
   struct utf_32_to_8_iterator
-    : iterator_interface<utf_32_to_8_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, char, char> {
+    : iterator_interface<utf_32_to_8_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, char8_t, char8_t> {
     constexpr utf_32_to_8_iterator();
     explicit constexpr utf_32_to_8_iterator(I first, I it, S last);
     template<class I2, class S2>
@@ -505,7 +505,7 @@ namespace std::uc {
     constexpr I begin() const { return first_; }
     constexpr S end() const { return last_; }
 
-    constexpr char operator*() const { return buf_[index_]; }
+    constexpr char8_t operator*() const { return buf_[index_]; }
 
     constexpr I base() const { return it_; }
 
@@ -528,8 +528,8 @@ namespace std::uc {
     using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_32_to_8_iterator<I, S, ErrorHandler>,
                          bidirectional_iterator_tag,
-                         uint32_t,
-                         uint32_t>;
+                         char32_t,
+                         char32_t>;
     using @*base-type*@::operator++;
     using @*base-type*@::operator--;
 
@@ -538,7 +538,7 @@ namespace std::uc {
     I it_;                    // @*exposition only*@
     S last_;                  // @*exposition only*@
     int index_;               // @*exposition only*@
-    array<char, 5> buf_;      // @*exposition only*@
+    array<char8_t, 5> buf_;   // @*exposition only*@
 
     template<
       utf32_iter I2,
@@ -557,7 +557,7 @@ namespace std::uc {
     sentinel_for<I> S = I,
     transcoding_error_handler ErrorHandler = use_replacement_character>
   struct utf_8_to_32_iterator
-    : iterator_interface<utf_8_to_32_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, uint32_t, uint32_t> {
+    : iterator_interface<utf_8_to_32_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, char32_t, char32_t> {
     constexpr utf_8_to_32_iterator();
     explicit constexpr utf_8_to_32_iterator(I first, I it, S last);
     template<class I2, class S2>
@@ -568,7 +568,7 @@ namespace std::uc {
     constexpr I begin() const { return first_; }
     constexpr S end() const { return last_; }
 
-    constexpr uint32_t operator*() const;
+    constexpr char32_t operator*() const;
 
     constexpr I base() const { return it_; }
 
@@ -581,8 +581,8 @@ namespace std::uc {
     using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_8_to_32_iterator<I, S, ErrorHandler>,
                          bidirectional_iterator_tag,
-                         uint32_t,
-                         uint32_t>;
+                         char32_t,
+                         char32_t>;
     using @*base-type*@::operator++;
     using @*base-type*@::operator--;
 
@@ -623,7 +623,7 @@ namespace std::uc {
     sentinel_for<I> S = I,
     transcoding_error_handler ErrorHandler = use_replacement_character>
   struct utf_32_to_16_iterator
-    : iterator_interface<utf_32_to_16_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, uint16_t, uint16_t> {
+    : iterator_interface<utf_32_to_16_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, char16_t, char16_t> {
     constexpr utf_32_to_16_iterator();
     explicit constexpr utf_32_to_16_iterator(I first, I it, S last);
     template<class I2, class S2>
@@ -634,7 +634,7 @@ namespace std::uc {
     constexpr I begin() const { return first_; }
     constexpr S end() const { return last_; }
 
-    constexpr uint16_t operator*() const
+    constexpr char16_t operator*() const
     { return buf_[index_]; }
 
     constexpr I base() const { return it_; }
@@ -658,8 +658,8 @@ namespace std::uc {
     using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_32_to_16_iterator<I, S, ErrorHandler>,
                          bidirectional_iterator_tag,
-                         uint16_t,
-                         uint16_t>;
+                         char16_t,
+                         char16_t>;
     using @*base-type*@::operator++;
     using @*base-type*@::operator--;
 
@@ -668,7 +668,7 @@ namespace std::uc {
     I it_;                    // @*exposition only*@
     S last_;                  // @*exposition only*@
     int index_;               // @*exposition only*@
-    array<uint16_t, 4> buf_;  // @*exposition only*@
+    array<char16_t, 4> buf_;  // @*exposition only*@
 
     template<
       utf32_iter I2,
@@ -687,7 +687,7 @@ namespace std::uc {
     sentinel_for<I> S = I,
     transcoding_error_handler ErrorHandler = use_replacement_character>
   struct utf_16_to_32_iterator
-    : iterator_interface<utf_16_to_32_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, uint32_t, uint32_t> {
+    : iterator_interface<utf_16_to_32_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, char32_t, char32_t> {
     constexpr utf_16_to_32_iterator();
     explicit constexpr utf_16_to_32_iterator(I first, I it, S last);
     template<class I2, class S2>
@@ -698,7 +698,7 @@ namespace std::uc {
     constexpr I begin() const { return first_; }
     constexpr S end() const { return last_; }
 
-    constexpr uint32_t operator*() const;
+    constexpr char32_t operator*() const;
 
     constexpr I base() const { return it_; }
 
@@ -711,8 +711,8 @@ namespace std::uc {
     using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_16_to_32_iterator<I, S, ErrorHandler>,
                          bidirectional_iterator_tag,
-                         uint32_t,
-                         uint32_t>;
+                         char32_t,
+                         char32_t>;
     using @*base-type*@::operator++;
     using @*base-type*@::operator--;
 
@@ -753,7 +753,7 @@ namespace std::uc {
       sentinel_for<I> S = I,
       transcoding_error_handler ErrorHandler = use_replacement_character>
   struct utf_16_to_8_iterator
-    : iterator_interface<utf_16_to_8_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, char, char> {
+    : iterator_interface<utf_16_to_8_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, char8_t, char8_t> {
     constexpr utf_16_to_8_iterator();
     explicit constexpr utf_16_to_8_iterator(I first, I it, S last);
     template<class I2, class S2>
@@ -763,7 +763,7 @@ namespace std::uc {
     constexpr I begin() const { return first_; }
     constexpr S end() const { return last_; }
 
-    constexpr char operator*() const { return buf_[index_]; }
+    constexpr char8_t operator*() const { return buf_[index_]; }
 
     constexpr I base() const { return it_; }
 
@@ -786,8 +786,8 @@ namespace std::uc {
     using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_16_to_8_iterator<I, S, ErrorHandler>,
                          bidirectional_iterator_tag,
-                         char,
-                         char>;
+                         char8_t,
+                         char8_t>;
     using @*base-type*@::operator++;
     using @*base-type*@::operator--;
 
@@ -796,7 +796,7 @@ namespace std::uc {
     I it_;                    // @*exposition only*@
     S last_;                  // @*exposition only*@
     int index_;               // @*exposition only*@
-    array<char, 5> buf_;      // @*exposition only*@
+    array<char8_t, 5> buf_;   // @*exposition only*@
 
     template<
       utf16_iter I2,
@@ -824,7 +824,7 @@ namespace std::uc {
     sentinel_for<I> S,
     transcoding_error_handler ErrorHandler>
   struct utf_8_to_16_iterator
-    : iterator_interface<utf_8_to_16_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, uint16_t, uint16_t> {
+    : iterator_interface<utf_8_to_16_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, char16_t, char16_t> {
     constexpr utf_8_to_16_iterator();
     explicit constexpr utf_8_to_16_iterator(I first, I it, S last);
     template<class I2, class S2>
@@ -835,7 +835,7 @@ namespace std::uc {
     constexpr I begin() const { return it_.begin(); }
     constexpr S end() const { return it_.end(); }
 
-    constexpr uint16_t operator*() const { return buf_[index_]; }
+    constexpr char16_t operator*() const { return buf_[index_]; }
 
     constexpr I base() const { return it_.base(); }
 
@@ -858,15 +858,15 @@ namespace std::uc {
     using @*base-type*@ =                // @*exposition only*@
       iterator_interface<utf_8_to_16_iterator<I, S, ErrorHandler>,
                          bidirectional_iterator_tag,
-                         uint16_t,
-                         uint16_t>;
+                         char16_t,
+                         char16_t>;
     using @*base-type*@::operator++;
     using @*base-type*@::operator--;
 
   private:
     utf_8_to_32_iterator<I, S> it_;  // @*exposition only*@
     int index_;                      // @*exposition only*@
-    array<uint16_t, 4> buf_;         // @*exposition only*@
+    array<char16_t, 4> buf_;         // @*exposition only*@
 
     template<
       utf8_iter I2,
@@ -911,13 +911,13 @@ namespace std::uc {
 
   // UTF-32 -> UTF-8
 
-  template<output_iterator<char> Iter>
+  template<output_iterator<char8_t> Iter>
   struct utf_32_to_8_out_iterator
     : @*trans-ins-iter*@<utf_32_to_8_out_iterator<Iter>, Iter> {
     constexpr utf_32_to_8_out_iterator() {}
     constexpr explicit utf_32_to_8_out_iterator(Iter it);
 
-    constexpr utf_32_to_8_out_iterator& operator=(uint32_t cp);
+    constexpr utf_32_to_8_out_iterator& operator=(char32_t cp);
   };
 
   template<class Cont>
@@ -926,7 +926,7 @@ namespace std::uc {
     constexpr utf_32_to_8_insert_iterator() {}
     constexpr utf_32_to_8_insert_iterator(Cont& c, typename Cont::iterator it);
 
-    constexpr utf_32_to_8_insert_iterator& operator=(uint32_t cp);
+    constexpr utf_32_to_8_insert_iterator& operator=(char32_t cp);
   };
 
   template<class Cont>
@@ -935,7 +935,7 @@ namespace std::uc {
     constexpr utf_32_to_8_front_insert_iterator() {}
     constexpr explicit utf_32_to_8_front_insert_iterator(Cont& c);
 
-    constexpr utf_32_to_8_front_insert_iterator& operator=(uint32_t cp);
+    constexpr utf_32_to_8_front_insert_iterator& operator=(char32_t cp);
   };
 
   template<class Cont>
@@ -944,18 +944,18 @@ namespace std::uc {
     constexpr utf_32_to_8_back_insert_iterator() {}
     constexpr explicit utf_32_to_8_back_insert_iterator(Cont& c);
 
-    constexpr utf_32_to_8_back_insert_iterator& operator=(uint32_t cp);
+    constexpr utf_32_to_8_back_insert_iterator& operator=(char32_t cp);
   };
 
   // UTF-8 -> UTF-32
 
-  template<output_iterator<uint32_t> Iter>
+  template<output_iterator<char32_t> Iter>
   struct utf_8_to_32_out_iterator
     : @*trans-ins-iter*@<utf_8_to_32_out_iterator<Iter>, Iter> {
     constexpr utf_8_to_32_out_iterator() {}
     constexpr explicit utf_8_to_32_out_iterator(Iter it);
 
-    constexpr utf_8_to_32_out_iterator& operator=(char cu);
+    constexpr utf_8_to_32_out_iterator& operator=(char8_t cu);
   };
 
   template<class Cont>
@@ -964,7 +964,7 @@ namespace std::uc {
     constexpr utf_8_to_32_insert_iterator() {}
     constexpr utf_8_to_32_insert_iterator(Cont& c, typename Cont::iterator it);
 
-    constexpr utf_8_to_32_insert_iterator& operator=(uint16_t cu);
+    constexpr utf_8_to_32_insert_iterator& operator=(char16_t cu);
   };
 
   template<class Cont>
@@ -973,7 +973,7 @@ namespace std::uc {
     constexpr utf_8_to_32_front_insert_iterator() {}
     constexpr explicit utf_8_to_32_front_insert_iterator(Cont& c);
 
-    constexpr utf_8_to_32_front_insert_iterator& operator=(uint16_t cu);
+    constexpr utf_8_to_32_front_insert_iterator& operator=(char16_t cu);
   };
 
   template<class Cont>
@@ -982,18 +982,18 @@ namespace std::uc {
     constexpr utf_8_to_32_back_insert_iterator() {}
     constexpr explicit utf_8_to_32_back_insert_iterator(Cont& c);
 
-    constexpr utf_8_to_32_back_insert_iterator& operator=(uint16_t cu);
+    constexpr utf_8_to_32_back_insert_iterator& operator=(char16_t cu);
   };
 
   // UTF-32 -> UTF-16
 
-  template<output_iterator<uint16_t> Iter>
+  template<output_iterator<char16_t> Iter>
   struct utf_32_to_16_out_iterator
     : @*trans-ins-iter*@<utf_32_to_16_out_iterator<Iter>, Iter> {
     constexpr utf_32_to_16_out_iterator() {}
     constexpr explicit utf_32_to_16_out_iterator(Iter it);
 
-    constexpr utf_32_to_16_out_iterator& operator=(uint32_t cp);
+    constexpr utf_32_to_16_out_iterator& operator=(char32_t cp);
   };
 
   template<class Cont>
@@ -1002,7 +1002,7 @@ namespace std::uc {
     constexpr utf_32_to_16_insert_iterator() {}
     constexpr utf_32_to_16_insert_iterator(Cont& c, typename Cont::iterator it);
 
-    constexpr utf_32_to_16_insert_iterator& operator=(uint32_t cp);
+    constexpr utf_32_to_16_insert_iterator& operator=(char32_t cp);
   };
 
   template<class Cont>
@@ -1011,7 +1011,7 @@ namespace std::uc {
     constexpr utf_32_to_16_front_insert_iterator() {}
     constexpr explicit utf_32_to_16_front_insert_iterator(Cont& c);
 
-    constexpr utf_32_to_16_front_insert_iterator& operator=(uint32_t cp);
+    constexpr utf_32_to_16_front_insert_iterator& operator=(char32_t cp);
   };
 
   template<class Cont>
@@ -1020,18 +1020,18 @@ namespace std::uc {
     constexpr utf_32_to_16_back_insert_iterator() {}
     constexpr explicit utf_32_to_16_back_insert_iterator(Cont& c);
 
-    constexpr utf_32_to_16_back_insert_iterator& operator=(uint32_t cp);
+    constexpr utf_32_to_16_back_insert_iterator& operator=(char32_t cp);
   };
 
   // UTF-16 -> UTF-32
 
-  template<output_iterator<uint32_t> Iter>
+  template<output_iterator<char32_t> Iter>
   struct utf_16_to_32_out_iterator
     : @*trans-ins-iter*@<utf_16_to_32_out_iterator<Iter>, Iter> {
     constexpr utf_16_to_32_out_iterator() {}
     constexpr explicit utf_16_to_32_out_iterator(Iter it);
 
-    constexpr utf_16_to_32_out_iterator& operator=(uint16_t cu);
+    constexpr utf_16_to_32_out_iterator& operator=(char16_t cu);
   };
 
   template<class Cont>
@@ -1040,7 +1040,7 @@ namespace std::uc {
     constexpr utf_16_to_32_insert_iterator() {}
     constexpr utf_16_to_32_insert_iterator(Cont& c, typename Cont::iterator it);
 
-    constexpr utf_16_to_32_insert_iterator& operator=(uint16_t cu);
+    constexpr utf_16_to_32_insert_iterator& operator=(char16_t cu);
   };
 
   template<class Cont>
@@ -1049,7 +1049,7 @@ namespace std::uc {
     constexpr utf_16_to_32_front_insert_iterator() {}
     explicit constexpr utf_16_to_32_front_insert_iterator(Cont& c);
 
-    constexpr utf_16_to_32_front_insert_iterator& operator=(uint16_t cu);
+    constexpr utf_16_to_32_front_insert_iterator& operator=(char16_t cu);
   };
 
   template<class Cont>
@@ -1058,18 +1058,18 @@ namespace std::uc {
     constexpr utf_16_to_32_back_insert_iterator() {}
     explicit constexpr utf_16_to_32_back_insert_iterator(Cont& c);
 
-    constexpr utf_16_to_32_back_insert_iterator& operator=(uint16_t cu);
+    constexpr utf_16_to_32_back_insert_iterator& operator=(char16_t cu);
   };
 
   // UTF-16 -> UTF-8
 
-  template<output_iterator<char> Iter>
+  template<output_iterator<char8_t> Iter>
   struct utf_16_to_8_out_iterator
     : @*trans-ins-iter*@<utf_16_to_8_out_iterator<Iter>, Iter> {
     constexpr utf_16_to_8_out_iterator() {}
     explicit constexpr utf_16_to_8_out_iterator(Iter it);
 
-    constexpr utf_16_to_8_out_iterator& operator=(uint16_t cu);
+    constexpr utf_16_to_8_out_iterator& operator=(char16_t cu);
   };
 
   template<class Cont>
@@ -1078,7 +1078,7 @@ namespace std::uc {
     constexpr utf_16_to_8_insert_iterator() {}
     constexpr utf_16_to_8_insert_iterator(Cont& c, typename Cont::iterator it);
 
-    constexpr utf_16_to_8_insert_iterator& operator=(uint16_t cu);
+    constexpr utf_16_to_8_insert_iterator& operator=(char16_t cu);
   };
 
   template<class Cont>
@@ -1087,7 +1087,7 @@ namespace std::uc {
     constexpr utf_16_to_8_front_insert_iterator() {}
     explicit constexpr utf_16_to_8_front_insert_iterator(Cont& c);
 
-    constexpr utf_16_to_8_front_insert_iterator& operator=(uint16_t cu);
+    constexpr utf_16_to_8_front_insert_iterator& operator=(char16_t cu);
   };
 
   template<class Cont>
@@ -1096,18 +1096,18 @@ namespace std::uc {
     constexpr utf_16_to_8_back_insert_iterator() {}
     explicit constexpr utf_16_to_8_back_insert_iterator(Cont& c);
 
-    constexpr utf_16_to_8_back_insert_iterator& operator=(uint16_t cu);
+    constexpr utf_16_to_8_back_insert_iterator& operator=(char16_t cu);
   };
 
   // UTF-8 -> UTF-16
 
-  template<output_iterator<uint16_t> Iter>
+  template<output_iterator<char16_t> Iter>
   struct utf_8_to_16_out_iterator
       : @*trans-ins-iter*@<utf_8_to_16_out_iterator<Iter>, Iter> {
     constexpr utf_8_to_16_out_iterator() {}
     explicit constexpr utf_8_to_16_out_iterator(Iter it);
 
-    constexpr utf_8_to_16_out_iterator& operator=(char cu);
+    constexpr utf_8_to_16_out_iterator& operator=(char8_t cu);
   };
 
   template<class Cont>
@@ -1116,7 +1116,7 @@ namespace std::uc {
     constexpr utf_8_to_16_insert_iterator() {}
     constexpr utf_8_to_16_insert_iterator(Cont& c, typename Cont::iterator it);
 
-    constexpr utf_8_to_16_insert_iterator& operator=(uint16_t cu);
+    constexpr utf_8_to_16_insert_iterator& operator=(char16_t cu);
   };
 
   template<class Cont>
@@ -1125,7 +1125,7 @@ namespace std::uc {
     constexpr utf_8_to_16_front_insert_iterator() {}
     explicit constexpr utf_8_to_16_front_insert_iterator(Cont& c);
 
-    constexpr utf_8_to_16_front_insert_iterator& operator=(uint16_t cu);
+    constexpr utf_8_to_16_front_insert_iterator& operator=(char16_t cu);
   };
 
   template<class Cont>
@@ -1134,7 +1134,7 @@ namespace std::uc {
     constexpr utf_8_to_16_back_insert_iterator() {}
     explicit constexpr utf_8_to_16_back_insert_iterator(Cont& c);
 
-    constexpr utf_8_to_16_back_insert_iterator& operator=(uint16_t cu);
+    constexpr utf_8_to_16_back_insert_iterator& operator=(char16_t cu);
   };
 }
 ```
@@ -1143,22 +1143,22 @@ namespace std::uc {
 
 ```cpp
 namespace std::uc {
-  template<output_iterator<char> O>
+  template<output_iterator<char8_t> O>
     constexpr utf_32_to_8_out_iterator<O> utf_32_to_8_out(O it);
 
-  template<output_iterator<uint32_t> O>
+  template<output_iterator<char32_t> O>
     constexpr utf_8_to_32_out_iterator<O> utf_8_to_32_out(O it);
 
-  template<output_iterator<uint16_t> O>
+  template<output_iterator<char16_t> O>
     constexpr utf_32_to_16_out_iterator<O> utf_32_to_16_out(O it);
 
-  template<output_iterator<uint32_t> O>
+  template<output_iterator<char32_t> O>
     constexpr utf_16_to_32_out_iterator<O> utf_16_to_32_out(O it);
 
-  template<output_iterator<char> O>
+  template<output_iterator<char8_t> O>
     constexpr utf_16_to_8_out_iterator<O> utf_16_to_8_out(O it);
 
-  template<output_iterator<uint16_t> O>
+  template<output_iterator<char16_t> O>
     constexpr utf_8_to_16_out_iterator<O> utf_8_to_16_out(O it);
 
   template<bidirectional_iterator I, sentinel_for<I> S>
@@ -1474,7 +1474,7 @@ Sometimes, an interface might accept any UTF-N iterator, and then transcode
 internally to UTF-32:
 
 ```c++
-template<input_iterator I, sentinel_for<I> S, output_iterator<char> O>
+template<input_iterator I, sentinel_for<I> S, output_iterator<char8_t> O>
   requires(utf8_code_unit<iter_value_t<I>> || utf16_code_unit<iter_value_t<I>>)
 transcode_result<I, O> transcode_to_utf32(I first, S last, O out);
 ```
@@ -1483,7 +1483,7 @@ For such interfaces, it can be difficult in the general case to form an
 iterator of type `I` to return to the user:
 
 ```c++
-template<input_iterator I, sentinel_for<I> S, output_iterator<char> O>
+template<input_iterator I, sentinel_for<I> S, output_iterator<char8_t> O>
     requires(utf8_code_unit<iter_value_t<I>> || utf16_code_unit<iter_value_t<I>>)
 transcode_result<I, O> transcode_to_utf32(I first, S last, O out) {
     // Get the input as UTF-32.
@@ -1507,14 +1507,14 @@ the result.  To demonstrate, here is the implementation of from
 `transcode_to_utf32` from Boost.Text:
 
 ```c++
-template<std::input_iterator I, std::sentinel_for<I> S, std::output_iterator<uint32_t> O>
+template<std::input_iterator I, std::sentinel_for<I> S, std::output_iterator<char32_t> O>
     requires(utf8_code_unit<std::iter_value_t<I>> || utf16_code_unit<std::iter_value_t<I>>)
 transcode_result<I, O> transcode_to_utf32(I first, S last, O out)
 {
-    auto const r = detail::unpack_iterator_and_sentinel(first, last);
-    auto unpacked =
-        detail::transcode_to_32<false>(r.tag_, r.f_, r.l_, -1, out);
-    return {r.repack_(unpacked.in), unpacked.out};
+    auto const r = boost::text::unpack_iterator_and_sentinel(first, last);
+    auto unpacked = detail::transcode_to_32<false>(
+        detail::tag_t<r.format_tag>, r.first, r.last, -1, out);
+    return {r.repack(unpacked.in), unpacked.out};
 }
 ```
 
