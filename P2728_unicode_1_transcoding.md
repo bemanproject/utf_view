@@ -83,89 +83,22 @@ code units in sequence may encode a particular code point.
 
 # Use cases
 
-There are several contexts to consider here:
+## Case 1: Adapt to an existing range interface taking a different UTF
 
-- Coding convenience, terseness, and clarity.
-- Performance.
-- Compatibility with other APIs.
-
-Some times the contexts are in alignment, and sometimes they are in conflict.
-We need multiple ways to do transcoding to cover all of those contexts.  Let's
-make things more concrete:
-
-## Case 1: Transcode a buffer as fast as possible
-
-We care primarily about performance in this use case, so everything is a
-pointer.  Also, our wire-communications layer knows nothing about the UTFs, so
-we need to use some of the utility functions to make sure we don't process
-partially-received UTF-8 sequences.
+In this case, we have a generic range interface to transcode into, so we use a
+transcoding view.
 
 ```cpp
-// Using same size to ensure the transcode operation always has room.
-char utf8_buf[buf_size];
-char utf16_buf[buf_size];
+// A generic function that accepts sequences of UTF-16.
+template<class UTF16Range>
+void process_input(UTF16Range && r);
 
-char * read_first = utf8_buf;
-while (true) {
-    // Reads off a wire; may contain partial UTF-8 sequences at the ends of
-    // some reads.
-    char * buf_last = read_into_utf8_buffer(read_first, utf8_buf + buf_size);
-    
-    if (buf_last == read_first)
-        break;
+std::string input = get_utf8_input(); // A std::string used as a UTF-8 string.
 
-    // find the last whole UTF-8 sequence, so we don't feed partial sequences
-    // to the algorithm below.
-    char * last = buf_last;
-    auto const last_lead = std::ranges::find_last_if(
-        utf8_buf, buf_last, std::uc::lead_code_unit);
-    if (!last_lead.empty()) {
-        auto const dist_from_end = buf_last - last_lead.begin();
-        assert(dist_from_end <= 4);
-        if (std::uc::utf8_code_units(*last_lead.begin()) != dist_from_end)
-            last = last_lead.begin();
-    }
-
-    // Same interface as std::ranges::copy(), except that it converts as it copies.
-    auto const result = std::uc::transcode_to_utf16(utf8_buf, last, utf16_buf);
-    
-    // Do something with the resulting UTF-16 buffer contents.
-    send_utf16_somewhere(utf16_buf, result.out);
-
-    // Copy partial UTF-8 sequence to start of buffer.
-    read_first = std::ranges::copy_backward(last, buf_last, utf8_buf).out;
-}
+process_input(std::uc::as_utf16(input));
 ```
 
-## Case 2: Transcode an object as fast as possible
-
-`my_string` does not provide a pointer-based interface, so we need to use more
-generic facilities for this case.
-
-```cpp
-struct my_string; // Some string type with *non-pointer* iterators.
-
-my_string input = get_utf8_input();
-std::vector<uint16_t> input_as_utf16(input.size()); // Reserve some space.
-auto const result = std::uc::transcode_to_utf16(input, input_as_utf16.data());
-input_as_utf16.resize(result.out - input_as_utf16.data()); // Trim unused space.
-```
-
-## Case 3: Transcode an object as conveniently as possible
-
-This solution is similar to Case 2, but marginally more convenient.  There are
-other cases, like accepting output from `std` algorithms, that indicate use of
-a back-inserter.
-
-```cpp
-struct my_string; // Some string type with *non-pointer* iterators.
-
-my_string input = get_utf8_input();
-std::vector<uint16_t> input_as_utf16;
-std::ranges::copy(input, std::uc::from_utf8_back_inserter(input_as_utf16));
-```
-
-## Case 4: Adapt to an existing iterator interface taking a different UTF
+## Case 2: Adapt to an existing iterator interface taking a different UTF
 
 This time, we have a generic iterator interface we want to transcode into, so
 we want to use the transcoding iterators.
@@ -183,21 +116,6 @@ process_input(std::uc::utf_8_to_16_iterator(input.begin(), input.begin(), input.
 // Even more conveniently:
 auto const utf16_view = std::uc::as_utf16(input);
 process_input(utf16_view.begin(), utf16.end());
-```
-
-## Case 5: Adapt to an existing range interface taking a different UTF
-
-In this case, we have a generic range interface to transcode into, so we use a
-transcoding view.
-
-```cpp
-// A generic function that accepts sequences of UTF-16.
-template<class UTF16Range>
-void process_input(UTF16Range && r);
-
-std::string input = get_utf8_input(); // A std::string used as a UTF-8 string.
-
-process_input(std::uc::as_utf16(input));
 ```
 
 # Proposed design
@@ -422,57 +340,6 @@ namespace std::uc {
       constexpr bool ends_encoded(I first, I last);
 }
 ```
-
-## Add transcode algorithms
-
-These algorithms take an iterator/sentinel pair, a range, or a null-terminated
-string, and transcode the input to the output iterator.
-
-```cpp
-namespace std::uc {
-  // An alias for in_out_result returned by algorithms that perform a
-  // transcoding copy.
-  template<class Iter, class OutIter>
-  using transcode_result = in_out_result<Iter, OutIter>;
-  
-  template<class T>
-    using @*range-like-result-iterator*@ = @*see below*@; // @*exposition only*@
-
-  // -> UTF-8
-
-  template<input_iterator I, sentinel_for<I> S, output_iterator<char8_t> O>
-    requires(utf16_code_unit<iter_value_t<I>> || utf32_code_unit<iter_value_t<I>>)
-      constexpr transcode_result<I, O> transcode_to_utf8(I first, S last, O out);
-
-  template<class R, output_iterator<char32_t> O>
-    requires(utf16_input_range_like<R> || utf32_input_range_like<R>)
-      constexpr transcode_result<@*range-like-result-iterator*@<R>, O> transcode_to_utf8(R&& r, O out);
-
-  // -> UTF-16
-
-  template<input_iterator I, sentinel_for<I> S, output_iterator<char8_t> O>
-    requires(utf8_code_unit<iter_value_t<I>> || utf32_code_unit<iter_value_t<I>>)
-      constexpr transcode_result<I, O> transcode_to_utf16(I first, S last, O out);
-
-  template<class R, output_iterator<char32_t> O>
-    requires(utf8_input_range_like<R> || utf32_input_range_like<R>)
-      constexpr transcode_result<@*range-like-result-iterator*@<R>, O> transcode_to_utf16(R&& r, O out);
-
-  // -> UTF-32
-
-  template<input_iterator I, sentinel_for<I> S, output_iterator<char8_t> O>
-    requires(utf8_code_unit<iter_value_t<I>> || utf16_code_unit<iter_value_t<I>>)
-      constexpr transcode_result<I, O> transcode_to_utf32(I first, S last, O out);
-
-  template<class R, output_iterator<char32_t> O>
-    requires(utf8_input_range_like<R> || utf16_input_range_like<R>)
-      constexpr transcode_result<@*range-like-result-iterator*@<R>, O> transcode_to_utf32(R&& r, O out);
-
-}
-```
-
-`@*range-like-result-iterator*@<T>` is `T` if `is_pointer_v<remove_reference_t<T>>` is
-`true`, and `ranges::borrowed_iterator_t<T>` otherwise.
 
 ## Add the transcoding iterators
 
@@ -1461,8 +1328,7 @@ Each of these views stores only the unpacked iterator and sentinel, so each
 view is typically the size of two pointers, and possibly smaller if a sentinel
 is used.
 
-The same unpacking logic is used in `utfN_iterator()`, `from_utfN_inserter()`,
-the transcoding algorithms, and the normalization algorithms. This allows you
+The same unpacking logic is used in the entire proposed API.  This allows you
 to write `std::uc::as_utf32(first, last)` in a generic context, without caring
 whether first and last are iterators to a sequence of UTF-8, UTF-16, or
 UTF-32. You also do not need to care about whether first and last are raw
