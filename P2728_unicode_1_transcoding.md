@@ -95,7 +95,7 @@ void process_input(UTF16Range && r);
 
 std::string input = get_utf8_input(); // A std::string used as a UTF-8 string.
 
-process_input(std::uc::as_utf16(input));
+process_input(input | std::uc::as_utf16);
 ```
 
 ## Case 2: Adapt to an existing iterator interface taking a different UTF
@@ -114,7 +114,7 @@ process_input(std::uc::utf_8_to_16_iterator(input.begin(), input.begin(), input.
               std::uc::utf_8_to_16_iterator(input.begin(), input.end(), input.end()));
 
 // Even more conveniently:
-auto const utf16_view = std::uc::as_utf16(input);
+auto const utf16_view = input | std::uc::as_utf16;
 process_input(utf16_view.begin(), utf16.end());
 ```
 
@@ -218,7 +218,7 @@ namespace std::uc {
     constexpr null_sentinel_t base() const { return {}; }
 
     template<class T>
-      requires utf8_code_unit<T> || utf16_code_unit<T> || utf32_code_unit<T>
+      requires utf_code_unit<T>
         friend constexpr bool operator==(T* p, null_sentinel_t);
   };
 
@@ -276,16 +276,16 @@ namespace std::uc {
 
   // Returns true iff c is a UTF-8 lead code unit (which must be followed
   // by 1-3 following units).
-  constexpr bool is_lead_code_unit(unsigned char c);
+  constexpr bool is_lead_code_unit(char8_t c);
 
   // Returns true iff c is a UTF-8 continuation (non-lead) code unit.
-  constexpr bool is_continuation(unsigned char c);
+  constexpr bool is_continuation(char8_t c);
 
   // Given the first (and possibly only) code unit of a UTF-8-encoded code
   // point, returns the number of bytes occupied by that code point (in the
   // range [1, 4]).  Returns a value < 0 if first_unit is not a valid
   // initial UTF-8 code unit.
-  constexpr int utf8_code_units(unsigned char first_unit);
+  constexpr int utf8_code_units(char8_t first_unit);
 
   // Given the first (and possibly only) code unit of a UTF-16-encoded code
   // point, returns the number of code units occupied by that code point
@@ -747,102 +747,91 @@ namespace std::uc {
 }
 ```
 
-### Add convenience factory functions for the transcoding iterators
-
-```cpp
-namespace std::uc {
-  template<bidirectional_iterator I, sentinel_for<I> S>
-    constexpr auto utf8_iterator(I first, I it, S last);
-
-  template<bidirectional_iterator I, sentinel_for<I> S>
-    constexpr auto utf16_iterator(I first, I it, S last);
-
-  template<bidirectional_iterator I, sentinel_for<I> S>
-    constexpr auto utf32_iterator(I first, I it, S last);
-}
-```
-
 ## Add transcoding views
 
 ### Add the views proper
 
 ```cpp
 namespace std::uc {
-  template<utf8_iter I, sentinel_for<I> S = I>
+  template<format Format, typename Unpacked>
+  constexpr auto @*make-utf-view-iter*@(Unpacked unpacked); // @*exposition only*@
+
+  template<format Format, typename Unpacked>
+  constexpr auto @*make-utf-view-sent*@(Unpacked unpacked); // @*exposition only*@
+
+  template<utf_iter I, sentinel_for<I> S = I>
   struct utf8_view : view_interface<utf8_view<I, S>> {
-    using iterator = I;
-    using sentinel = S;
+    using from_iterator = I;
+    using from_sentinel = S;
+
+    using iterator = decltype(make-utf-view-iter<format::utf8>(
+      uc::unpack_iterator_and_sentinel(std::declval<I>(), std::declval<S>())));
+    using sentinel = decltype(make-utf-view-sent<format::utf8>(
+      uc::unpack_iterator_and_sentinel(std::declval<I>(), std::declval<S>())));
 
     constexpr utf8_view() {}
     constexpr utf8_view(iterator first, sentinel last);
 
-    constexpr iterator begin() const;
-    constexpr sentinel end() const;
-
-    friend constexpr bool operator==(utf8_view lhs, utf8_view rhs)
-      { return lhs.begin() == rhs.begin() && lhs.end() == rhs.end(); }
+    constexpr iterator begin() const { return first_; }
+    constexpr sentinel end() const { return last_; }
 
     template<class CharT, class Traits>
       friend basic_ostream<CharT, Traits>&
         operator<<(basic_ostream<CharT, Traits>& os, utf8_view v);
 
   private:
-    using iterator_t = @*unspecified*@;          // @*exposition only*@
-    using sentinel_t = @*unspecified*@;          // @*exposition only*@
-
-    iterator_t first_;                       // @*exposition only*@
-    [[no_unique_address]] sentinel_t last_;  // @*exposition only*@
+    iterator first_;
+    [[no_unique_address]] sentinel last_;
   };
 
-  template<utf16_iter I, sentinel_for<I> S = I>
+  template<utf_iter I, sentinel_for<I> S = I>
   struct utf16_view : view_interface<utf16_view<I, S>> {
-    using iterator = I;
-    using sentinel = S;
+    using from_iterator = I;
+    using from_sentinel = S;
+
+    using iterator = decltype(make-utf-view-iter<format::utf16>(
+      uc::unpack_iterator_and_sentinel(std::declval<I>(), std::declval<S>())));
+    using sentinel = decltype(make-utf-view-sent<format::utf16>(
+      uc::unpack_iterator_and_sentinel(std::declval<I>(), std::declval<S>())));
 
     constexpr utf16_view() {}
     constexpr utf16_view(iterator first, sentinel last);
 
-    constexpr iterator begin() const;
-    constexpr sentinel end() const;
-
-    friend constexpr bool operator==(utf16_view lhs, utf16_view rhs)
-      { return lhs.begin() == rhs.begin() && lhs.end() == rhs.end(); }
+    constexpr iterator begin() const { return first_; }
+    constexpr sentinel end() const { return last_; }
 
     template<class CharT, class Traits>
       friend basic_ostream<CharT, Traits>&
         operator<<(basic_ostream<CharT, Traits>& os, utf16_view v);
 
   private:
-    using iterator_t = @*unspecified*@;          // @*exposition only*@
-    using sentinel_t = @*unspecified*@;          // @*exposition only*@
-
-    iterator_t first_;                       // @*exposition only*@
-    [[no_unique_address]] sentinel_t last_;  // @*exposition only*@
+    iterator first_;
+    [[no_unique_address]] sentinel last_;
   };
 
-  template<utf32_iter I, sentinel_for<I> S = I>
+  template<utf_iter I, sentinel_for<I> S = I>
   struct utf32_view : view_interface<utf32_view<I, S>> {
-    using iterator = I;
-    using sentinel = S;
+    using from_iterator = I;
+    using from_sentinel = S;
+
+    using iterator = decltype(make-utf-view-iter<format::utf32>(
+      uc::unpack_iterator_and_sentinel(std::declval<I>(), std::declval<S>())));
+    using sentinel = decltype(make-utf-view-sent<format::utf32>(
+      uc::unpack_iterator_and_sentinel(std::declval<I>(), std::declval<S>())));
 
     constexpr utf32_view() {}
     constexpr utf32_view(iterator first, sentinel last);
 
-    constexpr iterator begin() const;
-    constexpr sentinel end() const;
-    friend constexpr bool operator==(utf32_view lhs, utf32_view rhs)
-      { return lhs.begin() == rhs.begin() && lhs.end() == rhs.end(); }
+    constexpr iterator begin() const { return first_; }
+    constexpr sentinel end() const { return last_; }
 
     template<class CharT, class Traits>
       friend basic_ostream<CharT, Traits>&
         operator<<(basic_ostream<CharT, Traits>& os, utf32_view v);
 
   private:
-    using iterator_t = @*unspecified*@;          // @*exposition only*@
-    using sentinel_t = @*unspecified*@;          // @*exposition only*@
-
-    iterator_t first_;                       // @*exposition only*@
-    [[no_unique_address]] sentinel_t last_;  // @*exposition only*@
+    iterator first_;
+    [[no_unique_address]] sentinel last_;
   };
 }
 
@@ -858,32 +847,18 @@ namespace std::ranges {
 }
 ```
 
-### Add `as_utfN()`
+### Add `as_utfN` view adaptors
 
-Each `as_utfN()` factory function takes an iterator/sentinel pair, or a
-range-like (meaning an range or a null-terminated pointer), and returns a
-`utfN_view` that may do transcoding (if the inputs are not UTF-N) or may not
-do transcoding (if the inputs are UTF-N).
+Each `as_utfN` view adaptor adapts a `utf_range_like` (meaning an range or a
+null-terminated pointer), and returns a `utfN_view` that may do transcoding
+(if the inputs are not UTF-N) or may not do transcoding (if the inputs are
+UTF-N).
 
 ```cpp
 namespace std::uc {
-  template<utf_iter I, sentinel_for<I> S>
-    constexpr @*unspecified*@ as_utf8(I first, S last);
-
-  template<utf_range_like R>
-    constexpr @*unspecified*@ as_utf8(R&& r);
-
-  template<utf_iter I, sentinel_for<I> S>
-    constexpr @*unspecified*@ as_utf16(I first, S last);
-
-  template<utf_range_like R>
-    constexpr @*unspecified*@ as_utf16(R&& r);
-
-  template<utf_iter I, sentinel_for<I> S>
-    constexpr @*unspecified*@ as_utf32(I first, S last);
-
-  template<utf_range_like R>
-    constexpr @*unspecified*@ as_utf32(R&& r);
+  inline @*unspecified*@ as_utf8;
+  inline @*unspecified*@ as_utf16;
+  inline @*unspecified*@ as_utf32;
 }
 ```
 
@@ -922,7 +897,7 @@ convenience-vs-compatibility tradeoffs.  Explicitly, they are:
 - If you need compatibility with existing iterator-based algorithms (such as
   the standard algorithms), use the transcoding iterators.
 - If you want streamability or the convenience of constructing ranges with a
-  single `as_utfN()` function call, use the transcoding views.
+  single `| as_utfN` adaptor use, use the transcoding views.
 
 All the transcoding iterators allow you access to the underlying iterator via
 `.base()`, following the convention of the iterator adaptors already in the
@@ -930,7 +905,7 @@ standard.
 
 The transcoding views are lazy, as you'd expect.  They also compose with the
 standard view adaptors, so just transcoding at most 10 UTF-16 code units out
-of some UTF can be done with `std::uc::as_utf16(foo) |
+of some UTF can be done with `foo | std::uc::as_utf16 |
 std::ranges::views::take(10)`.
 
 Error handling is explicitly configurable in the transcoding iterators.  This
@@ -952,9 +927,9 @@ Signedness is ignored.
 
 A null-terminated pointer `p` to an 8-, 16-, or 32-bit string of code units is
 considered the implicit range `[p, null_sentinel)`.  This makes user code much
-more natural; `as_utf16("foo")`, `as_utf16("foo"sv)`, and `as_utf16("foo"s)`
-are roughly equivalent (though the iterator type of the resulting view may
-differ).
+more natural; `"foo" | as_utf16`, `"foo"sv | as_utf16`, and `"foo"s |
+as_utf16` are roughly equivalent (though the iterator type of the resulting
+view may differ).
 
 Iterators are constructed from more than one underlying iterator.  To do
 iteration in many text-handling contexts, you need to know the beginning and
@@ -988,7 +963,7 @@ be the size of 18 pointers! Further, such a view would do a UTF-8 to UTF-16 to
 UTF-32 conversion, when it could have done a direct UTF-8 to UTF-32 conversion
 instead.
 
-To solve these kinds of problems, `as_utfN()` unpacks the iterators it is given,
+To solve these kinds of problems, `as_utfN` unpacks the iterators it is given,
 so that only the bottom-most underlying pointer or iterator is stored:
 
 ```cpp
@@ -1006,7 +981,7 @@ auto to_32_last = std::uc::utf_16_to_32_iterator<
     std::uc::utf_8_to_16_iterator<std::string::iterator>
 >(to_16_first, to_16_last, to_16_last);
 
-auto range = std::uc::as_utf8(to_32_first, to_32_last);
+auto range = std::ranges::subrange(to_32_first, to_32_last) | std::uc::as_utf8;
 
 // Poof!  The utf_16_to_32_iterators disappeared!
 static_assert(std::is_same<decltype(range),
@@ -1018,12 +993,12 @@ view is typically the size of two pointers, and possibly smaller if a sentinel
 is used.
 
 The same unpacking logic is used in the entire proposed API.  This allows you
-to write `std::uc::as_utf32(first, last)` in a generic context, without caring
-whether first and last are iterators to a sequence of UTF-8, UTF-16, or
-UTF-32. You also do not need to care about whether first and last are raw
-pointers, some other kind of iterator, or transcoding iterators. For example,
-if first is a `utf_32_to_8_iterator`, the resulting view will use
-`first.base()` for its begin-iterator.
+to write `r | std::uc::as_utf32` in a generic context, without caring whether
+`r` is a range of UTF-8, UTF-16, or UTF-32. You do not need to care about
+whether `r` is a common range or not.  You also can ignore whether `r` is
+comprised of raw pointers, some other kind of iterator, or transcoding
+iterators. For example, if `r.begin()` is a `utf_32_to_8_iterator`, the
+resulting view will use `r.begin().base()` for its begin-iterator.
 
 Sometimes, an interface might accept any UTF-N iterator, and then transcode
 internally to UTF-32:
@@ -1042,7 +1017,7 @@ template<input_iterator I, sentinel_for<I> S, output_iterator<char8_t> O>
     requires(utf8_code_unit<iter_value_t<I>> || utf16_code_unit<iter_value_t<I>>)
 transcode_result<I, O> transcode_to_utf32(I first, S last, O out) {
     // Get the input as UTF-32.
-    auto r = uc::as_utf32(first, last);
+    auto r = uc::utf32_view(first, last);
 
     // Do transcoding.
     auto copy_result = ranges::copy(r, out);
@@ -1058,7 +1033,7 @@ seems; consider the case where `I` is
 `std::uc::utf_16_to_32_iterator<std::uc::utf_8_to_16_iterator<std::string::iterator>>`.
 The solution is for the unpacking algorithm to remember the structure of
 whatever iterator it unpacks, and then rebuild the structure when returning
-the result.  To demonstrate, here is the implementation of from
+the result.  To demonstrate, here is the implementation of
 `transcode_to_utf32` from Boost.Text:
 
 ```c++
