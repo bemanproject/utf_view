@@ -764,10 +764,10 @@ namespace std::uc {
     using from_iterator = I;
     using from_sentinel = S;
 
-    using iterator = decltype(make-utf-view-iter<format::utf8>(
-      uc::unpack_iterator_and_sentinel(std::declval<I>(), std::declval<S>())));
-    using sentinel = decltype(make-utf-view-sent<format::utf8>(
-      uc::unpack_iterator_and_sentinel(std::declval<I>(), std::declval<S>())));
+    using iterator = decltype(@*make-utf-view-iter*@<format::utf8>(
+      uc::unpack_iterator_and_sentinel(declval<I>(), declval<S>())));
+    using sentinel = decltype(@*make-utf-view-sent*@<format::utf8>(
+      uc::unpack_iterator_and_sentinel(declval<I>(), declval<S>())));
 
     constexpr utf8_view() {}
     constexpr utf8_view(iterator first, sentinel last);
@@ -789,10 +789,10 @@ namespace std::uc {
     using from_iterator = I;
     using from_sentinel = S;
 
-    using iterator = decltype(make-utf-view-iter<format::utf16>(
-      uc::unpack_iterator_and_sentinel(std::declval<I>(), std::declval<S>())));
-    using sentinel = decltype(make-utf-view-sent<format::utf16>(
-      uc::unpack_iterator_and_sentinel(std::declval<I>(), std::declval<S>())));
+    using iterator = decltype(@*make-utf-view-iter*@<format::utf16>(
+      uc::unpack_iterator_and_sentinel(declval<I>(), declval<S>())));
+    using sentinel = decltype(@*make-utf-view-sent*@<format::utf16>(
+      uc::unpack_iterator_and_sentinel(declval<I>(), declval<S>())));
 
     constexpr utf16_view() {}
     constexpr utf16_view(iterator first, sentinel last);
@@ -814,10 +814,10 @@ namespace std::uc {
     using from_iterator = I;
     using from_sentinel = S;
 
-    using iterator = decltype(make-utf-view-iter<format::utf32>(
-      uc::unpack_iterator_and_sentinel(std::declval<I>(), std::declval<S>())));
-    using sentinel = decltype(make-utf-view-sent<format::utf32>(
-      uc::unpack_iterator_and_sentinel(std::declval<I>(), std::declval<S>())));
+    using iterator = decltype(@*make-utf-view-iter*@<format::utf32>(
+      uc::unpack_iterator_and_sentinel(declval<I>(), declval<S>())));
+    using sentinel = decltype(@*make-utf-view-sent*@<format::utf32>(
+      uc::unpack_iterator_and_sentinel(declval<I>(), declval<S>())));
 
     constexpr utf32_view() {}
     constexpr utf32_view(iterator first, sentinel last);
@@ -880,79 +880,36 @@ template<class I, class S>
   struct formatter<uc::utf32_view<I, S>, charT>;
 ```
 
-## Add a feature test macro
+### Add `unpack_iterator_and_sentinel` CPO for iterator "unpacking"
 
-Add the feature test macro `__cpp_lib_unicode_transcoding`.
+```cpp
+struct no_op_repacker {
+  template<typename T>
+    T operator()(T x) const { return x; }
+};
 
-## Design notes
+template<typename RepackedIterator, typename I, typename S, typename Then>
+struct repacker {
+  auto operator()(I it) const { return then(RepackedIterator(first, it, last)); }
 
-None of the proposed interfaces is subject to change in future versions of
-Unicode; each relates to the guaranteed-stable subset.  Just sayin'.
+  I first;
+  [[no_unique_address]] S last;
+  [[no_unique_address]] Then then;
+};
 
-None of the proposed interfaces allocates.
+template<format FormatTag, utf_iter I, sentinel_for<I> S, typename Repack>
+struct utf_tagged_range {
+  static constexpr format format_tag = FormatTag;
 
-The proposed interfaces allow users to choose amongst multiple
-convenience-vs-compatibility tradeoffs.  Explicitly, they are:
+  I first;
+  [[no_unique_address]] S last;
+  [[no_unique_address]] Repack repack;
+};
 
-- If you need compatibility with existing iterator-based algorithms (such as
-  the standard algorithms), use the transcoding iterators.
-- If you want streamability or the convenience of constructing ranges with a
-  single `| as_utfN` adaptor use, use the transcoding views.
-
-All the transcoding iterators allow you access to the underlying iterator via
-`.base()`, following the convention of the iterator adaptors already in the
-standard.
-
-The transcoding views are lazy, as you'd expect.  They also compose with the
-standard view adaptors, so just transcoding at most 10 UTF-16 code units out
-of some UTF can be done with `foo | std::uc::as_utf16 |
-std::ranges::views::take(10)`.
-
-Error handling is explicitly configurable in the transcoding iterators.  This
-gives complete control to those who want to do something other than the
-default.  The default, according to Unicode, is to produce a replacement
-character (`0xfffd`) in the output when broken UTF encoding is seen in the
-input.  This is what all these interfaces do, unless you configure one of the
-iterators as mentioned above.
-
-The production of replacement characters as error-handling strategy is good
-for memory compactness and safety.  It allows us to store all our text as
-UTF-8 (or, less compactly, as UTF-16), and then process code points as
-transcoding views.  If an error occurs, the transcoding views will simply
-produce a replacement character; there is no danger of UB.
-
-Code units are just numbers.  All of these interfaces treat integral types as
-code units of various sizes (at least the ones that are 8-, 16-, or 32-bit).
-Signedness is ignored.
-
-A null-terminated pointer `p` to an 8-, 16-, or 32-bit string of code units is
-considered the implicit range `[p, null_sentinel)`.  This makes user code much
-more natural; `"foo" | as_utf16`, `"foo"sv | as_utf16`, and `"foo"s |
-as_utf16` are roughly equivalent (though the iterator type of the resulting
-view may differ).
-
-Iterators are constructed from more than one underlying iterator.  To do
-iteration in many text-handling contexts, you need to know the beginning and
-the end of the range you are iterating over, just to be able to do iteration
-correctly. Note that this is not a safety issue, but a correctness one.  For
-example, say we have a string `s` of UTF-8 code units that we would like to
-iterate over to produce UTF-32 code points. If the last code unit in `s` is
-`0xe0`, we should expect two more code units to follow. They are not present,
-though, because `0xe0` is the last code unit. Now consider how you would
-implement `operator++()` for an iterator `iter` that transcodes from UTF-8 to
-UTF-32. If you advance far enough to get the next UTF-32 code point in each
-call to `operator++()`, you may run off the end of `s` when you find `0xe0`
-and try to read two more code units. Note that it does not matter that `iter`
-probably comes from a range with an end-iterator or sentinel as its mate;
-inside `iter`'s `operator++()` this is no help. `iter` must therefore have the
-end-iterator or sentinel as a data member. The same logic applies to the other
-end of the range if `iter` is bidirectional — it must also have the iterator
-to the start of the underlying range as a data member.  This unfortunate
-reality comes up over and over in the proposed iterators, not just the ones
-that are UTF transcoding iterators. This is why iterators in this proposal
-(and the ones to come) usually consist of three underlying iterators.
-
-### Iterator "unpacking"
+// CPO equivalent to:
+template<utf_iter I, sentinel_for<I> S, typename Repack = no_op_repacker>
+constexpr auto unpack_iterator_and_sentinel(I first, S last, Repack repack = Repack());
+```
 
 A simple way to represent a transcoding view is as a pair of transcoding
 iterators. However, there is a problem with that approach, since a
@@ -1050,8 +1007,83 @@ transcode_result<I, O> transcode_to_utf32(I first, S last, O out)
 
 If this all sounds way too complicated, it's not that bad at all.  Here's the
 unpacking/repacking implementation from Boost.Text:
-[unpack.hpp](https://github.com/tzlaine/text/blob/master/include/boost/text/detail/unpack.hpp).
+[unpack.hpp](https://github.com/tzlaine/text/blob/master/include/boost/text/unpack.hpp).
 
+`unpack_iterator_and_sentinel` is a CPO.  It is intended to work with UDTs
+that provide ther own unpacking implementation.  It returns a
+`utf_tagged_range`.
+
+## Add a feature test macro
+
+Add the feature test macro `__cpp_lib_unicode_transcoding`.
+
+## Design notes
+
+None of the proposed interfaces is subject to change in future versions of
+Unicode; each relates to the guaranteed-stable subset.  Just sayin'.
+
+None of the proposed interfaces allocates.
+
+The proposed interfaces allow users to choose amongst multiple
+convenience-vs-compatibility tradeoffs.  Explicitly, they are:
+
+- If you need compatibility with existing iterator-based algorithms (such as
+  the standard algorithms), use the transcoding iterators.
+- If you want streamability or the convenience of constructing ranges with a
+  single `| as_utfN` adaptor use, use the transcoding views.
+
+All the transcoding iterators allow you access to the underlying iterator via
+`.base()`, following the convention of the iterator adaptors already in the
+standard.
+
+The transcoding views are lazy, as you'd expect.  They also compose with the
+standard view adaptors, so just transcoding at most 10 UTF-16 code units out
+of some UTF can be done with `foo | std::uc::as_utf16 |
+std::ranges::views::take(10)`.
+
+Error handling is explicitly configurable in the transcoding iterators.  This
+gives complete control to those who want to do something other than the
+default.  The default, according to Unicode, is to produce a replacement
+character (`0xfffd`) in the output when broken UTF encoding is seen in the
+input.  This is what all these interfaces do, unless you configure one of the
+iterators as mentioned above.
+
+The production of replacement characters as error-handling strategy is good
+for memory compactness and safety.  It allows us to store all our text as
+UTF-8 (or, less compactly, as UTF-16), and then process code points as
+transcoding views.  If an error occurs, the transcoding views will simply
+produce a replacement character; there is no danger of UB.
+
+Code units are just numbers.  All of these interfaces treat integral types as
+code units of various sizes (at least the ones that are 8-, 16-, or 32-bit).
+Signedness is ignored.
+
+A null-terminated pointer `p` to an 8-, 16-, or 32-bit string of code units is
+considered the implicit range `[p, null_sentinel)`.  This makes user code much
+more natural; `"foo" | as_utf16`, `"foo"sv | as_utf16`, and `"foo"s |
+as_utf16` are roughly equivalent (though the iterator type of the resulting
+view may differ).
+
+Iterators are constructed from more than one underlying iterator.  To do
+iteration in many text-handling contexts, you need to know the beginning and
+the end of the range you are iterating over, just to be able to do iteration
+correctly. Note that this is not a safety issue, but a correctness one.  For
+example, say we have a string `s` of UTF-8 code units that we would like to
+iterate over to produce UTF-32 code points. If the last code unit in `s` is
+`0xe0`, we should expect two more code units to follow. They are not present,
+though, because `0xe0` is the last code unit. Now consider how you would
+implement `operator++()` for an iterator `iter` that transcodes from UTF-8 to
+UTF-32. If you advance far enough to get the next UTF-32 code point in each
+call to `operator++()`, you may run off the end of `s` when you find `0xe0`
+and try to read two more code units. Note that it does not matter that `iter`
+probably comes from a range with an end-iterator or sentinel as its mate;
+inside `iter`'s `operator++()` this is no help. `iter` must therefore have the
+end-iterator or sentinel as a data member. The same logic applies to the other
+end of the range if `iter` is bidirectional — it must also have the iterator
+to the start of the underlying range as a data member.  This unfortunate
+reality comes up over and over in the proposed iterators, not just the ones
+that are UTF transcoding iterators. This is why iterators in this proposal
+(and the ones to come) usually consist of three underlying iterators.
 
 # Implementation experience
 
