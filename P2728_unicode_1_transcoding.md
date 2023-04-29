@@ -190,25 +190,31 @@ namespace std::uc {
     concept utf_range_like =
       utf_range<remove_reference_t<T>> || utf_pointer<remove_reference_t<T>>;
 
-    template<class T>
+  template<class T>
     concept utf8_input_range_like =
         (ranges::input_range<remove_reference_t<T>> && utf8_code_unit<iter_value_t<T>>) ||
         utf8_pointer<remove_reference_t<T>>;
-    template<class T>
+  template<class T>
     concept utf16_input_range_like =
         (ranges::input_range<remove_reference_t<T>> && utf16_code_unit<iter_value_t<T>>) ||
         utf16_pointer<remove_reference_t<T>>;
-    template<class T>
+  template<class T>
     concept utf32_input_range_like =
         (ranges::input_range<remove_reference_t<T>> && utf32_code_unit<iter_value_t<T>>) ||
         utf32_pointer<remove_reference_t<T>>;
 
-    template<class T>
+  template<class T>
     concept utf_input_range_like =
         utf8_input_range_like<T> || utf16_input_range_like<T> || utf32_input_range_like<T>;
 
+  template<typename T>
+    concept transcoding_error_handler =
+      requires(T t, char const * msg) { { t(msg) } -> code_point; };
+
 }
 ```
+
+# TODO: More iterator categories for transcoding iterators.
 
 ## Add a standard null-terminated sequence sentinel
 
@@ -377,10 +383,7 @@ namespace std::uc {
     constexpr utf_32_to_8_iterator& operator++();
     constexpr utf_32_to_8_iterator& operator--();
 
-    template<
-      class I1, class S1,
-      class I2, class S2,
-      class ErrorHandler2>
+    template<class I1, class S1, class I2, class S2, class ErrorHandler2>
     friend constexpr bool operator==(
       const utf_32_to_8_iterator<I1, S1, ErrorHandler2>& lhs,
       const utf_32_to_8_iterator<I2, S2, ErrorHandler2>& rhs)
@@ -405,10 +408,7 @@ namespace std::uc {
     int index_;               // @*exposition only*@
     array<char8_t, 5> buf_;   // @*exposition only*@
 
-    template<
-      utf32_iter I2,
-      sentinel_for<I2> S2,
-      transcoding_error_handler ErrorHandler2>
+    template<utf32_iter I2, sentinel_for<I2> S2, transcoding_error_handler ErrorHandler2>
     friend struct utf_32_to_8_iterator;
   };
 
@@ -456,16 +456,10 @@ namespace std::uc {
     I it_;                    // @*exposition only*@
     S last_;                  // @*exposition only*@
 
-    template<
-      utf8_iter I2,
-      sentinel_for<I2> S2,
-      transcoding_error_handler ErrorHandler2>
+    template<utf8_iter I2, sentinel_for<I2> S2, transcoding_error_handler ErrorHandler2>
     friend struct utf_8_to_16_iterator;
 
-    template<
-      utf8_iter I2,
-      sentinel_for<I2> S2,
-      transcoding_error_handler ErrorHandler2>
+    template<utf8_iter I2, sentinel_for<I2> S2, transcoding_error_handler ErrorHandler2>
     friend struct utf_8_to_32_iterator;
   };
 
@@ -474,10 +468,7 @@ namespace std::uc {
     const utf_8_to_32_iterator<I, S, ErrorHandler>& lhs, Sentinel rhs)
       requires requires { lhs.base() == rhs; };
 
-  template<
-    class I1, class S1,
-    class I2, class S2,
-    class ErrorHandler>
+  template<class I1, class S1, class I2, class S2, class ErrorHandler>
   constexpr bool operator==(
     const utf_8_to_32_iterator<I1, S1, ErrorHandler>& lhs,
     const utf_8_to_32_iterator<I2, S2, ErrorHandler>& rhs)
@@ -507,10 +498,7 @@ namespace std::uc {
     constexpr utf_32_to_16_iterator& operator++();
     constexpr utf_32_to_16_iterator& operator--();
 
-    template<
-      class I1, class S1,
-      class I2, class S2,
-      class ErrorHandler2>
+    template<class I1, class S1, class I2, class S2, class ErrorHandler2>
     friend constexpr bool operator==(
       const utf_32_to_16_iterator<I1, S1, ErrorHandler2>& lhs,
       const utf_32_to_16_iterator<I2, S2, ErrorHandler2>& rhs)
@@ -535,10 +523,7 @@ namespace std::uc {
     int index_;               // @*exposition only*@
     array<char16_t, 4> buf_;  // @*exposition only*@
 
-    template<
-      utf32_iter I2,
-      sentinel_for<I2> S2,
-      transcoding_error_handler ErrorHandler2>
+    template<utf32_iter I2, sentinel_for<I2> S2, transcoding_error_handler ErrorHandler2>
     friend struct utf_32_to_16_iterator;
   };
 
@@ -586,16 +571,10 @@ namespace std::uc {
     I it_;                    // @*exposition only*@
     S last_;                  // @*exposition only*@
 
-    template<
-      utf32_iter I2,
-      sentinel_for<I2> S2,
-      transcoding_error_handler ErrorHandler2>
+    template<utf32_iter I2, sentinel_for<I2> S2, transcoding_error_handler ErrorHandler2>
     friend struct utf_32_to_16_iterator;
 
-    template<
-      utf16_iter I2,
-      sentinel_for<I2> S2,
-      transcoding_error_handler ErrorHandler2>
+    template<utf16_iter I2, sentinel_for<I2> S2, transcoding_error_handler ErrorHandler2>
     friend struct utf_16_to_32_iterator;
   };
 
@@ -635,10 +614,7 @@ namespace std::uc {
     constexpr utf_16_to_8_iterator& operator++();
     constexpr utf_16_to_8_iterator& operator--();
 
-    template<
-      class I1, class S1,
-      class I2, class S2,
-      class ErrorHandler2>
+    template<class I1, class S1, class I2, class S2, class ErrorHandler2>
     friend constexpr bool operator==(
       const utf_16_to_8_iterator<I1, S1, ErrorHandler2>& lhs,
       const utf_16_to_8_iterator<I2, S2, ErrorHandler2>& rhs)
@@ -663,10 +639,7 @@ namespace std::uc {
     int index_;               // @*exposition only*@
     array<char8_t, 5> buf_;   // @*exposition only*@
 
-    template<
-      utf16_iter I2,
-      sentinel_for<I2> S2,
-      transcoding_error_handler ErrorHandler2>
+    template<utf16_iter I2, sentinel_for<I2> S2, transcoding_error_handler ErrorHandler2>
     friend struct utf_16_to_8_iterator;
   };
 
@@ -675,10 +648,7 @@ namespace std::uc {
     const utf_16_to_8_iterator<I, S, ErrorHandler>& lhs, Sentinel rhs)
       requires requires { lhs.base() == rhs; };
 
-  template<
-    class I1, class S1,
-    class I2, class S2,
-    class ErrorHandler>
+  template<class I1, class S1, class I2, class S2, class ErrorHandler>
   constexpr bool operator==(
     const utf_16_to_8_iterator<I1, S1, ErrorHandler>& lhs,
     const utf_16_to_8_iterator<I2, S2, ErrorHandler>& rhs)
@@ -686,8 +656,8 @@ namespace std::uc {
 
   template<
     utf8_iter I,
-    sentinel_for<I> S,
-    transcoding_error_handler ErrorHandler>
+    sentinel_for<I> S = I,
+    transcoding_error_handler ErrorHandler = use_replacement_character>
   struct utf_8_to_16_iterator
     : iterator_interface<utf_8_to_16_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, char16_t, char16_t> {
     constexpr utf_8_to_16_iterator();
@@ -707,10 +677,7 @@ namespace std::uc {
     constexpr utf_8_to_16_iterator& operator++();
     constexpr utf_8_to_16_iterator& operator--();
 
-    template<
-      class I1, class S1,
-      class I2, class S2,
-      class ErrorHandler2>
+    template<class I1, class S1, class I2, class S2, class ErrorHandler2>
     friend constexpr bool operator==(
       const utf_8_to_16_iterator<I1, S1, ErrorHandler2>& lhs,
       const utf_8_to_16_iterator<I2, S2, ErrorHandler2>& rhs)
@@ -733,10 +700,7 @@ namespace std::uc {
     int index_;                      // @*exposition only*@
     array<char16_t, 4> buf_;         // @*exposition only*@
 
-    template<
-      utf8_iter I2,
-      sentinel_for<I2> S2,
-      transcoding_error_handler ErrorHandler2>
+    template<utf8_iter I2, sentinel_for<I2> S2, transcoding_error_handler ErrorHandler2>
     friend struct utf_8_to_16_iterator;
   };
 
