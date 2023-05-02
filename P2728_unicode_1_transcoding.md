@@ -150,12 +150,12 @@ namespace std::uc {
 
   template<class T, format F>
     concept code_unit_iter =
-      bidirectional_iterator<T> && code_unit<iter_value_t<T>, F>;
+      imput_iterator<T> && code_unit<iter_value_t<T>, F>;
   template<class T, format F>
     concept code_unit_pointer =
       is_pointer_v<T> && code_unit<iter_value_t<T>, F>;
   template<class T, format F>
-    concept code_unit_range = ranges::bidirectional_range<T> &&
+    concept code_unit_range = ranges::imput_range<T> &&
       code_unit<ranges::range_value_t<T>, F>;
 
   template<class T>
@@ -213,8 +213,6 @@ namespace std::uc {
 
 }
 ```
-
-# TODO: More iterator categories for transcoding iterators.
 
 ## Add a standard null-terminated sequence sentinel
 
@@ -359,13 +357,28 @@ namespace std::uc {
   struct use_replacement_character {
     constexpr char32_t operator()(const char*) const { return replacement_character; }
   };
+  
+  template<typename I>
+  auto @*bidirectional-at-most*@()  // @*exposition only*@
+  {
+    if constexpr (bidirectional_iterator<I>) {
+      return bidirectional_iterator_tag{};
+    } else if constexpr (forward_iterator<I>) {
+      return forward_iterator_tag{};
+    } else if constexpr (input_iterator<I>) {
+      return input_iterator_tag{};
+    }
+  }
+  
+  template<typename I>
+  using @*bidirectional-at-most-t*@ = decltype(@*bidirectional-at-most*@<I>()); // @*exposition only*@
 
   template<
     utf32_iter I,
     sentinel_for<I> S = I,
     transcoding_error_handler ErrorHandler = use_replacement_character>
   struct utf_32_to_8_iterator
-    : iterator_interface<utf_32_to_8_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, char8_t, char8_t> {
+    : iterator_interface<utf_32_to_8_iterator<I, S, ErrorHandler>, @*bidirectional-at-most-t*@<I>, char8_t, char8_t> {
     constexpr utf_32_to_8_iterator();
     explicit constexpr utf_32_to_8_iterator(I first, I it, S last);
     template<class I2, class S2>
@@ -395,7 +408,7 @@ namespace std::uc {
 
     using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_32_to_8_iterator<I, S, ErrorHandler>,
-                         bidirectional_iterator_tag,
+                         @*bidirectional-at-most-t*@<I>,
                          char32_t,
                          char32_t>;
     using @*base-type*@::operator++;
@@ -422,7 +435,7 @@ namespace std::uc {
     sentinel_for<I> S = I,
     transcoding_error_handler ErrorHandler = use_replacement_character>
   struct utf_8_to_32_iterator
-    : iterator_interface<utf_8_to_32_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, char32_t, char32_t> {
+    : iterator_interface<utf_8_to_32_iterator<I, S, ErrorHandler>, @*bidirectional-at-most-t*@<I>, char32_t, char32_t> {
     constexpr utf_8_to_32_iterator();
     explicit constexpr utf_8_to_32_iterator(I first, I it, S last);
     template<class I2, class S2>
@@ -445,7 +458,7 @@ namespace std::uc {
 
     using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_8_to_32_iterator<I, S, ErrorHandler>,
-                         bidirectional_iterator_tag,
+                         @*bidirectional-at-most-t*@<I>,
                          char32_t,
                          char32_t>;
     using @*base-type*@::operator++;
@@ -479,7 +492,7 @@ namespace std::uc {
     sentinel_for<I> S = I,
     transcoding_error_handler ErrorHandler = use_replacement_character>
   struct utf_32_to_16_iterator
-    : iterator_interface<utf_32_to_16_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, char16_t, char16_t> {
+    : iterator_interface<utf_32_to_16_iterator<I, S, ErrorHandler>, @*bidirectional-at-most-t*@<I>, char16_t, char16_t> {
     constexpr utf_32_to_16_iterator();
     explicit constexpr utf_32_to_16_iterator(I first, I it, S last);
     template<class I2, class S2>
@@ -510,7 +523,7 @@ namespace std::uc {
 
     using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_32_to_16_iterator<I, S, ErrorHandler>,
-                         bidirectional_iterator_tag,
+                         @*bidirectional-at-most-t*@<I>,
                          char16_t,
                          char16_t>;
     using @*base-type*@::operator++;
@@ -537,7 +550,7 @@ namespace std::uc {
     sentinel_for<I> S = I,
     transcoding_error_handler ErrorHandler = use_replacement_character>
   struct utf_16_to_32_iterator
-    : iterator_interface<utf_16_to_32_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, char32_t, char32_t> {
+    : iterator_interface<utf_16_to_32_iterator<I, S, ErrorHandler>, @*bidirectional-at-most-t*@<I>, char32_t, char32_t> {
     constexpr utf_16_to_32_iterator();
     explicit constexpr utf_16_to_32_iterator(I first, I it, S last);
     template<class I2, class S2>
@@ -560,7 +573,7 @@ namespace std::uc {
 
     using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_16_to_32_iterator<I, S, ErrorHandler>,
-                         bidirectional_iterator_tag,
+                         @*bidirectional-at-most-t*@<I>,
                          char32_t,
                          char32_t>;
     using @*base-type*@::operator++;
@@ -597,7 +610,7 @@ namespace std::uc {
       sentinel_for<I> S = I,
       transcoding_error_handler ErrorHandler = use_replacement_character>
   struct utf_16_to_8_iterator
-    : iterator_interface<utf_16_to_8_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, char8_t, char8_t> {
+    : iterator_interface<utf_16_to_8_iterator<I, S, ErrorHandler>, @*bidirectional-at-most-t*@<I>, char8_t, char8_t> {
     constexpr utf_16_to_8_iterator();
     explicit constexpr utf_16_to_8_iterator(I first, I it, S last);
     template<class I2, class S2>
@@ -626,7 +639,7 @@ namespace std::uc {
 
     using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_16_to_8_iterator<I, S, ErrorHandler>,
-                         bidirectional_iterator_tag,
+                         @*bidirectional-at-most-t*@<I>,
                          char8_t,
                          char8_t>;
     using @*base-type*@::operator++;
@@ -659,7 +672,7 @@ namespace std::uc {
     sentinel_for<I> S = I,
     transcoding_error_handler ErrorHandler = use_replacement_character>
   struct utf_8_to_16_iterator
-    : iterator_interface<utf_8_to_16_iterator<I, S, ErrorHandler>, bidirectional_iterator_tag, char16_t, char16_t> {
+    : iterator_interface<utf_8_to_16_iterator<I, S, ErrorHandler>, @*bidirectional-at-most-t*@<I>, char16_t, char16_t> {
     constexpr utf_8_to_16_iterator();
     explicit constexpr utf_8_to_16_iterator(I first, I it, S last);
     template<class I2, class S2>
@@ -689,7 +702,7 @@ namespace std::uc {
 
     using @*base-type*@ =                // @*exposition only*@
       iterator_interface<utf_8_to_16_iterator<I, S, ErrorHandler>,
-                         bidirectional_iterator_tag,
+                         @*bidirectional-at-most-t*@<I>,
                          char16_t,
                          char16_t>;
     using @*base-type*@::operator++;
