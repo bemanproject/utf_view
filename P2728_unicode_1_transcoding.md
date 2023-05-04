@@ -167,12 +167,12 @@ namespace std::uc {
 
   template<class T, format F>
     concept code_unit_iter =
-      imput_iterator<T> && code_unit<iter_value_t<T>, F>;
+      input_iterator<T> && code_unit<iter_value_t<T>, F>;
   template<class T, format F>
     concept code_unit_pointer =
       is_pointer_v<T> && code_unit<iter_value_t<T>, F>;
   template<class T, format F>
-    concept code_unit_range = ranges::imput_range<T> &&
+    concept code_unit_range = ranges::input_range<T> &&
       code_unit<ranges::range_value_t<T>, F>;
 
   template<class T>
@@ -1001,7 +1001,7 @@ transcode_result<I, O> transcode_to_utf32(I first, S last, O out)
 
 If this all sounds way too complicated, it's not that bad at all.  Here's the
 unpacking/repacking implementation from Boost.Text:
-[unpack.hpp](https://github.com/tzlaine/text/blob/master/include/boost/text/unpack.hpp).
+[unpack.hpp](https://github.com/tzlaine/text/blob/develop/include/boost/text/unpack.hpp).
 
 `unpack_iterator_and_sentinel` is a CPO.  It is intended to work with UDTs
 that provide ther own unpacking implementation.  It returns a
