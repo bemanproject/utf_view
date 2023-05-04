@@ -1,6 +1,6 @@
 ---
 title: "Unicode in the Library, Part 1: UTF Transcoding"
-document: P2728R0
+document: P2728R1
 date: 2022-11-20
 audience:
   - SG-16 Unicode
@@ -13,6 +13,23 @@ toc: true
 monofont: "DejaVu Sans Mono"
 
 ---
+
+# Changelog
+
+## Changes since R0
+
+- When naming code points in interfaces, use `char32_t`.
+- When naming code units in interfaces, use `charN_t`.
+- Remove each eager algorithm, leaving in its corresponding view.
+- Remove all the output iterators.
+- Change template parameters to `utfN_view` to the types of the from-range,
+  instead of thetypes of the transcoding iterators used to implement the view.
+- Remove all make-functions.
+- Replace the misbegotten `as_utfN()` functions with the `as_utfN` view
+  adaptors that should have been there all along.
+- Add missing `transcoding_error_handler` concept.
+- Turn `unpack_iterator_and_sentinel` into a CPO.
+- Lower the UTF iterator concepts from bidirectional to input.
 
 # Motivation
 
