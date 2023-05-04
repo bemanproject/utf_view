@@ -317,51 +317,53 @@ namespace std::uc {
   // not a valid initial UTF-16 code unit.
   constexpr int utf16_code_units(char16_t first_unit);
 
-  // Returns the first code unit in [first, last) that is not properly
-  // UTF-8 encoded, or last if no such code unit is found.
-  template<utf8_iter I, sentinel_for<I> S = I>
-    requires random_access_iterator<I>
-      constexpr I find_invalid_encoding(I first, S last);
+  // Returns the first code unit in [ranges::begin(r), ranges::end(r)) that
+  // is not properly UTF-8 encoded, or ranges::begin(r) + ranges::distance(r) if
+  // no such code unit is found.
+  template<utf8_range R>
+    requires ranges::forward_range<R>
+      constexpr ranges::borrowed_iterator_t<R> find_invalid_encoding(R && r);
 
-  // Returns the first code unit in [first, last) that is not properly
-  // UTF-16 encoded, or last if no such code unit is found.
-  template<utf16_iter I, sentinel_for<I> S = I>
-    requires random_access_iterator<I>
-      constexpr I find_invalid_encoding(I first, S last);
+  // Returns the first code unit in [ranges::begin(r), ranges::end(r)) that
+  // is not properly UTF-16 encoded, or ranges::begin(r) + ranges::distance(r) if
+  // no such code unit is found.
+  template<utf16_range R>
+    requires ranges::forward_range<R>
+      constexpr ranges::borrowed_iterator_t<R> find_invalid_encoding(R && r);
 
-  // Returns true iff [first, last) is properly UTF-8 encoded.
-  template<utf8_iter I>
-    requires random_access_iterator<I>
-      constexpr bool is_encoded(I first, I last);
+  // Returns true iff r is properly UTF-8 encoded.
+  template<utf8_range R>
+    requires ranges::forward_range<R>
+      constexpr bool encoded(R && r);
 
-  // Returns true iff [first, last) is properly UTF-16 encoded
-  template<utf16_iter I>
-    requires random_access_iterator<I>
-      constexpr bool is_encoded(I first, I last);
+  // Returns true iff r is properly UTF-16 encoded.
+  template<utf16_range R>
+    requires ranges::forward_range<R>
+      constexpr bool encoded(R && r);
 
-  // Returns true iff [first, last) is empty or the initial UTF-8 code
-  // units in [first, last) form a valid Unicode code point.
-  template<utf8_iter I>
-    requires random_access_iterator<I>
-      constexpr bool starts_encoded(I first, I last);
+  // Returns true iff r is empty or the initial UTF-8 code units in r form a valid
+  // Unicode code point.
+  template<utf8_range R>
+    requires ranges::forward_range<R>
+      constexpr bool starts_encoded(R && r);
 
-  // Returns true iff [first, last) is empty or the initial UTF-16 code
-  // units in [first, last) form a valid Unicode code point.
-  template<utf16_iter I>
-    requires random_access_iterator<I>
-      constexpr bool starts_encoded(I first, I last);
+  // Returns true iff r is empty or the initial UTF-16 code units in r form a valid
+  // Unicode code point.
+  template<utf16_range R>
+    requires ranges::forward_range<R>
+      constexpr bool starts_encoded(R && r);
 
-  // Returns true iff [first, last) is empty or the final UTF-8 code
-  // units in [first, last) form a valid Unicode code point.
-  template<utf8_iter I>
-    requires random_access_iterator<I>
-      constexpr bool ends_encoded(I first, I last);
+  // Returns true iff r is empty or the final UTF-8 code units in r form a valid
+  // Unicode code point.
+  template<utf8_range R>
+    requires ranges::bidirectional_range<R> && ranges::common_range<R>
+      constexpr bool ends_encoded(R && r);
 
-  // Returns true iff [first, last) is empty or the final UTF-16 code
-  // units in [first, last) form a valid Unicode code point.
-  template<utf16_iter I>
-    requires random_access_iterator<I>
-      constexpr bool ends_encoded(I first, I last);
+  // Returns true iff r is empty or the final UTF-16 code units in r form a valid
+  // Unicode code point.
+  template<utf16_range R>
+    requires ranges::bidirectional_range<R> && ranges::common_range<R>
+      constexpr bool ends_encoded(R && r);
 }
 ```
 
