@@ -234,13 +234,13 @@ namespace std::uc {
 ## Add a standard null-terminated sequence sentinel
 
 ```cpp
-namespace std::uc {
+namespace std {
   struct null_sentinel_t {
     constexpr null_sentinel_t base() const { return {}; }
 
     template<class T>
-      requires utf_code_unit<T>
-        friend constexpr bool operator==(T* p, null_sentinel_t);
+      friend constexpr bool operator==(const T* p, null_sentinel_t)
+        { return *p == T{}; }
   };
 
   inline constexpr null_sentinel_t null_sentinel;
@@ -263,6 +263,9 @@ Instead of making people writing generic code have to special-case the use of
 `r.end().base()` instead of `null_sentinel`.  This means that for either `r` or
 `r2`, the underlying range of UTF-8 code units is just [`r1.begin().base()`,
 `r1.end().base()`).
+
+Note that this is a general-interest utility, and as such, it is in `std`, not
+`std::uc`.
 
 ## Add constants and utility functions that query the state of UTF sequences (well-formedness, etc.)
 
