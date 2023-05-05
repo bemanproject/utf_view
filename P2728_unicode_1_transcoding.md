@@ -135,6 +135,48 @@ auto const utf16_view = input | std::uc::as_utf16;
 process_input(utf16_view.begin(), utf16.end());
 ```
 
+## Case 3:  Transcode data as it is read into a buffer
+
+Let's say we have a wire-communications layer that knows nothing about the UTFs, and we need to use some of the utility functions to make sure we don’t process partially-received UTF-8 sequences.
+
+```c++
+// Using same size to ensure the transcode operation always has room.
+char utf8_buf[buf_size];
+char utf16_buf[buf_size];
+
+char * read_first = utf8_buf;
+while (true) {
+    // Reads off a wire; may contain partial UTF-8 sequences at the ends of
+    // some reads.
+    char * buf_last = read_into_utf8_buffer(read_first, utf8_buf + buf_size);
+
+    if (buf_last == read_first)
+        continue;
+
+    // find the last whole UTF-8 sequence, so we don't feed partial sequences
+    // to the algorithm below.
+    char * last = buf_last;
+    auto const last_lead = std::ranges::find_last_if(
+        utf8_buf, buf_last, std::uc::lead_code_unit);
+    if (!last_lead.empty()) {
+        auto const dist_from_end = buf_last - last_lead.begin();
+        assert(dist_from_end <= 4);
+        if (std::uc::utf8_code_units(*last_lead.begin()) != dist_from_end)
+            last = last_lead.begin();
+    }
+
+    auto const result = std::ranges::copy(
+        std::ranges::subrange(utf8_buf, last) | std::uc::as_utf16,
+        utf16_buf);
+
+    // Do something with the resulting UTF-16 buffer contents.
+    send_utf16_somewhere(utf16_buf, result.out);
+
+    // Copy partial UTF-8 sequence to start of buffer.
+    read_first = std::ranges::copy_backward(last, buf_last, utf8_buf).out;
+}
+```
+
 # Proposed design
 
 ## Dependencies
