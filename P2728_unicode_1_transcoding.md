@@ -1,7 +1,7 @@
 ---
 title: "Unicode in the Library, Part 1: UTF Transcoding"
-document: P2728R1
-date: 2022-11-20
+document: P2728R2
+date: 2023-05-04
 audience:
   - SG-16 Unicode
   - LEWG-I
@@ -30,6 +30,14 @@ monofont: "DejaVu Sans Mono"
 - Add missing `transcoding_error_handler` concept.
 - Turn `unpack_iterator_and_sentinel` into a CPO.
 - Lower the UTF iterator concepts from bidirectional to input.
+
+## Changes since R1
+
+- Reintroduce the transcoding-from-a-buffer example.
+- Generalize `null_sentinel_t` to a non-Unicode-specific facility.
+- In utility functions that search for ill-formed encoding, take a range
+  argument instead of a pair of iterator arguments.
+- Replace `utf{8,16,32}_view` with a single `utf_view`.
 
 # Motivation
 
@@ -157,7 +165,7 @@ while (true) {
     // to the algorithm below.
     char * last = buf_last;
     auto const last_lead = std::ranges::find_last_if(
-        utf8_buf, buf_last, std::uc::lead_code_unit);
+        utf8_buf, buf_last, std::uc::is_lead_code_unit);
     if (!last_lead.empty()) {
         auto const dist_from_end = buf_last - last_lead.begin();
         assert(dist_from_end <= 4);
