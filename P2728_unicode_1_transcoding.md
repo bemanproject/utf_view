@@ -381,8 +381,7 @@ namespace std::uc {
   };
   
   template<typename I>
-  auto @*bidirectional-at-most*@()  // @*exposition only*@
-  {
+  auto @*bidirectional-at-most*@() {  // @*exposition only*@
     if constexpr (bidirectional_iterator<I>) {
       return bidirectional_iterator_tag{};
     } else if constexpr (forward_iterator<I>) {
@@ -746,87 +745,41 @@ namespace std::uc {
 }
 ```
 
-## Add transcoding views
+## Add a transcoding view
 
-### Add the views proper
+### Add the view proper
 
 ```cpp
 namespace std::uc {
+  template<typename V>
+    using @*utf-view-iter-t*@ = @*see below*@;                    // @*exposition only*@
+  template<typename V>
+    using @*utf-view-sent-t*@ = @*see below*@;                    // @*exposition only*@
   template<format Format, typename Unpacked>
-  constexpr auto @*make-utf-view-iter*@(Unpacked unpacked); // @*exposition only*@
-
+    constexpr auto @*make-utf-view-iter*@(Unpacked unpacked); // @*exposition only*@
   template<format Format, typename Unpacked>
-  constexpr auto @*make-utf-view-sent*@(Unpacked unpacked); // @*exposition only*@
+    constexpr auto @*make-utf-view-sent*@(Unpacked unpacked); // @*exposition only*@
 
-  template<utf_iter I, sentinel_for<I> S = I>
-  struct utf8_view : view_interface<utf8_view<I, S>> {
-    using from_iterator = I;
-    using from_sentinel = S;
+  template<format Format, utf_range_like V>
+    requires ranges::view<V> || utf_pointer<V>
+  struct utf_view : stl_interfaces::view_interface<utf_view<Format, V>>
+  {
+    using from_iterator = @*utf-view-iter-t*@<V>;
+    using from_sentinel = @*utf-view-sent-t*@<V>;
 
-    using iterator = decltype(@*make-utf-view-iter*@<format::utf8>(
-      uc::unpack_iterator_and_sentinel(declval<I>(), declval<S>())));
-    using sentinel = decltype(@*make-utf-view-sent*@<format::utf8>(
-      uc::unpack_iterator_and_sentinel(declval<I>(), declval<S>())));
+    using iterator = decltype(@*make-utf-view-iter*@<Format>(
+      uc::unpack_iterator_and_sentinel(declval<from_iterator>(), declval<from_sentinel>())));
+    using sentinel = decltype(@*make-utf-view-iter*@<Format>(
+      uc::unpack_iterator_and_sentinel(declval<from_iterator>(), declval<from_sentinel>())));
 
-    constexpr utf8_view() {}
-    constexpr utf8_view(iterator first, sentinel last);
-
-    constexpr iterator begin() const { return first_; }
-    constexpr sentinel end() const { return last_; }
-
-    template<class CharT, class Traits>
-      friend basic_ostream<CharT, Traits>&
-        operator<<(basic_ostream<CharT, Traits>& os, utf8_view v);
-
-  private:
-    iterator first_;
-    [[no_unique_address]] sentinel last_;
-  };
-
-  template<utf_iter I, sentinel_for<I> S = I>
-  struct utf16_view : view_interface<utf16_view<I, S>> {
-    using from_iterator = I;
-    using from_sentinel = S;
-
-    using iterator = decltype(@*make-utf-view-iter*@<format::utf16>(
-      uc::unpack_iterator_and_sentinel(declval<I>(), declval<S>())));
-    using sentinel = decltype(@*make-utf-view-sent*@<format::utf16>(
-      uc::unpack_iterator_and_sentinel(declval<I>(), declval<S>())));
-
-    constexpr utf16_view() {}
-    constexpr utf16_view(iterator first, sentinel last);
+    constexpr utf_view() {}
+    constexpr utf_view(V base);
 
     constexpr iterator begin() const { return first_; }
     constexpr sentinel end() const { return last_; }
 
-    template<class CharT, class Traits>
-      friend basic_ostream<CharT, Traits>&
-        operator<<(basic_ostream<CharT, Traits>& os, utf16_view v);
-
-  private:
-    iterator first_;
-    [[no_unique_address]] sentinel last_;
-  };
-
-  template<utf_iter I, sentinel_for<I> S = I>
-  struct utf32_view : view_interface<utf32_view<I, S>> {
-    using from_iterator = I;
-    using from_sentinel = S;
-
-    using iterator = decltype(@*make-utf-view-iter*@<format::utf32>(
-      uc::unpack_iterator_and_sentinel(declval<I>(), declval<S>())));
-    using sentinel = decltype(@*make-utf-view-sent*@<format::utf32>(
-      uc::unpack_iterator_and_sentinel(declval<I>(), declval<S>())));
-
-    constexpr utf32_view() {}
-    constexpr utf32_view(iterator first, sentinel last);
-
-    constexpr iterator begin() const { return first_; }
-    constexpr sentinel end() const { return last_; }
-
-    template<class CharT, class Traits>
-      friend basic_ostream<CharT, Traits>&
-        operator<<(basic_ostream<CharT, Traits>& os, utf32_view v);
+    friend ostream& operator<<(ostream& os, utf_view v);
+    friend wostream& operator<<(wostream& os, utf_view v);
 
   private:
     iterator first_;
@@ -835,16 +788,25 @@ namespace std::uc {
 }
 
 namespace std::ranges {
-  template<class I, class S>
-    inline constexpr bool enable_borrowed_range<uc::utf8_view<I, S>> = true;
-
-  template<class I, class S>
-    inline constexpr bool enable_borrowed_range<uc::utf16_view<I, S>> = true;
-
-  template<class I, class S>
-    inline constexpr bool enable_borrowed_range<uc::utf32_view<I, S>> = true;
+  template<uc::format Format, typename V>
+    inline constexpr bool enable_borrowed_range<uc::utf_view<Format, V>> = true;
 }
 ```
+
+`@*utf-view-iter-t*@` evaluates to `V` if `V` is a pointer, and
+`decltype(std::ranges::begin(std::declval<V>()))` otherwise.
+`@*utf-view-sent-t*@` evaluates to `null_sentinel_t` if `V` is a pointer, and
+`decltype(std::ranges::end(std::declval<V>()))` otherwise.
+
+`@*make-utf-view-iter*@` makes a transcoding iterator that produces the UTF
+format `format` from the result of a call to
+`std::uc::unpack_iterator_and_sentinel()`, and similarly
+`@*make-utf-view-sent*@` makes a sentinel from the result of a call to
+`std::uc::unpack_iterator_and_sentinel()`.
+
+The `ostream` and `wostream` stream operators transcode the `utf_view` to
+UTF-8 and UTF-16 respectively (if transcoding is needed), and the `wostream`
+overload is only defined on Windows.
 
 ### Add `as_utfN` view adaptors
 
@@ -860,6 +822,20 @@ namespace std::uc {
   inline @*unspecified*@ as_utf32;
 }
 ```
+
+Each of these `as_utfN` adaptors produces a `uf_view<format::utfN, ...>`.
+Here is some psuedo-wording for that hopefully clarifies.
+
+Let `E` be an expression, and let `T` be `remove_cvref_t<decltype((E))>`.  The
+expression `as_utfN(E)` is expression-equivalent to:
+
+- If `T` is a specialization of `empty_view` ([range.empty.view]), then `decay-copy(E)`.
+
+- Otherwise, if `ranges::iterator_t<T>` models `code_unit_iter<format::utfN>`,
+  then `decay-copy(E)`.
+
+- Otherwise, `utf_view<format::utfN, T>(E)`.
+
 
 ### Add `utfN_view` specializations of `formatter`
 
@@ -919,8 +895,9 @@ be the size of 18 pointers! Further, such a view would do a UTF-8 to UTF-16 to
 UTF-32 conversion, when it could have done a direct UTF-8 to UTF-32 conversion
 instead.
 
-To solve these kinds of problems, `as_utfN` unpacks the iterators it is given,
-so that only the bottom-most underlying pointer or iterator is stored:
+To solve these kinds of problems, `utf_view` unpacks the iterators it is given
+in the view it adapts, so that only the bottom-most underlying pointer or
+iterator is stored:
 
 ```cpp
 std::string str = "some text";
@@ -944,9 +921,9 @@ static_assert(std::is_same<decltype(range),
                            std::uc::utf8_view<std::string::iterator>>::value, "");
 ```
 
-Each of these views stores only the unpacked iterator and sentinel, so each
-view is typically the size of two pointers, and possibly smaller if a sentinel
-is used.
+Each of these views stores only a single iterator and sentinel, so each view
+is typically the size of two pointers, and possibly smaller if a sentinel is
+used.
 
 The same unpacking logic is used in the entire proposed API.  This allows you
 to write `r | std::uc::as_utf32` in a generic context, without caring whether
