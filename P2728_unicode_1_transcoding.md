@@ -811,9 +811,8 @@ overload is only defined on Windows.
 ### Add `as_utfN` view adaptors
 
 Each `as_utfN` view adaptor adapts a `utf_range_like` (meaning an range or a
-null-terminated pointer), and returns a `utfN_view` that may do transcoding
-(if the inputs are not UTF-N) or may not do transcoding (if the inputs are
-UTF-N).
+null-terminated pointer), and returns a `utf_view` that may do transcoding (if
+the inputs are not UTF-N) or the given input (if the inputs are UTF-N).
 
 ```cpp
 namespace std::uc {
@@ -823,7 +822,6 @@ namespace std::uc {
 }
 ```
 
-Each of these `as_utfN` adaptors produces a `uf_view<format::utfN, ...>`.
 Here is some psuedo-wording for that hopefully clarifies.
 
 Let `E` be an expression, and let `T` be `remove_cvref_t<decltype((E))>`.  The
@@ -884,9 +882,9 @@ constexpr auto unpack_iterator_and_sentinel(I first, S last, Repack repack = Rep
 
 A simple way to represent a transcoding view is as a pair of transcoding
 iterators. However, there is a problem with that approach, since a
-`utf32_view<utf_8_to_32_iterator<char const *>>` would be a range the size of
+`utf_view<format::utf32, utf_8_to_32_iterator<char const *>>` would be a range the size of
 6 pointers. Worse yet, a
-`utf32_view<utf_8_to_16_iterator<utf_16_to_32_iterator<char const *>>>` would
+`utf_view<format::utf32, utf_8_to_16_iterator<utf_16_to_32_iterator<char const *>>>` would
 be the size of 18 pointers! Further, such a view would do a UTF-8 to UTF-16 to
 UTF-32 conversion, when it could have done a direct UTF-8 to UTF-32 conversion
 instead.
@@ -913,8 +911,7 @@ auto to_32_last = std::uc::utf_16_to_32_iterator<
 auto range = std::ranges::subrange(to_32_first, to_32_last) | std::uc::as_utf8;
 
 // Poof!  The utf_16_to_32_iterators disappeared!
-static_assert(std::is_same<decltype(range),
-                           std::uc::utf8_view<std::string::iterator>>::value, "");
+static_assert(std::is_same<std::ranges::iterator_t<decltype(range)>, std::string::iterator>::value, "");
 ```
 
 Each of these views stores only a single iterator and sentinel, so each view
@@ -946,7 +943,7 @@ template<input_iterator I, sentinel_for<I> S, output_iterator<char8_t> O>
     requires(utf8_code_unit<iter_value_t<I>> || utf16_code_unit<iter_value_t<I>>)
 transcode_result<I, O> transcode_to_utf32(I first, S last, O out) {
     // Get the input as UTF-32.
-    auto r = uc::utf32_view(first, last);
+    auto r = uc::utf_view(uc::format::utf32, first, last);
 
     // Do transcoding.
     auto copy_result = ranges::copy(r, out);
