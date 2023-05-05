@@ -224,7 +224,7 @@ namespace std::uc {
     concept utf_input_range_like =
         utf8_input_range_like<T> || utf16_input_range_like<T> || utf32_input_range_like<T>;
 
-  template<typename T>
+  template<class T>
     concept transcoding_error_handler =
       requires(T t, char const * msg) { { t(msg) } -> code_point; };
 
@@ -380,7 +380,7 @@ namespace std::uc {
     constexpr char32_t operator()(const char*) const { return replacement_character; }
   };
   
-  template<typename I>
+  template<class I>
   auto @*bidirectional-at-most*@() {  // @*exposition only*@
     if constexpr (bidirectional_iterator<I>) {
       return bidirectional_iterator_tag{};
@@ -391,7 +391,7 @@ namespace std::uc {
     }
   }
   
-  template<typename I>
+  template<class I>
   using @*bidirectional-at-most-t*@ = decltype(@*bidirectional-at-most*@<I>()); // @*exposition only*@
 
   template<
@@ -751,13 +751,13 @@ namespace std::uc {
 
 ```cpp
 namespace std::uc {
-  template<typename V>
+  template<class V>
     using @*utf-view-iter-t*@ = @*see below*@;                    // @*exposition only*@
-  template<typename V>
+  template<class V>
     using @*utf-view-sent-t*@ = @*see below*@;                    // @*exposition only*@
-  template<format Format, typename Unpacked>
+  template<format Format, class Unpacked>
     constexpr auto @*make-utf-view-iter*@(Unpacked unpacked); // @*exposition only*@
-  template<format Format, typename Unpacked>
+  template<format Format, class Unpacked>
     constexpr auto @*make-utf-view-sent*@(Unpacked unpacked); // @*exposition only*@
 
   template<format Format, utf_range_like V>
@@ -788,7 +788,7 @@ namespace std::uc {
 }
 
 namespace std::ranges {
-  template<uc::format Format, typename V>
+  template<uc::format Format, class V>
     inline constexpr bool enable_borrowed_range<uc::utf_view<Format, V>> = true;
 }
 ```
@@ -837,33 +837,29 @@ expression `as_utfN(E)` is expression-equivalent to:
 - Otherwise, `utf_view<format::utfN, T>(E)`.
 
 
-### Add `utfN_view` specializations of `formatter`
+### Add `utf_view` specialization of `formatter`
 
 These should be added to the list of "the debug-enabled string type
-specializations" in [format.formatter.spec].  This allows all three kinds of
-UTF views to be used in `std::format()` and `std::print()`.  The intention is
-that each one will transcode to UTF-8 if the formatter's `charT` is `char`, or
-to UTF-16 if the formatter's `charT` is `wchar_t` -- if transcoding is
-necessary at all.
+specializations" in [format.formatter.spec].  This allows `utf_view` to be
+used in `std::format()` and `std::print()`.  The intention is that the
+formatter will transcode to UTF-8 if the formatter's `charT` is `char`, or to
+UTF-16 if the formatter's `charT` is `wchar_t` -- if transcoding is necessary
+at all.
 
 ```cpp
-template<class I, class S>
-  struct formatter<uc::utf8_view<I, S>, charT>;
-template<class I, class S>
-  struct formatter<uc::utf16_view<I, S>, charT>;
-template<class I, class S>
-  struct formatter<uc::utf32_view<I, S>, charT>;
+template<uc::format Format, class V>
+  struct formatter<uc::utf_view<Format, V>, charT>;
 ```
 
 ### Add `unpack_iterator_and_sentinel` CPO for iterator "unpacking"
 
 ```cpp
 struct no_op_repacker {
-  template<typename T>
+  template<class T>
     T operator()(T x) const { return x; }
 };
 
-template<typename RepackedIterator, typename I, typename S, typename Then>
+template<class RepackedIterator, class I, class S, class Then>
 struct repacker {
   auto operator()(I it) const { return then(RepackedIterator(first, it, last)); }
 
@@ -872,7 +868,7 @@ struct repacker {
   [[no_unique_address]] Then then;
 };
 
-template<format FormatTag, utf_iter I, sentinel_for<I> S, typename Repack>
+template<format FormatTag, utf_iter I, sentinel_for<I> S, class Repack>
 struct utf_tagged_range {
   static constexpr format format_tag = FormatTag;
 
@@ -882,7 +878,7 @@ struct utf_tagged_range {
 };
 
 // CPO equivalent to:
-template<utf_iter I, sentinel_for<I> S, typename Repack = no_op_repacker>
+template<utf_iter I, sentinel_for<I> S, class Repack = no_op_repacker>
 constexpr auto unpack_iterator_and_sentinel(I first, S last, Repack repack = Repack());
 ```
 
