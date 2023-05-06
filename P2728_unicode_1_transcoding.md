@@ -286,7 +286,7 @@ namespace std::uc {
 ```cpp
 namespace std {
   struct null_sentinel_t {
-    constexpr null_sentinel_t base() const { return {}; }
+    constexpr null_sentinel_t base() const noexcept { return {}; }
 
     template<class T>
       friend constexpr bool operator==(const T* p, null_sentinel_t)
@@ -330,90 +330,90 @@ namespace std::uc {
   inline constexpr char32_t replacement_character = 0xfffd;
 
   // Returns is_high_surrogate(c) || is_low_surrogate(c).
-  constexpr bool is_surrogate(char32_t c);
+  constexpr bool is_surrogate(char32_t c) noexcept;
 
   // Returns true iff c is a Unicode high surrogate.
-  constexpr bool is_high_surrogate(char32_t c);
+  constexpr bool is_high_surrogate(char32_t c) noexcept;
 
   // Returns true iff c is a Unicode low surrogate.
-  constexpr bool is_low_surrogate(char32_t c);
+  constexpr bool is_low_surrogate(char32_t c) noexcept;
 
   // Returns true iff c is a Unicode reserved noncharacter.
-  constexpr bool is_reserved_noncharacter(char32_t c);
+  constexpr bool is_reserved_noncharacter(char32_t c) noexcept;
 
   // Returns true iff c is a valid Unicode scalar value.
-  constexpr bool is_scalar_value(char32_t c);
+  constexpr bool is_scalar_value(char32_t c) noexcept;
 
   // Returns true iff c is a Unicode scalar value not in the reserved
   // range.
-  constexpr bool is_unreserved_scalar_value(char32_t c);
+  constexpr bool is_unreserved_scalar_value(char32_t c) noexcept;
 
   // Returns true iff c is a UTF-8 lead code unit (which must be followed
   // by 1-3 following units).
-  constexpr bool is_lead_code_unit(char8_t c);
+  constexpr bool is_lead_code_unit(char8_t c) noexcept;
 
   // Returns true iff c is a UTF-8 continuation (non-lead) code unit.
-  constexpr bool is_continuation(char8_t c);
+  constexpr bool is_continuation(char8_t c) noexcept;
 
   // Given the first (and possibly only) code unit of a UTF-8-encoded code
   // point, returns the number of bytes occupied by that code point (in the
   // range [1, 4]).  Returns a value < 0 if first_unit is not a valid
   // initial UTF-8 code unit.
-  constexpr int utf8_code_units(char8_t first_unit);
+  constexpr int utf8_code_units(char8_t first_unit) noexcept;
 
   // Given the first (and possibly only) code unit of a UTF-16-encoded code
   // point, returns the number of code units occupied by that code point
   // (in the range [1, 2]).  Returns a value < 0 if first_unit is
   // not a valid initial UTF-16 code unit.
-  constexpr int utf16_code_units(char16_t first_unit);
+  constexpr int utf16_code_units(char16_t first_unit) noexcept;
 
   // Returns the first code unit in [ranges::begin(r), ranges::end(r)) that
   // is not properly UTF-8 encoded, or ranges::begin(r) + ranges::distance(r) if
   // no such code unit is found.
   template<utf8_range R>
     requires ranges::forward_range<R>
-      constexpr ranges::borrowed_iterator_t<R> find_invalid_encoding(R && r);
+      constexpr ranges::borrowed_iterator_t<R> find_invalid_encoding(R && r) noexcept;
 
   // Returns the first code unit in [ranges::begin(r), ranges::end(r)) that
   // is not properly UTF-16 encoded, or ranges::begin(r) + ranges::distance(r) if
   // no such code unit is found.
   template<utf16_range R>
     requires ranges::forward_range<R>
-      constexpr ranges::borrowed_iterator_t<R> find_invalid_encoding(R && r);
+      constexpr ranges::borrowed_iterator_t<R> find_invalid_encoding(R && r) noexcept;
 
   // Returns true iff r is properly UTF-8 encoded.
   template<utf8_range R>
     requires ranges::forward_range<R>
-      constexpr bool encoded(R && r);
+      constexpr bool encoded(R && r) noexcept;
 
   // Returns true iff r is properly UTF-16 encoded.
   template<utf16_range R>
     requires ranges::forward_range<R>
-      constexpr bool encoded(R && r);
+      constexpr bool encoded(R && r) noexcept;
 
   // Returns true iff r is empty or the initial UTF-8 code units in r form a valid
   // Unicode code point.
   template<utf8_range R>
     requires ranges::forward_range<R>
-      constexpr bool starts_encoded(R && r);
+      constexpr bool starts_encoded(R && r) noexcept;
 
   // Returns true iff r is empty or the initial UTF-16 code units in r form a valid
   // Unicode code point.
   template<utf16_range R>
     requires ranges::forward_range<R>
-      constexpr bool starts_encoded(R && r);
+      constexpr bool starts_encoded(R && r) noexcept;
 
   // Returns true iff r is empty or the final UTF-8 code units in r form a valid
   // Unicode code point.
   template<utf8_range R>
     requires ranges::bidirectional_range<R> && ranges::common_range<R>
-      constexpr bool ends_encoded(R && r);
+      constexpr bool ends_encoded(R && r) noexcept;
 
   // Returns true iff r is empty or the final UTF-16 code units in r form a valid
   // Unicode code point.
   template<utf16_range R>
     requires ranges::bidirectional_range<R> && ranges::common_range<R>
-      constexpr bool ends_encoded(R && r);
+      constexpr bool ends_encoded(R && r) noexcept;
 }
 ```
 
@@ -427,7 +427,7 @@ namespace std::uc {
   // An error handler type that can be used with the converting iterators;
   // provides the Unicode replacement character on errors.
   struct use_replacement_character {
-    constexpr char32_t operator()(const char*) const { return replacement_character; }
+    constexpr char32_t operator()(const char*) const noexcept { return replacement_character; }
   };
   
   template<class I>
@@ -480,8 +480,8 @@ namespace std::uc {
     using @*base-type*@ =         // @*exposition only*@
       iterator_interface<utf_32_to_8_iterator<I, S, ErrorHandler>,
                          @*bidirectional-at-most-t*@<I>,
-                         char32_t,
-                         char32_t>;
+                         char8_t,
+                         char8_t>;
     using @*base-type*@::operator++;
     using @*base-type*@::operator--;
 
@@ -812,7 +812,7 @@ namespace std::uc {
 
   template<format Format, utf_range_like V>
     requires ranges::view<V> || utf_pointer<V>
-  struct utf_view : stl_interfaces::view_interface<utf_view<Format, V>>
+  struct utf_view : ranges::view_interface<utf_view<Format, V>>
   {
     using from_iterator = @*utf-view-iter-t*@<V>;
     using from_sentinel = @*utf-view-sent-t*@<V>;
