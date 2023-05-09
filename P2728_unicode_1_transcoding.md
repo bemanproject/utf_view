@@ -1,6 +1,6 @@
 ---
 title: "Unicode in the Library, Part 1: UTF Transcoding"
-document: P2728R2
+document: P2728R3
 date: 2023-05-04
 audience:
   - SG-16 Unicode
@@ -388,6 +388,20 @@ namespace std::uc {
       constexpr bool ends_encoded(R && r) noexcept;
 }
 ```
+
+These utility functions are useful for finding encoding breakages in UTF
+ranges.
+
+`utf8_code_units` can be used to determine whether a UTF-8 code unit is an
+initial code unit within a code point sequence, and if so, how many
+continuation code units are to follow.  `is_continuation` can then be used to
+verify that the N expected code units in the code point sequence are actually
+continuationm code units.  This sort of inquiry is useful in cases like Case 3
+example near the top of the paper.  `utf16_code_units` and `is_low_surrogate`
+form a similar pair for UTF-16.
+
+The other functions can be used to check if a given range is properly UTF-8 or
+-16 encoded, either entirely, or at the beginning or end or the range.
 
 ## Add the transcoding iterators
 
