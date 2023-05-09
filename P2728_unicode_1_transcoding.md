@@ -65,9 +65,6 @@ requirements that I think are important; I hope you'll agree:
 - Iterators are the present.  We should support generic programming, whether
   it is done in terms of pointers, a particular iterator, or an iterator type
   specified as a template parameter.
-- Pointers are important.  The fastest transcoding will always be done in
-  terms of pointers (due to the speed of SIMD operations in particular).  We
-  should support all-pointer-interface transcoding.
 - Transcoding cannot be a black box; sometimes you need to be able to find
   where there is a break in the encoding, or to detect whether a sequence has
   any broken encodings in it.  We should provide utility functions that let
@@ -90,6 +87,12 @@ all that is required for Unicode support.  P1629 is concerned with those
 conversions, plus a lot more.  Accepting both proposals would not cause
 problems; in fact, the APIs proposed here could be used to implement parts of
 the P1629 design.
+
+There are some differences between the way that the transcode views and
+iterators from [@P1629R1] work and the transcoding view and iterators from
+this paper work.  First, `std::text::transcode_view` has no direct support for
+null-terminated strings.  Second, it does not do the unpacking described in
+this paper.
 
 # The shortest Unicode primer imaginable
 
@@ -115,12 +118,15 @@ transcoding view.
 
 ```cpp
 // A generic function that accepts sequences of UTF-16.
-template<class UTF16Range>
-void process_input(UTF16Range && r);
+template<std::uc::utf16_range R>
+void process_input(R r);
+void process_input_again(std::uc::utf_view<std::uc::format::utf16, std::ranges::ref_view<std::string>> r);
 
-std::string input = get_utf8_input(); // A std::string used as a UTF-8 string.
+std::u8string input = get_utf8_input();
+auto input_utf16 = std::views::all(input) | std::uc::as_utf16;
 
-process_input(input | std::uc::as_utf16);
+process_input(input_utf16);
+process_input_again(input_utf16);
 ```
 
 ## Case 2: Adapt to an existing iterator interface taking a different UTF
@@ -130,22 +136,24 @@ we want to use the transcoding iterators.
 
 ```cpp
 // A generic function that accepts sequences of UTF-16.
-template<class UTF16Iter>
-void process_input(UTF16Iter first, UTF16Iter last);
+template<std::uc::utf16_iter I>
+void process_input(I first, I last);
 
-std::string input = get_utf8_input(); // A std::string used as a UTF-8 string.
+std::u8string input = get_utf8_input();
 
 process_input(std::uc::utf_8_to_16_iterator(input.begin(), input.begin(), input.end()),
               std::uc::utf_8_to_16_iterator(input.begin(), input.end(), input.end()));
 
 // Even more conveniently:
-auto const utf16_view = input | std::uc::as_utf16;
+auto const utf16_view = std::views::all(input) | std::uc::as_utf16;
 process_input(utf16_view.begin(), utf16.end());
 ```
 
 ## Case 3:  Transcode data as it is read into a buffer
 
-Let's say we have a wire-communications layer that knows nothing about the UTFs, and we need to use some of the utility functions to make sure we don’t process partially-received UTF-8 sequences.
+Let's say we have a wire-communications layer that knows nothing about the
+UTFs, and we need to use some of the utility functions to make sure we don’t
+process partially-received UTF-8 sequences.
 
 ```c++
 // Using same size to ensure the transcode operation always has room.
@@ -321,39 +329,7 @@ Note that this is a general-interest utility, and as such, it is in `std`, not
 
 ```cpp
 namespace std::uc {
-  inline constexpr char16_t high_surrogate_base = 0xd7c0;
-  inline constexpr char16_t low_surrogate_base = 0xdc00;
-  inline constexpr char32_t high_surrogate_min = 0xd800;
-  inline constexpr char32_t high_surrogate_max = 0xdbff;
-  inline constexpr char32_t low_surrogate_min = 0xdc00;
-  inline constexpr char32_t low_surrogate_max = 0xdfff;
   inline constexpr char32_t replacement_character = 0xfffd;
-
-  // Returns is_high_surrogate(c) || is_low_surrogate(c).
-  constexpr bool is_surrogate(char32_t c) noexcept;
-
-  // Returns true iff c is a Unicode high surrogate.
-  constexpr bool is_high_surrogate(char32_t c) noexcept;
-
-  // Returns true iff c is a Unicode low surrogate.
-  constexpr bool is_low_surrogate(char32_t c) noexcept;
-
-  // Returns true iff c is a Unicode reserved noncharacter.
-  constexpr bool is_reserved_noncharacter(char32_t c) noexcept;
-
-  // Returns true iff c is a valid Unicode scalar value.
-  constexpr bool is_scalar_value(char32_t c) noexcept;
-
-  // Returns true iff c is a Unicode scalar value not in the reserved
-  // range.
-  constexpr bool is_unreserved_scalar_value(char32_t c) noexcept;
-
-  // Returns true iff c is a UTF-8 lead code unit (which must be followed
-  // by 1-3 following units).
-  constexpr bool is_lead_code_unit(char8_t c) noexcept;
-
-  // Returns true iff c is a UTF-8 continuation (non-lead) code unit.
-  constexpr bool is_continuation(char8_t c) noexcept;
 
   // Given the first (and possibly only) code unit of a UTF-8-encoded code
   // point, returns the number of bytes occupied by that code point (in the
@@ -361,11 +337,17 @@ namespace std::uc {
   // initial UTF-8 code unit.
   constexpr int utf8_code_units(char8_t first_unit) noexcept;
 
+  // Returns true iff c is a UTF-8 continuation (non-lead) code unit.
+  constexpr bool is_continuation(char8_t c) noexcept;
+
   // Given the first (and possibly only) code unit of a UTF-16-encoded code
   // point, returns the number of code units occupied by that code point
   // (in the range [1, 2]).  Returns a value < 0 if first_unit is
   // not a valid initial UTF-16 code unit.
   constexpr int utf16_code_units(char16_t first_unit) noexcept;
+
+  // Returns true iff c is a Unicode low (non-lead) surrogate.
+  constexpr bool is_low_surrogate(char32_t c) noexcept;
 
   // Returns the first code unit in [ranges::begin(r), ranges::end(r)) that
   // is not properly UTF-8 encoded, or ranges::begin(r) + ranges::distance(r) if
@@ -380,16 +362,6 @@ namespace std::uc {
   template<utf16_range R>
     requires ranges::forward_range<R>
       constexpr ranges::borrowed_iterator_t<R> find_invalid_encoding(R && r) noexcept;
-
-  // Returns true iff r is properly UTF-8 encoded.
-  template<utf8_range R>
-    requires ranges::forward_range<R>
-      constexpr bool encoded(R && r) noexcept;
-
-  // Returns true iff r is properly UTF-16 encoded.
-  template<utf16_range R>
-    requires ranges::forward_range<R>
-      constexpr bool encoded(R && r) noexcept;
 
   // Returns true iff r is empty or the initial UTF-8 code units in r form a valid
   // Unicode code point.
@@ -872,18 +844,52 @@ namespace std::uc {
 }
 ```
 
-Here is some psuedo-wording for that hopefully clarifies.
+Here is some psuedo-wording for `as_utfN` that hopefully clarifies.
 
 Let `E` be an expression, and let `T` be `remove_cvref_t<decltype((E))>`.  The
 expression `as_utfN(E)` is expression-equivalent to:
 
 - If `T` is a specialization of `empty_view` ([range.empty.view]), then `decay-copy(E)`.
 
+- Otherwise, if `is_pointer_v<T>` is `true`, and `T` models
+  `code_unit_iter<format::utfN>`, then `ranges::subrange(E, uc::null_sentinel)`.
+
 - Otherwise, if `ranges::iterator_t<T>` models `code_unit_iter<format::utfN>`,
   then `decay-copy(E)`.
 
 - Otherwise, `utf_view<format::utfN, T>(E)`.
 
+Examples:
+
+```c++
+static_assert(std::is_same_v<
+    decltype(std::views::all(u8"text") | std::uc::as_utf16),
+    std::uc::utf_view<std::uc::format::utf16, std::ranges::ref_view<const char8_t [5]>>>);
+
+std::u8string str = u8"text";
+
+static_assert(std::is_same_v<
+    decltype(std::views::all(str) | std::uc::as_utf16),
+    std::uc::utf_view<std::uc::format::utf16, std::ranges::ref_view<std::u8string>>>);
+
+static_assert(std::is_same_v<
+    decltype(str.c_str() | std::uc::as_utf16),
+    std::uc::utf_view<std::uc::format::utf16, const char8_t *>>);
+
+static_assert(std::is_same_v<
+    decltype(std::ranges::empty_view<int>{} | std::uc::as_utf16),
+    std::ranges::empty_view<int>>);
+
+std::u16string str2 = u"text";
+
+static_assert(std::is_same_v<
+    decltype(std::views::all(str2) | std::uc::as_utf16),
+    std::ranges::ref_view<std::u16string>>);
+
+static_assert(std::is_same_v<
+    decltype(str2.c_str() | std::uc::as_utf16),
+    std::ranges::subrange<const char16_t *, std::uc::null_sentinel_t>>);
+```
 
 ### Add `utf_view` specialization of `formatter`
 
