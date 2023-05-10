@@ -39,6 +39,16 @@ monofont: "DejaVu Sans Mono"
   argument instead of a pair of iterator arguments.
 - Replace `utf{8,16,32}_view` with a single `utf_view`.
 
+## Changes since R2
+
+- Add `noexcept` where appropriate.
+- Remove non-essential constants and utility functions, and elaborate on the
+  usage of the ones that remain.
+- Note differences from similar elements proposed in [@P1629R1].
+- Extend the examples slightly.
+- Correct an error in the description of the view adaptors' semantics, and
+  provide several examples of their use.
+
 # Motivation
 
 Unicode is important to many, many users in everyday software.  It is not
@@ -92,7 +102,7 @@ There are some differences between the way that the transcode views and
 iterators from [@P1629R1] work and the transcoding view and iterators from
 this paper work.  First, `std::text::transcode_view` has no direct support for
 null-terminated strings.  Second, it does not do the unpacking described in
-this paper.
+this paper.  Third, they are not printable and streamable.
 
 # The shortest Unicode primer imaginable
 
@@ -190,6 +200,23 @@ while (true) {
 
     // Copy partial UTF-8 sequence to start of buffer.
     read_first = std::ranges::copy_backward(last, buf_last, utf8_buf).out;
+}
+```
+
+## Case 4: Print the results of transcoding
+
+Text processing is pretty useless without I/O.  All of the Unicode algorithms
+operate on code points, and so the output of any of those algorithms will be
+in code points/UTF-32.  It should be easy to print the results to a
+`std::ostream`, to a `std::wostream` on Windows, or using `std::print`.
+`utf_view` is therefore printable and streamable.
+
+```c++
+void double_print(char32_t const * str)
+{
+    auto utf8 = str | std::uc::as_utf8;
+    std::print(utf8);
+    std::cerr << utf8;
 }
 ```
 
