@@ -311,7 +311,7 @@ namespace std::uc {
 
   template<class T>
     concept transcoding_error_handler =
-      requires(T t, char const * msg) { { t(msg) } -> code_point; };
+      requires (T t, char const * msg) { { t(msg) } -> code_point; };
 
 }
 ```
@@ -885,7 +885,7 @@ namespace std::uc {
 }
 ```
 
-Here is some psuedo-wording for `as_utfN` that hopefully clarifies.
+Here is some pseudo-wording for `as_utfN` that hopefully clarifies.
 
 Let `E` be an expression, and let `T` be `remove_cvref_t<decltype((E))>`.  The
 expression `as_utfN(E)` is expression-equivalent to:
@@ -1028,7 +1028,7 @@ internally to UTF-32:
 
 ```c++
 template<input_iterator I, sentinel_for<I> S, output_iterator<char8_t> O>
-  requires(utf8_code_unit<iter_value_t<I>> || utf16_code_unit<iter_value_t<I>>)
+  requires (utf8_code_unit<iter_value_t<I>> || utf16_code_unit<iter_value_t<I>>)
 transcode_result<I, O> transcode_to_utf32(I first, S last, O out);
 ```
 
@@ -1037,7 +1037,7 @@ iterator of type `I` to return to the user:
 
 ```c++
 template<input_iterator I, sentinel_for<I> S, output_iterator<char8_t> O>
-    requires(utf8_code_unit<iter_value_t<I>> || utf16_code_unit<iter_value_t<I>>)
+    requires (utf8_code_unit<iter_value_t<I>> || utf16_code_unit<iter_value_t<I>>)
 transcode_result<I, O> transcode_to_utf32(I first, S last, O out) {
     // Get the input as UTF-32.
     auto r = uc::utf_view(uc::format::utf32, first, last);
@@ -1061,7 +1061,7 @@ the result.  To demonstrate, here is the implementation of
 
 ```c++
 template<std::input_iterator I, std::sentinel_for<I> S, std::output_iterator<char32_t> O>
-    requires(utf8_code_unit<std::iter_value_t<I>> || utf16_code_unit<std::iter_value_t<I>>)
+    requires (utf8_code_unit<std::iter_value_t<I>> || utf16_code_unit<std::iter_value_t<I>>)
 transcode_result<I, O> transcode_to_utf32(I first, S last, O out)
 {
     auto const r = boost::text::unpack_iterator_and_sentinel(first, last);
