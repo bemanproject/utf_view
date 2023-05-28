@@ -692,9 +692,7 @@ units read while decoding `c`; encodes `c` as `ToFormat` into `buf_`; sets
 
 # TODO: Explain why forward iterators are not unpackable
 
-## Add a transcoding view
-
-### Add the view proper
+## Add a transcoding view and adaptors
 
 ```cpp
 namespace std::uc {
@@ -777,21 +775,21 @@ namespace std::uc {
     requires ranges::view<V>
   class utf8_view : public utf_view<format::utf8, V> {
   public:
-    constexpr utf8_view() = default;
+    constexpr utf8_view() requires default_initializable<V> = default;
     constexpr utf8_view(V base) : utf_view<format::utf8, V>{std::move(base)} {}
   };
   template<utf_range V>
     requires ranges::view<V>
   class utf16_view : public utf_view<format::utf16, V> {
   public:
-    constexpr utf16_view() = default;
+    constexpr utf16_view() requires default_initializable<V> = default;
     constexpr utf16_view(V base) : utf_view<format::utf16, V>{std::move(base)} {}
   };
   template<utf_range V>
     requires ranges::view<V>
   class utf32_view : public utf_view<format::utf32, V> {
   public:
-    constexpr utf32_view() = default;
+    constexpr utf32_view() requires default_initializable<V> = default;
     constexpr utf32_view(V base) : utf_view<format::utf32, V>{std::move(base)} {}
   };
 
@@ -813,27 +811,75 @@ namespace std::ranges {
     template<class V>
     inline constexpr bool enable_borrowed_range<uc::utf32_view<V>> = enable_borrowed_range<V>;
 }
+
+namspace std::uc {
+  template<class R>
+    constexpr decltype(auto) @*unpack-range*@(R && r) {                     // @*exposition only*@
+      using T = remove_cvref_t<R>;
+      if constexpr (ranges::forward_range<T>) {
+        auto unpacked = uc::unpack_iterator_and_sentinel(ranges::begin(r), ranges::end(r));
+        if constexpr (is_bounded_array_v<T>) {
+          constexpr auto n = extent_v<T>;
+          if (n && !r[n - 1])
+            --unpacked.last;
+        }
+        return ranges::subrange(unpacked.first, unpacked.last);
+      } else {
+        return forward<R>(r);
+      }
+    }
+
+  inline constexpr @*unspecified*@ as_utf8;
+  inline constexpr @*unspecified*@ as_utf16;
+  inline constexpr @*unspecified*@ as_utf32;
+}
 ```
 
 # TODO: Explain why utf_view always uses utf_iterator, even in utfN -> utfN cases.
+
+`utf_view` produces a view in UTF format `Format` of the elements from another
+UTF view.  `utf8_view` produces a UTF-8 view of the elements from another UTF
+view.  `utf16_view` produces a UTF-16 view of the elements from another UTF
+view.  `utf32_view` produces a UTF-32 view of the elements from another UTF
+view.  Let `utfN_view` denote any one of the views `utf8_view`, `utf16_view`,
+amd `utf32_view`.
+
+The names `as_utf8`, `as_utf16`, and `as_utf32` denote range adaptor objects
+([range.adaptor.object]).  `as_utf8` produces `utf8_view`s, `as_utf16`
+produces `utf16_view`s, and `as_utf32` produces `utf32_view`s.  Let `as_utfN`
+denote any one of `as_utf8`, `as_utf16`, and `as_utf32`, and let `v` denote
+the `utfN_view` associated with that object.  Let `E` be an expression and let
+`T` be `remove_cvref_t<decltype((E))>`.  If `decltype((E))` does not model
+`utf_range_like`, `as_utfN(E)` is ill-formed.  The expression `as_utfN(E)` is
+expression-equivalent to:
+
+If `T` is a specialization of `empty_view` ([range.empty.view]), then
+`@*decay-copy*@(E)`.
+
+Otherwise, if `is_pointer_v<T>` is `true`, then `utfN_view(ranges::subrange(E,
+null_sentinel))`.
+
+Otherwise, `utfN_view(@*unpack-range*@(E))`.
+
+[Example 1:
+std::u32string s = U"Unicode";
+for (char8_t c : s | as_utf8)
+  cout << (char)c << ' '; // prints U n i c o d e 
+— end example]
+
+[Example 2:
+auto * s = L"is weird.";
+for (char8_t c : s | as_utf8)
+  cout << (char)c << ' '; // prints i s   w e i r d . 
+— end example]
 
 The `ostream` and `wostream` stream operators transcode the `utf_view` to
 UTF-8 and UTF-16 respectively (if transcoding is needed), and the `wostream`
 overload is only defined on Windows.
 
-### Add `as_utfN` view adaptors
-
 Each `as_utfN` view adaptor adapts a `utf_range_like` (meaning an range or a
-null-terminated pointer), and returns a `utf_view` that may do transcoding (if
-the inputs are not UTF-N) or the given input (if the inputs are UTF-N).
-
-```cpp
-namespace std::uc {
-  inline @*unspecified*@ as_utf8;
-  inline @*unspecified*@ as_utf16;
-  inline @*unspecified*@ as_utf32;
-}
-```
+null-terminated pointer), and returns a `utfN_view` that may do transcoding
+(if the inputs are not UTF-N) or validation (if the inputs are UTF-N).
 
 Here is some pseudo-wording for `as_utfN` that hopefully clarifies.
 
