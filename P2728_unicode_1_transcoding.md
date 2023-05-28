@@ -215,7 +215,7 @@ in code points/UTF-32.  It should be easy to print the results to a
 void double_print(char32_t const * str)
 {
     auto utf8 = str | std::uc::as_utf8;
-    std::print(utf8);
+    std::print("{}", utf8);
     std::cerr << utf8;
 }
 ```
