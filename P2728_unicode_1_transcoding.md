@@ -430,21 +430,15 @@ form a similar pair for UTF-16.
 The other functions can be used to check if a given range is properly UTF-8 or
 -16 encoded, either entirely, or at the beginning or end or the range.
 
-## Add the transcoding iterators
+## Add the transcoding iterator template
 
 I'm using [P2727](https://isocpp.org/files/papers/P2727R0.html)'s
 `iterator_interface` here for simplicity.
 
 ```cpp
 namespace std::uc {
-  // An error handler type that can be used with the converting iterators;
-  // provides the Unicode replacement character on errors.
-  struct use_replacement_character {
-    constexpr char32_t operator()(const char*) const noexcept { return replacement_character; }
-  };
-  
   template<class I>
-  auto @*bidirectional-at-most*@() {  // @*exposition only*@
+  constexpr auto @*bidirectional-at-most*@() {    // @*exposition only*@
     if constexpr (bidirectional_iterator<I>) {
       return bidirectional_iterator_tag{};
     } else if constexpr (forward_iterator<I>) {
@@ -457,356 +451,246 @@ namespace std::uc {
   template<class I>
   using @*bidirectional-at-most-t*@ = decltype(@*bidirectional-at-most*@<I>()); // @*exposition only*@
 
+  template<format Format>
+  constexpr auto @*format-to-type*@() {           // @*exposition only*@
+    if constexpr (Format == format::utf8) {
+      return char8_t{};
+    } else if constexpr (Format == format::utf16) {
+      return char16_t{};
+    } else {
+      return char32_t{};
+    }
+  }
+
+  template<class I>
+  using @*format-to-type-t*@ = decltype(@*format-to-type*@<I>()); // @*exposition only*@
+
+  template<typename I, bool SupportReverse = bidirectional_iterator<I>>
+  struct @*first-and-curr*@ {                         // @*exposition only*@
+    @*first-and-curr*@() = default;
+    @*first-and-curr*@(I curr) : curr{curr} {}
+    template<class I2>
+      requires convertible_to<I2, I>
+        @*first-and-curr*@(const @*first-and-curr*@<I2>& other) : curr{other.curr} {}
+
+    I curr;
+  };
+  template<typename I>
+  struct @*first-and-curr*@<I, true> {                // @*exposition only*@
+    @*first-and-curr*@() = default;
+    @*first-and-curr*@(I first, I curr) : first{first}, curr{curr} {}
+    template<class I2>
+      requires convertible_to<I2, I>
+        @*first-and-curr*@(const @*first-and-curr*@<I2>& other) : first{other.first}, curr{other.curr} {}
+
+    I first;
+    I curr;
+  };
+
+  struct use_replacement_character {
+    constexpr char32_t operator()(const char*) const noexcept { return replacement_character; }
+  };
+
   template<
-    utf32_iter I,
-    sentinel_for<I> S = I,
-    transcoding_error_handler ErrorHandler = use_replacement_character>
-  struct utf_32_to_8_iterator
-    : iterator_interface<utf_32_to_8_iterator<I, S, ErrorHandler>, @*bidirectional-at-most-t*@<I>, char8_t, char8_t> {
-    constexpr utf_32_to_8_iterator();
-    explicit constexpr utf_32_to_8_iterator(I first, I it, S last);
+    format FromFormat,
+    format ToFormat,
+    code_unit_iter<FromFormat> I,
+    sentinel_for<I> S,
+    transcoding_error_handler ErrorHandler>
+  class utf_iterator : public iterator_interface<
+                         utf_iterator<FromFormat, ToFormat, I, S, ErrorHandler>,
+                         @*bidirectional-at-most*@<I>,
+                         @*format-to-type-t*@<ToFormat>,
+                         @*format-to-type-t*@<ToFormat>> {
+  public:
+    using value_type = @*format-to-type-t*@<ToFormat>;
+
+    constexpr utf_iterator() = default;
+
+    constexpr utf_iterator(I first, I it, S last) requires bidirectional_iterator<I>
+      : first_and_curr_{first, it}, last_(last) {
+      if (curr() != last_)
+        read();
+    }
+    constexpr utf_iterator(I it, S last) requires (!bidirectional_iterator<I>)
+      : first_and_curr_{it}, last_(last) {
+      if (curr() != last_)
+        read();
+    }
+
     template<class I2, class S2>
       requires convertible_to<I2, I> && convertible_to<S2, S>
-        constexpr utf_32_to_8_iterator(
-          const utf_32_to_8_iterator<I2, S2, ErrorHandler>& other);
+        constexpr utf_iterator(const utf_iterator<FromFormat, ToFormat, I2, S2, ErrorHandler>& other) :
+      buf_(other.buf_),
+      first_and_curr_(other.first_and_curr_),
+      buf_index_(other.buf_index_),
+      buf_last_(other.buf_last_),
+      last_(other.last_)
+    {}
 
-    constexpr I begin() const { return first_; }
+    constexpr I begin() const requires bidirectional_iterator<I> { return first(); }
     constexpr S end() const { return last_; }
 
-    constexpr char8_t operator*() const { return buf_[index_]; }
+    constexpr I base() const requires forward_iterator<I> { return curr(); }
 
-    constexpr I base() const { return it_; }
+    constexpr value_type operator*() const { return buf_[buf_index_]; }
 
-    constexpr utf_32_to_8_iterator& operator++();
-    constexpr utf_32_to_8_iterator& operator--();
+    constexpr utf_iterator& operator++() {
+      if (buf_index_ + 1 == buf_last_ && curr() != last_) {
+        if constexpr (forward_iterator<I>) {
+          advance(curr(), to_increment_);
+        }
+        if (curr() == last_)
+          buf_index_ = 0;
+        else
+          read();
+      } else if (buf_index_ + 1 <= buf_last_) {
+        ++buf_index_;
+      }
+      return *this;
+    }
 
-    template<class I1, class S1, class I2, class S2, class ErrorHandler2>
-    friend constexpr bool operator==(
-      const utf_32_to_8_iterator<I1, S1, ErrorHandler2>& lhs,
-      const utf_32_to_8_iterator<I2, S2, ErrorHandler2>& rhs)
-        requires requires { lhs.base() == rhs.base(); }
-          { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
+    constexpr utf_iterator& operator--() requires bidirectional_iterator<I> {
+      if (!buf_index_ && curr() != first())
+        read_reverse();
+      else if (buf_index_)
+        --buf_index_;
+      return *this;
+    }
 
-    friend constexpr bool operator==(utf_32_to_8_iterator lhs, utf_32_to_8_iterator rhs)
-      { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
+    friend constexpr bool operator==(utf_iterator lhs, utf_iterator rhs)
+      requires forward_iterator<I> || requires (I i) { i != i; } {
+      if constexpr (forward_iterator<I>) {
+        return lhs.curr() == rhs.curr() && lhs.buf_index_ == rhs.buf_index_;
+      } else {
+        if (lhs.curr() != rhs.curr())
+          return false;
 
-    using @*base-type*@ =         // @*exposition only*@
-      iterator_interface<utf_32_to_8_iterator<I, S, ErrorHandler>,
-                         @*bidirectional-at-most-t*@<I>,
-                         char8_t,
-                         char8_t>;
-    using @*base-type*@::operator++;
-    using @*base-type*@::operator--;
+        if (lhs.buf_index_ == rhs.buf_index_ &&
+          lhs.buf_last_ == rhs.buf_last_) {
+          return true;
+        }
 
-  private:
-    I first_;                 // @*exposition only*@
-    I it_;                    // @*exposition only*@
-    S last_;                  // @*exposition only*@
-    int index_;               // @*exposition only*@
-    array<char8_t, 5> buf_;   // @*exposition only*@
+        return lhs.buf_index_ == lhs.buf_last_ &&
+             rhs.buf_index_ == rhs.buf_last_;
+      }
+    }
 
-    template<utf32_iter I2, sentinel_for<I2> S2, transcoding_error_handler ErrorHandler2>
-    friend struct utf_32_to_8_iterator;
-  };
+    friend constexpr bool operator==(utf_iterator lhs, S rhs) requires (!same_as<I, S>) {
+      if constexpr (forward_iterator<I>) {
+        return lhs.curr() == rhs;
+      } else {
+        return lhs.curr() == rhs && lhs.buf_index_ == lhs.buf_last_;
+      }
+    }
 
-  template<class I, class S, class ErrorHandler>
-    constexpr bool operator==(
-      utf_32_to_8_iterator<I, S, ErrorHandler> lhs, S rhs)
-        requires requires { lhs.base() == rhs; };
-
-  template<
-    utf8_iter I,
-    sentinel_for<I> S = I,
-    transcoding_error_handler ErrorHandler = use_replacement_character>
-  struct utf_8_to_32_iterator
-    : iterator_interface<utf_8_to_32_iterator<I, S, ErrorHandler>, @*bidirectional-at-most-t*@<I>, char32_t, char32_t> {
-    constexpr utf_8_to_32_iterator();
-    explicit constexpr utf_8_to_32_iterator(I first, I it, S last);
-    template<class I2, class S2>
-      requires convertible_to<I2, I> && convertible_to<S2, S>
-        constexpr utf_8_to_32_iterator(
-          const utf_8_to_32_iterator<I2, S2, ErrorHandler>& other);
-
-    constexpr I begin() const { return first_; }
-    constexpr S end() const { return last_; }
-
-    constexpr char32_t operator*() const;
-
-    constexpr I base() const { return it_; }
-
-    constexpr utf_8_to_32_iterator& operator++();
-    constexpr utf_8_to_32_iterator& operator--();
-
-    friend constexpr bool operator==(utf_8_to_32_iterator lhs, utf_8_to_32_iterator rhs)
-      { return lhs.base() == rhs.base(); }
-
-    using @*base-type*@ =         // @*exposition only*@
-      iterator_interface<utf_8_to_32_iterator<I, S, ErrorHandler>,
-                         @*bidirectional-at-most-t*@<I>,
-                         char32_t,
-                         char32_t>;
-    using @*base-type*@::operator++;
-    using @*base-type*@::operator--;
+    using base_type =                   // @*exposition only*@
+      iterator_interface<
+        utf_iterator<FromFormat, ToFormat, I, S, ErrorHandler>,
+        @*bidirectional-at-most-t*@<I>,
+        value_type,
+        value_type>;
+    using base_type::operator++;
+    using base_type::operator--;
 
   private:
-    I first_;                 // @*exposition only*@
-    I it_;                    // @*exposition only*@
-    S last_;                  // @*exposition only*@
+    constexpr void read();                                            // @*exposition only*@
+    constexpr void read_reverse();                                    // @*exposition only*@
 
-    template<utf8_iter I2, sentinel_for<I2> S2, transcoding_error_handler ErrorHandler2>
-    friend struct utf_8_to_16_iterator;
+    constexpr I first() const requires bidirectional_iterator<I>      // @*exposition only*@
+      { return first_and_curr_.first; }
+    constexpr I& curr() { return first_and_curr_.curr; }              // @*exposition only*@
+    constexpr I curr() const { return first_and_curr_.curr; }         // @*exposition only*@
 
-    template<utf8_iter I2, sentinel_for<I2> S2, transcoding_error_handler ErrorHandler2>
-    friend struct utf_8_to_32_iterator;
+    array<value_type, 4 / static_cast<int>(ToFormat)> buf_;           // @*exposition only*@
+
+    @*first-and-curr*@<I> first_and_curr_;                                // @*exposition only*@
+
+    uint8_t buf_index_ = 0;                                           // @*exposition only*@
+    uint8_t buf_last_ = 0;                                            // @*exposition only*@
+    uint8_t to_increment_ = 0;                                        // @*exposition only*@
+
+    [[no_unique_address]] S last_;                                    // @*exposition only*@
+
+    template<
+      format FromFormat2,
+      format ToFormat2,
+      code_unit_iter<FromFormat2> I2,
+      sentinel_for<I2> S2,
+      transcoding_error_handler ErrorHandler2>
+    friend class utf_iterator;
   };
-
-  template<class I, class S, class ErrorHandler>
-  constexpr bool operator==(
-    const utf_8_to_32_iterator<I, S, ErrorHandler>& lhs, Sentinel rhs)
-      requires requires { lhs.base() == rhs; };
-
-  template<class I1, class S1, class I2, class S2, class ErrorHandler>
-  constexpr bool operator==(
-    const utf_8_to_32_iterator<I1, S1, ErrorHandler>& lhs,
-    const utf_8_to_32_iterator<I2, S2, ErrorHandler>& rhs)
-      requires requires { lhs.base() == rhs.base(); };
-
-  template<
-    utf32_iter I,
-    sentinel_for<I> S = I,
-    transcoding_error_handler ErrorHandler = use_replacement_character>
-  struct utf_32_to_16_iterator
-    : iterator_interface<utf_32_to_16_iterator<I, S, ErrorHandler>, @*bidirectional-at-most-t*@<I>, char16_t, char16_t> {
-    constexpr utf_32_to_16_iterator();
-    explicit constexpr utf_32_to_16_iterator(I first, I it, S last);
-    template<class I2, class S2>
-      requires convertible_to<I2, I> && convertible_to<S2, S>
-        constexpr utf_32_to_16_iterator(
-          const utf_32_to_16_iterator<I2, S2, ErrorHandler>& other);
-
-    constexpr I begin() const { return first_; }
-    constexpr S end() const { return last_; }
-
-    constexpr char16_t operator*() const
-    { return buf_[index_]; }
-
-    constexpr I base() const { return it_; }
-
-    constexpr utf_32_to_16_iterator& operator++();
-    constexpr utf_32_to_16_iterator& operator--();
-
-    template<class I1, class S1, class I2, class S2, class ErrorHandler2>
-    friend constexpr bool operator==(
-      const utf_32_to_16_iterator<I1, S1, ErrorHandler2>& lhs,
-      const utf_32_to_16_iterator<I2, S2, ErrorHandler2>& rhs)
-        requires requires { lhs.base() == rhs.base(); }
-          { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
-
-    friend constexpr bool operator==(utf_32_to_16_iterator lhs, utf_32_to_16_iterator rhs)
-      { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
-
-    using @*base-type*@ =         // @*exposition only*@
-      iterator_interface<utf_32_to_16_iterator<I, S, ErrorHandler>,
-                         @*bidirectional-at-most-t*@<I>,
-                         char16_t,
-                         char16_t>;
-    using @*base-type*@::operator++;
-    using @*base-type*@::operator--;
-
-  private:
-    I first_;                 // @*exposition only*@
-    I it_;                    // @*exposition only*@
-    S last_;                  // @*exposition only*@
-    int index_;               // @*exposition only*@
-    array<char16_t, 4> buf_;  // @*exposition only*@
-
-    template<utf32_iter I2, sentinel_for<I2> S2, transcoding_error_handler ErrorHandler2>
-    friend struct utf_32_to_16_iterator;
-  };
-
-  template<class I, class S, class ErrorHandler>
-  constexpr bool operator==(
-    const utf_32_to_16_iterator<I, S, ErrorHandler>& lhs, Sentinel rhs)
-      requires requires { lhs.base() == rhs; };
-
-  template<
-    utf16_iter I,
-    sentinel_for<I> S = I,
-    transcoding_error_handler ErrorHandler = use_replacement_character>
-  struct utf_16_to_32_iterator
-    : iterator_interface<utf_16_to_32_iterator<I, S, ErrorHandler>, @*bidirectional-at-most-t*@<I>, char32_t, char32_t> {
-    constexpr utf_16_to_32_iterator();
-    explicit constexpr utf_16_to_32_iterator(I first, I it, S last);
-    template<class I2, class S2>
-      requires convertible_to<I2, I> && convertible_to<S2, S>
-        constexpr utf_16_to_32_iterator(
-          const utf_16_to_32_iterator<I2, S2, ErrorHandler>& other);
-
-    constexpr I begin() const { return first_; }
-    constexpr S end() const { return last_; }
-
-    constexpr char32_t operator*() const;
-
-    constexpr I base() const { return it_; }
-
-    constexpr utf_16_to_32_iterator& operator++();
-    constexpr utf_16_to_32_iterator& operator--();
-
-    friend constexpr bool operator==(utf_16_to_32_iterator lhs, utf_16_to_32_iterator rhs)
-      { return lhs.base() == rhs.base(); }
-
-    using @*base-type*@ =         // @*exposition only*@
-      iterator_interface<utf_16_to_32_iterator<I, S, ErrorHandler>,
-                         @*bidirectional-at-most-t*@<I>,
-                         char32_t,
-                         char32_t>;
-    using @*base-type*@::operator++;
-    using @*base-type*@::operator--;
-
-  private:
-    I first_;                 // @*exposition only*@
-    I it_;                    // @*exposition only*@
-    S last_;                  // @*exposition only*@
-
-    template<utf32_iter I2, sentinel_for<I2> S2, transcoding_error_handler ErrorHandler2>
-    friend struct utf_32_to_16_iterator;
-
-    template<utf16_iter I2, sentinel_for<I2> S2, transcoding_error_handler ErrorHandler2>
-    friend struct utf_16_to_32_iterator;
-  };
-
-  template<class I, class S, class ErrorHandler>
-  constexpr bool operator==(
-    const utf_16_to_32_iterator<I, S, ErrorHandler>& lhs, Sentinel rhs)
-      requires requires { lhs.base() == rhs; };
-
-  template<
-    class I1, class S1,
-    class I2, class S2,
-    class ErrorHandler>
-  constexpr bool operator==(
-    const utf_16_to_32_iterator<I1, S1, ErrorHandler>& lhs,
-    const utf_16_to_32_iterator<I2, S2, ErrorHandler>& rhs)
-      requires requires { lhs.base() == rhs.base(); };
-
-  template<
-      utf16_iter I,
-      sentinel_for<I> S = I,
-      transcoding_error_handler ErrorHandler = use_replacement_character>
-  struct utf_16_to_8_iterator
-    : iterator_interface<utf_16_to_8_iterator<I, S, ErrorHandler>, @*bidirectional-at-most-t*@<I>, char8_t, char8_t> {
-    constexpr utf_16_to_8_iterator();
-    explicit constexpr utf_16_to_8_iterator(I first, I it, S last);
-    template<class I2, class S2>
-      requires convertible_to<I2, I> && convertible_to<S2, S>
-        constexpr utf_16_to_8_iterator(const utf_16_to_8_iterator<I2, S2>& other);
-
-    constexpr I begin() const { return first_; }
-    constexpr S end() const { return last_; }
-
-    constexpr char8_t operator*() const { return buf_[index_]; }
-
-    constexpr I base() const { return it_; }
-
-    constexpr utf_16_to_8_iterator& operator++();
-    constexpr utf_16_to_8_iterator& operator--();
-
-    template<class I1, class S1, class I2, class S2, class ErrorHandler2>
-    friend constexpr bool operator==(
-      const utf_16_to_8_iterator<I1, S1, ErrorHandler2>& lhs,
-      const utf_16_to_8_iterator<I2, S2, ErrorHandler2>& rhs)
-        requires requires { lhs.base() == rhs.base(); }
-          { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
-
-    friend constexpr bool operator==(utf_16_to_8_iterator lhs, utf_16_to_8_iterator rhs)
-      { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
-
-    using @*base-type*@ =         // @*exposition only*@
-      iterator_interface<utf_16_to_8_iterator<I, S, ErrorHandler>,
-                         @*bidirectional-at-most-t*@<I>,
-                         char8_t,
-                         char8_t>;
-    using @*base-type*@::operator++;
-    using @*base-type*@::operator--;
-
-  private:
-    I first_;                 // @*exposition only*@
-    I it_;                    // @*exposition only*@
-    S last_;                  // @*exposition only*@
-    int index_;               // @*exposition only*@
-    array<char8_t, 5> buf_;   // @*exposition only*@
-
-    template<utf16_iter I2, sentinel_for<I2> S2, transcoding_error_handler ErrorHandler2>
-    friend struct utf_16_to_8_iterator;
-  };
-
-  template<class I, class S, class ErrorHandler>
-  constexpr bool operator==(
-    const utf_16_to_8_iterator<I, S, ErrorHandler>& lhs, Sentinel rhs)
-      requires requires { lhs.base() == rhs; };
-
-  template<class I1, class S1, class I2, class S2, class ErrorHandler>
-  constexpr bool operator==(
-    const utf_16_to_8_iterator<I1, S1, ErrorHandler>& lhs,
-    const utf_16_to_8_iterator<I2, S2, ErrorHandler>& rhs)
-      requires requires { lhs.base() == rhs.base(); };
-
-  template<
-    utf8_iter I,
-    sentinel_for<I> S = I,
-    transcoding_error_handler ErrorHandler = use_replacement_character>
-  struct utf_8_to_16_iterator
-    : iterator_interface<utf_8_to_16_iterator<I, S, ErrorHandler>, @*bidirectional-at-most-t*@<I>, char16_t, char16_t> {
-    constexpr utf_8_to_16_iterator();
-    explicit constexpr utf_8_to_16_iterator(I first, I it, S last);
-    template<class I2, class S2>
-      requires convertible_to<I2, I> && convertible_to<S2, S>
-        constexpr utf_8_to_16_iterator(
-          const utf_8_to_16_iterator<I2, S2, ErrorHandler>& other);
-
-    constexpr I begin() const { return it_.begin(); }
-    constexpr S end() const { return it_.end(); }
-
-    constexpr char16_t operator*() const { return buf_[index_]; }
-
-    constexpr I base() const { return it_.base(); }
-
-    constexpr utf_8_to_16_iterator& operator++();
-    constexpr utf_8_to_16_iterator& operator--();
-
-    template<class I1, class S1, class I2, class S2, class ErrorHandler2>
-    friend constexpr bool operator==(
-      const utf_8_to_16_iterator<I1, S1, ErrorHandler2>& lhs,
-      const utf_8_to_16_iterator<I2, S2, ErrorHandler2>& rhs)
-        requires requires { lhs.base() == rhs.base()' }
-          { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
-
-    friend constexpr bool operator==(utf_8_to_16_iterator lhs, utf_8_to_16_iterator rhs)
-      { return lhs.base() == rhs.base() && lhs.index_ == rhs.index_; }
-
-    using @*base-type*@ =                // @*exposition only*@
-      iterator_interface<utf_8_to_16_iterator<I, S, ErrorHandler>,
-                         @*bidirectional-at-most-t*@<I>,
-                         char16_t,
-                         char16_t>;
-    using @*base-type*@::operator++;
-    using @*base-type*@::operator--;
-
-  private:
-    utf_8_to_32_iterator<I, S> it_;  // @*exposition only*@
-    int index_;                      // @*exposition only*@
-    array<char16_t, 4> buf_;         // @*exposition only*@
-
-    template<utf8_iter I2, sentinel_for<I2> S2, transcoding_error_handler ErrorHandler2>
-    friend struct utf_8_to_16_iterator;
-  };
-
-  template<class I, class S, class ErrorHandler>
-    constexpr bool operator==(
-      const utf_8_to_16_iterator<I, S, ErrorHandler>& lhs, Sentinel rhs)
-        requires requires { lhs.base() == rhs; };
 }
 ```
+
+`use_replacement_character` is an error handler type that can be used with
+`utf_iterator`.  It accepts a `const char *` error message, and returns the
+replacement character.  The user can subtitute their own type here, which may
+throw, abort, log, etc.
+
+`utf_iterator` is an iterator that transcodes from UTF-N to UTF-M, where N and
+M are each one of 8, 16, or 32.  Note that N can equal M.  UTF-N to UTF-N
+operation can be used to ensure correct encoding without changing format.
+`utf_iterator` does its work by adapting an underlying range of code units.
+Each code point `c` to be transcoded is decoded from `FromFormat` in the
+underlying range.  `c` is then encoded to `ToFormat` into an internal buffer.
+If ill-formed UTF is encountered during the decoding step, `c` is whatever
+`ErrorHandler{}("")` returns; using the default error handler, this is
+`replacement_character`.
+
+`utf_iterator` maintains certain invariants; the invariants differ based on
+whether `utf_iterator` is an input iterator.
+
+For input iterators the invairants are that either: `*this` is at the end of
+the range being adapted, and `curr()` == `last_`; or the position of `curr()`
+is always at the end of the current code point `c` within the range being
+adapted, and `buf_` contains the code units in `ToFormat` that comprise `c`.
+
+For forward and bidirectional iterators, the invariants are either: `*this` is
+at the end of the range being adapted, and `curr()` == `last_`; or the
+position of `curr()` is always at the beginning of the current code point `c`
+within the range being adapted, and `buf_` contains the code units in
+`ToFormat` that comprise `c`.
+
+When ill-formed UTF is encountered in the range being adapted, `utf_iterator`
+calls `ErrorHandler{}.operator()` to produce a character to represent the
+ill-formed sequence.  The number and position of error handler invocations
+within the transcoded output is the same, whether the range being adapted is
+traversed forward or backward.  The number and position of the error handler
+invocations should use the "substitution of maximal subparts" approach
+described in Chapter 3 of the Unicode standard.
+
+Besides the constructors, no member function of `utf_iterator` has
+preconditions.  As long as a `utf_iterator` `i` is constructed with proper
+arguments, all subsequent operations on `i` are memory safe.  This includes
+decrementing a `utf_iterator` at the beginning of the range being adapted, and
+incrementing or dereferencing a `utf_iterator` at the end of the range being
+adapted.
+
+If `FromFormat` and `ToFormat` are not each one of `format::utf8`,
+`format::utf16`, or `format::utf32`, the program is ill-formed.
+
+If `input_iterator<I>` is `true`, `noexcept(ErrorHandler{}("")))` must be
+`true` as well; otherwise, the program is ill-formed.
+
+The exposition-only member function `read` decodes the code point `c` as
+`FromFormat` starting from position `curr()` in the range being adapted (`c`
+may be `replacement_character`); sets `to_increment_` to the number of code
+units read while decoding `c`; encodes `c` as `ToFormat` into `buf_`; sets
+`buf_index_` to `0`; and sets `buf_last_` to the number of code units encoded
+into `buf_`.  If `forward_iterator<I>` is `true`, `curr()` is set to the
+position it had before `read` was called.  If an exception is thrown during a
+call to `read`, the call to `read` has no effect.
+
+The exposition-only member function `read_reverse` decodes the code point `c`
+as `FromFormat` ending at position `curr()` in the range being adapted (`c`
+may be `replacement_character`); sets `to_increment_` to the number of code
+units read while decoding `c`; encodes `c` as `ToFormat` into `buf_`; sets
+`buf_last_` to the number of code units encoded into `buf_`; and sets
+`buf_index_` to `buf_last_ - 1`.  If an exception is thrown during a call to
+`read_reverse`, the call to `read_reverse` has no effect.
+
+# TODO: Explain why forward iterators are not unpackable
 
 ## Add a transcoding view
 
@@ -814,58 +698,124 @@ namespace std::uc {
 
 ```cpp
 namespace std::uc {
-  template<class V>
-    using @*utf-view-iter-t*@ = @*see below*@;                    // @*exposition only*@
-  template<class V>
-    using @*utf-view-sent-t*@ = @*see below*@;                    // @*exposition only*@
-  template<format Format, class Unpacked>
-    constexpr auto @*make-utf-view-iter*@(Unpacked unpacked); // @*exposition only*@
-  template<format Format, class Unpacked>
-    constexpr auto @*make-utf-view-sent*@(Unpacked unpacked); // @*exposition only*@
+  template<typename T>
+  constexpr format @*format-of*@() {              // @*exposition only*@
+    if constexpr (same_as<T, char8_t>) {
+      return format::utf8;
+    } else if constexpr (same_as<T, char16_t>) {
+      return format::utf16;
+    } else {
+      return format::utf8;
+    }
+  }
 
-  template<format Format, utf_range_like V>
-    requires ranges::view<V> || utf_pointer<V>
-  struct utf_view : ranges::view_interface<utf_view<Format, V>>
-  {
-    using from_iterator = @*utf-view-iter-t*@<V>;
-    using from_sentinel = @*utf-view-sent-t*@<V>;
+  template<format Format, ranges::view V>
+  class utf_view : public ranges::view_interface<utf_view<Format, V>> {
+    V base_ = V();                                // @*exposition only*@
 
-    using iterator = decltype(@*make-utf-view-iter*@<Format>(
-      uc::unpack_iterator_and_sentinel(declval<from_iterator>(), declval<from_sentinel>())));
-    using sentinel = decltype(@*make-utf-view-iter*@<Format>(
-      uc::unpack_iterator_and_sentinel(declval<from_iterator>(), declval<from_sentinel>())));
+  public:
+    constexpr utf_view() requires default_initializable<V> = default;
+    constexpr utf_view(V base) : base_{std::move(base)} {}
 
-    constexpr utf_view() {}
-    constexpr utf_view(V base);
+    constexpr V base() const & requires copy_constructible<V> { return base_; }
+    constexpr V base() && { return std::move(base_); }
 
-    constexpr iterator begin() const { return first_; }
-    constexpr sentinel end() const { return last_; }
+    constexpr auto begin() const {
+      constexpr format from_format = @*format-of*@<ranges::range_value_t<V>>();
+      if constexpr (ranges::bidirectional_range<V>) {
+        return utf_iterator<from_format, Format, ranges::iterator_t<V>, ranges::sentinel_t<V>>{
+          ranges::begin(base_),
+          ranges::begin(base_),
+          ranges::end(base_)};
+      } else {
+        return utf_iterator<from_format, Format, ranges::iterator_t<V>, ranges::sentinel_t<V>>{
+          ranges::begin(base_), ranges::end(base_)};
+      }
+    }
+    constexpr auto end() const {
+      constexpr format from_format = @*format-of*@<ranges::range_value_t<V>>();
+      if constexpr (!ranges::common_range<V>) {
+        return ranges::end(base_);
+      } else if constexpr (ranges::bidirectional_range<V>) {
+        return utf_iterator<from_format, Format, ranges::iterator_t<V>, ranges::sentinel_t<V>>{
+          ranges::begin(base_),
+          ranges::end(base_),
+          ranges::end(base_)};
+      } else {
+        return utf_iterator<from_format, Format, ranges::iterator_t<V>, ranges::sentinel_t<V>>{
+          ranges::end(base_), ranges::end(base_)};
+      }
+    }
 
-    friend ostream& operator<<(ostream& os, utf_view v);
-    friend wostream& operator<<(wostream& os, utf_view v);
-
-  private:
-    iterator first_;
-    [[no_unique_address]] sentinel last_;
+    friend ostream & operator<<(ostream & os, utf_view v) {
+      if constexpr (Format == format::utf8) {
+        auto out = ostreambuf_iterator<char>(os);
+        for (auto it = v.begin(); it != v.end(); ++it, ++out) {
+          *out = *it;
+        }
+      } else {
+        boost::text::transcode_to_utf8(
+          v.begin(), v.end(), ostreambuf_iterator<char>(os));
+      }
+      return os;
+    }
+    friend wostream & operator<<(wostream & os, utf_view v) {
+      if constexpr (Format == format::utf16) {
+        auto out = ostreambuf_iterator<wchar_t>(os);
+        for (auto it = v.begin(); it != v.end(); ++it, ++out) {
+          *out = *it;
+        }
+      } else {
+        boost::text::transcode_to_utf16(
+          v.begin(), v.end(), ostreambuf_iterator<wchar_t>(os));
+      }
+      return os;
+    }
   };
+
+  template<utf_range V>
+    requires ranges::view<V>
+  class utf8_view : public utf_view<format::utf8, V> {
+  public:
+    constexpr utf8_view() = default;
+    constexpr utf8_view(V base) : utf_view<format::utf8, V>{std::move(base)} {}
+  };
+  template<utf_range V>
+    requires ranges::view<V>
+  class utf16_view : public utf_view<format::utf16, V> {
+  public:
+    constexpr utf16_view() = default;
+    constexpr utf16_view(V base) : utf_view<format::utf16, V>{std::move(base)} {}
+  };
+  template<utf_range V>
+    requires ranges::view<V>
+  class utf32_view : public utf_view<format::utf32, V> {
+  public:
+    constexpr utf32_view() = default;
+    constexpr utf32_view(V base) : utf_view<format::utf32, V>{std::move(base)} {}
+  };
+
+  template<class R>
+  utf8_view(R &&) -> utf8_view<views::all_t<R>>;
+  template<class R>
+  utf16_view(R &&) -> utf16_view<views::all_t<R>>;
+  template<class R>
+  utf32_view(R &&) -> utf32_view<views::all_t<R>>;
 }
 
 namespace std::ranges {
-  template<uc::format Format, class V>
-    inline constexpr bool enable_borrowed_range<uc::utf_view<Format, V>> = true;
+    template<uc::format Format, class V>
+    inline constexpr bool enable_borrowed_range<uc::utf_view<Format, V>> = enable_borrowed_range<V>;
+    template<class V>
+    inline constexpr bool enable_borrowed_range<uc::utf8_view<V>> = enable_borrowed_range<V>;
+    template<class V>
+    inline constexpr bool enable_borrowed_range<uc::utf16_view<V>> = enable_borrowed_range<V>;
+    template<class V>
+    inline constexpr bool enable_borrowed_range<uc::utf32_view<V>> = enable_borrowed_range<V>;
 }
 ```
 
-`@*utf-view-iter-t*@` evaluates to `V` if `V` is a pointer, and
-`decltype(std::ranges::begin(std::declval<V>()))` otherwise.
-`@*utf-view-sent-t*@` evaluates to `null_sentinel_t` if `V` is a pointer, and
-`decltype(std::ranges::end(std::declval<V>()))` otherwise.
-
-`@*make-utf-view-iter*@` makes a transcoding iterator that produces the UTF
-format `format` from the result of a call to
-`std::uc::unpack_iterator_and_sentinel()`, and similarly
-`@*make-utf-view-sent*@` makes a sentinel from the result of a call to
-`std::uc::unpack_iterator_and_sentinel()`.
+# TODO: Explain why utf_view always uses utf_iterator, even in utfN -> utfN cases.
 
 The `ostream` and `wostream` stream operators transcode the `utf_view` to
 UTF-8 and UTF-16 respectively (if transcoding is needed), and the `wostream`
