@@ -246,20 +246,20 @@ namespace std::uc {
 
   template<class T>
     concept utf8_input_range_like =
-        (ranges::input_range<remove_reference_t<T>> && utf8_code_unit<iter_value_t<T>>) ||
-        utf8_pointer<remove_reference_t<T>>;
+      (ranges::input_range<remove_reference_t<T>> && utf8_code_unit<iter_value_t<T>>) ||
+      utf8_pointer<remove_reference_t<T>>;
   template<class T>
     concept utf16_input_range_like =
-        (ranges::input_range<remove_reference_t<T>> && utf16_code_unit<iter_value_t<T>>) ||
-        utf16_pointer<remove_reference_t<T>>;
+      (ranges::input_range<remove_reference_t<T>> && utf16_code_unit<iter_value_t<T>>) ||
+      utf16_pointer<remove_reference_t<T>>;
   template<class T>
     concept utf32_input_range_like =
-        (ranges::input_range<remove_reference_t<T>> && utf32_code_unit<iter_value_t<T>>) ||
-        utf32_pointer<remove_reference_t<T>>;
+      (ranges::input_range<remove_reference_t<T>> && utf32_code_unit<iter_value_t<T>>) ||
+      utf32_pointer<remove_reference_t<T>>;
 
   template<class T>
     concept utf_input_range_like =
-        utf8_input_range_like<T> || utf16_input_range_like<T> || utf32_input_range_like<T>;
+      utf8_input_range_like<T> || utf16_input_range_like<T> || utf32_input_range_like<T>;
 
   template<class T>
     concept transcoding_error_handler =
