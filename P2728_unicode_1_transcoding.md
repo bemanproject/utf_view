@@ -881,70 +881,119 @@ The `ostream` and `wostream` stream operators transcode the `utf_view` to
 UTF-8 and UTF-16 respectively (if transcoding is needed), and the `wostream`
 overload is only defined on Windows.
 
-Each `as_utfN` view adaptor adapts a `utf_range_like` (meaning an range or a
-null-terminated pointer), and returns a `utfN_view` that may do transcoding
-(if the inputs are not UTF-N) or validation (if the inputs are UTF-N).
-
-Here is some pseudo-wording for `as_utfN` that hopefully clarifies.
-
-Let `E` be an expression, and let `T` be `remove_cvref_t<decltype((E))>`.  The
-expression `as_utfN(E)` is expression-equivalent to:
-
-- If `T` is a specialization of `empty_view` ([range.empty.view]), then `decay-copy(E)`.
-
-- Otherwise, if `is_pointer_v<T>` is `true`, and `T` models
-  `code_unit_iter<format::utfN>`, then `ranges::subrange(E, uc::null_sentinel)`.
-
-- Otherwise, if `ranges::iterator_t<T>` models `code_unit_iter<format::utfN>`,
-  then `decay-copy(E)`.
-
-- Otherwise, `utf_view<format::utfN, T>(E)`.
-
-Examples:
+More examples:
 
 ```c++
 static_assert(std::is_same_v<
-    decltype(std::views::all(u8"text") | std::uc::as_utf16),
-    std::uc::utf_view<std::uc::format::utf16, std::ranges::ref_view<const char8_t [5]>>>);
+              decltype(u8"text" | std::uc::as_utf16),
+              std::uc::utf16_view<std::ranges::subrange<const char8_t*, const char8_t*>>>);
 
 std::u8string str = u8"text";
 
 static_assert(std::is_same_v<
-    decltype(std::views::all(str) | std::uc::as_utf16),
-    std::uc::utf_view<std::uc::format::utf16, std::ranges::ref_view<std::u8string>>>);
+              decltype(str | std::uc::as_utf16),
+              std::uc::utf16_view<std::ranges::subrange<std::u8string::iterator>>>);
 
 static_assert(std::is_same_v<
-    decltype(str.c_str() | std::uc::as_utf16),
-    std::uc::utf_view<std::uc::format::utf16, const char8_t *>>);
+              decltype(str.c_str() | std::uc::as_utf16),
+              std::uc::utf16_view<std::ranges::subrange<const char8_t *, std::uc::null_sentinel_t>>>);
 
 static_assert(std::is_same_v<
-    decltype(std::ranges::empty_view<int>{} | std::uc::as_utf16),
-    std::ranges::empty_view<int>>);
+              decltype(std::ranges::empty_view<int>{} | std::uc::as_utf16),
+              std::ranges::empty_view<int>>);
 
 std::u16string str2 = u"text";
 
 static_assert(std::is_same_v<
-    decltype(std::views::all(str2) | std::uc::as_utf16),
-    std::ranges::ref_view<std::u16string>>);
+              decltype(str2 | std::uc::as_utf16),
+              std::uc::utf16_view<std::ranges::subrange<std::u16string::iterator>>>);
 
 static_assert(std::is_same_v<
-    decltype(str2.c_str() | std::uc::as_utf16),
-    std::ranges::subrange<const char16_t *, std::uc::null_sentinel_t>>);
+              decltype(str2.c_str() | std::uc::as_utf16),
+              std::uc::utf16_view<std::ranges::subrange<const char16_t *, std::uc::null_sentinel_t>>>);
 ```
 
 ### Add `utf_view` specialization of `formatter`
 
 These should be added to the list of "the debug-enabled string type
-specializations" in [format.formatter.spec].  This allows `utf_view` to be
-used in `std::format()` and `std::print()`.  The intention is that the
-formatter will transcode to UTF-8 if the formatter's `charT` is `char`, or to
-UTF-16 if the formatter's `charT` is `wchar_t` -- if transcoding is necessary
-at all.
+specializations" in [format.formatter.spec].  This allows `utf_view` and
+`utfN_view` to be used in `std::format()` and `std::print()`.  The intention
+is that the formatter will transcode to UTF-8 if the formatter's `charT` is
+`char`, or to UTF-16 or UTF-32 (which one is implementation defined) if the
+formatter's `charT` is `wchar_t` -- if transcoding is necessary at all.
 
 ```cpp
-template<uc::format Format, class V>
-  struct formatter<uc::utf_view<Format, V>, charT>;
+namespace std {
+  template<uc::format Format, class V, class CharT>
+  struct formatter<uc::utf_view<Format, V>, CharT> {
+  private:
+    formatter<basic_string<charT>, charT> @*underlying_*@;                // @*exposition only*@
+
+  public:
+    template<class ParseContext>
+      constexpr typename ParseContext::iterator
+        parse(ParseContext& ctx);
+
+    template<class FormatContext>
+      typename FormatContext::iterator
+        format(const uc::utf_view<Format, V>& view, FormatContext& ctx) const;
+
+    constexpr void set_debug_format() noexcept;
+  };
+
+  template<class V, class CharT>
+  struct formatter<uc::utf8_view<V>, CharT> : formatter<uc::utf_view<uc::format::utf8, V>, CharT> {
+    template<class FormatContext>
+    auto format(const uc::utf8_view<V>& view, FormatContext& ctx) const {
+      return formatter<uc::utf_view<uc::format::utf8, V>,CharT>::format(view, ctx);
+    }
+  };
+
+  template<class V, class CharT>
+  struct formatter<uc::utf16_view<V>, CharT> : formatter<uc::utf_view<uc::format::utf16, V>, CharT> {
+    template<class FormatContext>
+    auto format(const uc::utf16_view<V>& view, FormatContext& ctx) const {
+      return formatter<uc::utf_view<uc::format::utf16, V>,CharT>::format(view, ctx);
+    }
+  };
+
+  template<class V, class CharT>
+  struct formatter<uc::utf32_view<V>, CharT> : formatter<uc::utf_view<uc::format::utf32, V>, CharT> {
+    template<class FormatContext>
+    auto format(const uc::utf32_view<V>& view, FormatContext& ctx) const {
+      return formatter<uc::utf_view<uc::format::utf32, V>,CharT>::format(view, ctx);
+    }
+  };
+}
 ```
+
+```c++
+template<class ParseContext>
+  constexpr typename ParseContext::iterator
+    parse(ParseContext& ctx);
+```
+
+Effects: Equivalent to:
+```c++
+return @*underlying_*@.parse(ctx);
+```
+
+Returns: An iterator past the end of the range-format-spec.
+
+```c++
+template<class FormatContext>
+  typename FormatContext::iterator
+    format(const uc::utf_view<Format, V>& view, FormatContext& ctx) const;
+```
+
+Effects: Equivalent to:
+```c++
+auto adaptor = @*see below*@;
+return @*underlying_*@.format(basic_string<charT>(from_range, view | adaptor, ctx);
+```
+
+`adaptor` is `uc::as_utf8` if `charT` is `char`.  Otherwise, it is
+implementation defined whether `adaptor` is `uc::as_utf16` or `uc::as_utf32`.
 
 ### Add `unpack_iterator_and_sentinel` CPO for iterator "unpacking"
 
