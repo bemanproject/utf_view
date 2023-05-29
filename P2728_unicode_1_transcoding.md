@@ -75,10 +75,6 @@ requirements that I think are important; I hope you'll agree:
 - Iterators are the present.  We should support generic programming, whether
   it is done in terms of pointers, a particular iterator, or an iterator type
   specified as a template parameter.
-- Transcoding cannot be a black box; sometimes you need to be able to find
-  where there is a break in the encoding, or to detect whether a sequence has
-  any broken encodings in it.  We should provide utility functions that let
-  users investigate these states.
 - A null-terminated string should not be treated as a special case.  The
   ubiquity of such strings means that they should be treated as first-class
   strings.
@@ -159,51 +155,7 @@ auto const utf16_view = std::views::all(input) | std::uc::as_utf16;
 process_input(utf16_view.begin(), utf16.end());
 ```
 
-## Case 3:  Transcode data as it is read into a buffer
-
-Let's say we have a wire-communications layer that knows nothing about the
-UTFs, and we need to use some of the utility functions to make sure we don’t
-process partially-received UTF-8 sequences.
-
-```c++
-// Using same size to ensure the transcode operation always has room.
-char utf8_buf[buf_size];
-char utf16_buf[buf_size];
-
-char * read_first = utf8_buf;
-while (true) {
-    // Reads off a wire; may contain partial UTF-8 sequences at the ends of
-    // some reads.
-    char * buf_last = read_into_utf8_buffer(read_first, utf8_buf + buf_size);
-
-    if (buf_last == read_first)
-        continue;
-
-    // find the last whole UTF-8 sequence, so we don't feed partial sequences
-    // to the algorithm below.
-    char * last = buf_last;
-    auto const last_lead = std::ranges::find_last_if(
-        utf8_buf, buf_last, std::uc::is_lead_code_unit);
-    if (!last_lead.empty()) {
-        auto const dist_from_end = buf_last - last_lead.begin();
-        assert(dist_from_end <= 4);
-        if (std::uc::utf8_code_units(*last_lead.begin()) != dist_from_end)
-            last = last_lead.begin();
-    }
-
-    auto const result = std::ranges::copy(
-        std::ranges::subrange(utf8_buf, last) | std::uc::as_utf16,
-        utf16_buf);
-
-    // Do something with the resulting UTF-16 buffer contents.
-    send_utf16_somewhere(utf16_buf, result.out);
-
-    // Copy partial UTF-8 sequence to start of buffer.
-    read_first = std::ranges::copy_backward(last, buf_last, utf8_buf).out;
-}
-```
-
-## Case 4: Print the results of transcoding
+## Case 3: Print the results of transcoding
 
 Text processing is pretty useless without I/O.  All of the Unicode algorithms
 operate on code points, and so the output of any of those algorithms will be
@@ -351,84 +303,6 @@ Instead of making people writing generic code have to special-case the use of
 
 Note that this is a general-interest utility, and as such, it is in `std`, not
 `std::uc`.
-
-## Add constants and utility functions that query the state of UTF sequences (well-formedness, etc.)
-
-```cpp
-namespace std::uc {
-  inline constexpr char32_t replacement_character = 0xfffd;
-
-  // Given the first (and possibly only) code unit of a UTF-8-encoded code
-  // point, returns the number of bytes occupied by that code point (in the
-  // range [1, 4]).  Returns a value < 0 if first_unit is not a valid
-  // initial UTF-8 code unit.
-  constexpr int utf8_code_units(char8_t first_unit) noexcept;
-
-  // Returns true iff c is a UTF-8 continuation (non-lead) code unit.
-  constexpr bool is_continuation(char8_t c) noexcept;
-
-  // Given the first (and possibly only) code unit of a UTF-16-encoded code
-  // point, returns the number of code units occupied by that code point
-  // (in the range [1, 2]).  Returns a value < 0 if first_unit is
-  // not a valid initial UTF-16 code unit.
-  constexpr int utf16_code_units(char16_t first_unit) noexcept;
-
-  // Returns true iff c is a Unicode low (non-lead) surrogate.
-  constexpr bool is_low_surrogate(char32_t c) noexcept;
-
-  // Returns the first code unit in [ranges::begin(r), ranges::end(r)) that
-  // is not properly UTF-8 encoded, or ranges::begin(r) + ranges::distance(r) if
-  // no such code unit is found.
-  template<utf8_range R>
-    requires ranges::forward_range<R>
-      constexpr ranges::borrowed_iterator_t<R> find_invalid_encoding(R && r) noexcept;
-
-  // Returns the first code unit in [ranges::begin(r), ranges::end(r)) that
-  // is not properly UTF-16 encoded, or ranges::begin(r) + ranges::distance(r) if
-  // no such code unit is found.
-  template<utf16_range R>
-    requires ranges::forward_range<R>
-      constexpr ranges::borrowed_iterator_t<R> find_invalid_encoding(R && r) noexcept;
-
-  // Returns true iff r is empty or the initial UTF-8 code units in r form a valid
-  // Unicode code point.
-  template<utf8_range R>
-    requires ranges::forward_range<R>
-      constexpr bool starts_encoded(R && r) noexcept;
-
-  // Returns true iff r is empty or the initial UTF-16 code units in r form a valid
-  // Unicode code point.
-  template<utf16_range R>
-    requires ranges::forward_range<R>
-      constexpr bool starts_encoded(R && r) noexcept;
-
-  // Returns true iff r is empty or the final UTF-8 code units in r form a valid
-  // Unicode code point.
-  template<utf8_range R>
-    requires ranges::bidirectional_range<R> && ranges::common_range<R>
-      constexpr bool ends_encoded(R && r) noexcept;
-
-  // Returns true iff r is empty or the final UTF-16 code units in r form a valid
-  // Unicode code point.
-  template<utf16_range R>
-    requires ranges::bidirectional_range<R> && ranges::common_range<R>
-      constexpr bool ends_encoded(R && r) noexcept;
-}
-```
-
-These utility functions are useful for finding encoding breakages in UTF
-ranges.
-
-`utf8_code_units` can be used to determine whether a UTF-8 code unit is an
-initial code unit within a code point sequence, and if so, how many
-continuation code units are to follow.  `is_continuation` can then be used to
-verify that the N expected code units in the code point sequence are actually
-continuationm code units.  This sort of inquiry is useful in cases like Case 3
-example near the top of the paper.  `utf16_code_units` and `is_low_surrogate`
-form a similar pair for UTF-16.
-
-The other functions can be used to check if a given range is properly UTF-8 or
--16 encoded, either entirely, or at the beginning or end or the range.
 
 ## Add the transcoding iterator template
 
