@@ -847,31 +847,35 @@ amd `utf32_view`.
 The names `as_utf8`, `as_utf16`, and `as_utf32` denote range adaptor objects
 ([range.adaptor.object]).  `as_utf8` produces `utf8_view`s, `as_utf16`
 produces `utf16_view`s, and `as_utf32` produces `utf32_view`s.  Let `as_utfN`
-denote any one of `as_utf8`, `as_utf16`, and `as_utf32`, and let `v` denote
+denote any one of `as_utf8`, `as_utf16`, and `as_utf32`, and let `V` denote
 the `utfN_view` associated with that object.  Let `E` be an expression and let
 `T` be `remove_cvref_t<decltype((E))>`.  If `decltype((E))` does not model
 `utf_range_like`, `as_utfN(E)` is ill-formed.  The expression `as_utfN(E)` is
 expression-equivalent to:
 
-If `T` is a specialization of `empty_view` ([range.empty.view]), then
-`@*decay-copy*@(E)`.
+- If `T` is a specialization of `empty_view` ([range.empty.view]), then
+  `@*decay-copy*@(E)`.
 
-Otherwise, if `is_pointer_v<T>` is `true`, then `utfN_view(ranges::subrange(E,
-null_sentinel))`.
+- Otherwise, if `is_pointer_v<T>` is `true`, then
+  `V(ranges::subrange(E, null_sentinel))`.
 
-Otherwise, `utfN_view(@*unpack-range*@(E))`.
+- Otherwise, `V(@*unpack-range*@(E))`.
 
-[Example 1:
+\[Example 1:
+```c++
 std::u32string s = U"Unicode";
 for (char8_t c : s | as_utf8)
   cout << (char)c << ' '; // prints U n i c o d e 
-— end example]
+```
+— end example\]
 
-[Example 2:
+\[Example 2:
+```c++
 auto * s = L"is weird.";
 for (char8_t c : s | as_utf8)
   cout << (char)c << ' '; // prints i s   w e i r d . 
-— end example]
+```
+— end example\]
 
 The `ostream` and `wostream` stream operators transcode the `utf_view` to
 UTF-8 and UTF-16 respectively (if transcoding is needed), and the `wostream`
