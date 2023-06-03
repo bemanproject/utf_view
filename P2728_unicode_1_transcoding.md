@@ -1094,6 +1094,29 @@ The `ostream` and `wostream` stream operators transcode the `utf_view` to
 UTF-8 and UTF-16 respectively (if transcoding is needed), and the `wostream`
 overload is only defined on Windows.
 
+### Why there are three `utfN_view`s views plus `utf_view`
+
+The views in `std::ranges` are constrained to accept only `std::ranges::view`
+template parameters.  However, they accept `std::ranges::viewable_range`s in
+practice, because they each have a deduction guide that likes like this:
+
+```c++
+template<class R>
+utf8_view(R &&) -> utf8_view<views::all_t<R>>;
+```
+
+It's not possible to make this work for `utf_view`, since to use it you must
+supply a `format` NTTP.  So, we need the `utfN_view`s.  It might be possible
+to make `utf_view` an exposition-only implementation detail, but I think some
+users might find use for it, especially in generic contexts.  For instance:
+
+```c++
+template<std::uc::format F, typename V>
+auto f(std::uc::utf_view<F, V> const & view) {
+    // Use F, V, and view here....
+}
+```
+
 ### `unpacked_owning_view`
 
 To see why `unpacked_owning_view` is needed, consider:
