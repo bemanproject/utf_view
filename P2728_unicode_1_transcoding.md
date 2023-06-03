@@ -312,8 +312,7 @@ Instead of making people writing generic code have to special-case the use of
 ```c++
 template<typename UTF8To32Iter1, typename UTF8To32Iter2>
 auto f(UTF8To32Iter1 first, UTF8To32Iter2 last) {
-  if constexpr (
-      std::same_as<UTF8To32Iter1, UTF8To32Iter2>) {
+  if constexpr (std::same_as<UTF8To32Iter1, UTF8To32Iter2>) {
     auto utf8_first = first.base();
     auto utf8_last = last;
     return /* use utf8_{first,last} ... */;
@@ -866,18 +865,69 @@ proposed right now.
 namespace std::uc {
   template<typename T>
   constexpr format @*format-of*@() {              // @*exposition only*@
-    if constexpr (same_as<T, char8_t>) {
-      return format::utf8;
-    } else if constexpr (same_as<T, char16_t>) {
-      return format::utf16;
-    } else {
-      return format::utf8;
-    }
+    constexpr uint32_t size = sizeof(T);
+    static_assert(is_integral<T>::value, "");
+    static_assert(size == 1 || size == 2 || size == 4, "");
+    constexpr format formats[] = {
+      format::utf8,
+      format::utf8,
+      format::utf16,
+      format::utf32,
+      format::utf32};
+    return formats[size];
   }
 
-  template<format Format, ranges::view V>
+  template<class T>
+    constexpr bool @*is-unpacked-owning-view*@ = false;
+  template<class R, class V>
+    constexpr bool @*is-unpacked-owning-view*@<unpacked_owning_view<R, V>> = true;
+
+  template<ranges::range R, ranges::view V>
+    requires movable<R> && (!@*is-initializer-list*@<R>)
+  class unpacked_owning_view : public ranges::view_interface<unpacked_owning_view<R, V>> {
+    R r_ = R();
+    V v_ = V();
+
+  public:
+    constexpr unpacked_owning_view() requires default_initializable<R> && default_initializable<V> = default;
+    constexpr unpacked_owning_view(R&& r, V v) : r_(std::move(r)), v_(std::move(v)) {}
+
+    constexpr R& base() & noexcept { return r_; }
+    constexpr const R& base() const & noexcept { return r_; }
+    constexpr R&& base() && noexcept { return std::move(r_); }
+    constexpr const R&& base() const && noexcept { return std::move(r_); }
+
+    constexpr V code_units() const noexcept { return v_; }
+
+    constexpr auto begin() const { return ranges::begin(r_); }
+    constexpr auto end() const { return ranges::end(r_); }
+  };
+
+  template<format Format, utf_range V>
+    requires ranges::view<V>
   class utf_view : public ranges::view_interface<utf_view<Format, V>> {
-    V base_ = V();                                // @*exposition only*@
+    V base_ = V();                                          // @*exposition only*@
+
+    template<format FromFormat, class I, class S>
+      static constexpr auto make_begin(I first, S last) {   // @*exposition only*@
+        if constexpr (bidirectional_iterator<I>) {
+          return utf_iterator<FromFormat, Format, I, S>{
+            first, first, last};
+        } else {
+          return utf_iterator<FromFormat, Format, I, S>{first, last};
+        }
+      }
+    template<format FromFormat, class I, class S>
+      static constexpr auto make_end(I first, S last) {     // @*exposition only*@
+        if constexpr (!same_as<I, S>) {
+          return last;
+        } else if constexpr (bidirectional_iterator<I>) {
+          return utf_iterator<FromFormat, Format, I, S>{
+            first, last, last};
+        } else {
+          return utf_iterator<FromFormat, Format, I, S>{last, last};
+        }
+      }
 
   public:
     constexpr utf_view() requires default_initializable<V> = default;
@@ -886,57 +936,40 @@ namespace std::uc {
     constexpr V base() const & requires copy_constructible<V> { return base_; }
     constexpr V base() && { return std::move(base_); }
 
+    constexpr auto code_units() const noexcept
+      requires copy_constructible<V> || @*is-unpacked-owning-view*@<V> {
+      if constexpr (@*is-unpacked-owning-view*@<V>) {
+        return base_.code_units();
+      } else {
+        return base_;
+      }
+    }
+
     constexpr auto begin() const {
       constexpr format from_format = @*format-of*@<ranges::range_value_t<V>>();
-      if constexpr (ranges::bidirectional_range<V>) {
-        return utf_iterator<from_format, Format, ranges::iterator_t<V>, ranges::sentinel_t<V>>{
-          ranges::begin(base_),
-          ranges::begin(base_),
-          ranges::end(base_)};
+      if constexpr (@*is-unpacked-owning-view*@<V>) {
+        return make_begin<from_format>(
+          ranges::begin(base_.code_units()),
+          ranges::end(base_.code_units()));
       } else {
-        return utf_iterator<from_format, Format, ranges::iterator_t<V>, ranges::sentinel_t<V>>{
-          ranges::begin(base_), ranges::end(base_)};
+        return make_begin<from_format>(
+          ranges::begin(base_), ranges::end(base_));
       }
     }
     constexpr auto end() const {
       constexpr format from_format = @*format-of*@<ranges::range_value_t<V>>();
-      if constexpr (!ranges::common_range<V>) {
-        return ranges::end(base_);
-      } else if constexpr (ranges::bidirectional_range<V>) {
-        return utf_iterator<from_format, Format, ranges::iterator_t<V>, ranges::sentinel_t<V>>{
-          ranges::begin(base_),
-          ranges::end(base_),
-          ranges::end(base_)};
+      if constexpr (@*is-unpacked-owning-view*@<V>) {
+        return make_end<from_format>(
+          ranges::begin(base_.code_units()),
+          ranges::end(base_.code_units()));
       } else {
-        return utf_iterator<from_format, Format, ranges::iterator_t<V>, ranges::sentinel_t<V>>{
-          ranges::end(base_), ranges::end(base_)};
+        return make_end<from_format>(
+          ranges::begin(base_), ranges::end(base_));
       }
     }
 
-    friend ostream & operator<<(ostream & os, utf_view v) {
-      if constexpr (Format == format::utf8) {
-        auto out = ostreambuf_iterator<char>(os);
-        for (auto it = v.begin(); it != v.end(); ++it, ++out) {
-          *out = *it;
-        }
-      } else {
-        boost::text::transcode_to_utf8(
-          v.begin(), v.end(), ostreambuf_iterator<char>(os));
-      }
-      return os;
-    }
-    friend wostream & operator<<(wostream & os, utf_view v) {
-      if constexpr (Format == format::utf16) {
-        auto out = ostreambuf_iterator<wchar_t>(os);
-        for (auto it = v.begin(); it != v.end(); ++it, ++out) {
-          *out = *it;
-        }
-      } else {
-        boost::text::transcode_to_utf16(
-          v.begin(), v.end(), ostreambuf_iterator<wchar_t>(os));
-      }
-      return os;
-    }
+    friend ostream & operator<<(ostream & os, utf_view v);
+    friend wostream & operator<<(wostream & os, utf_view v);
   };
 
   template<utf_range V>
@@ -982,7 +1015,7 @@ namespace std::ranges {
 
 namspace std::uc {
   template<class R>
-    constexpr decltype(auto) @*unpack-range*@(R && r) {                     // @*exposition only*@
+    constexpr decltype(auto) unpack_range(R && r) {
       using T = remove_cvref_t<R>;
       if constexpr (ranges::forward_range<T>) {
         auto unpacked = uc::unpack_iterator_and_sentinel(ranges::begin(r), ranges::end(r));
@@ -991,7 +1024,14 @@ namspace std::uc {
           if (n && !r[n - 1])
             --unpacked.last;
         }
-        return ranges::subrange(unpacked.first, unpacked.last);
+        if constexpr (ranges::borrowed_range<T> || is_lvalue_reference_v<R>) {
+          return ranges::subrange(unpacked.first, unpacked.last);
+        } else if constexpr (!same_as<decltype(unpacked.first), ranges::iterator_t<T>> ||
+                             !same_as<decltype(unpacked.last), ranges::sentinel_t<T>>) {
+          return unpacked_owning_view(std::move(r), ranges::subrange(unpacked.first, unpacked.last));
+        } else {
+          return forward<R>(r);
+        }
       } else {
         return forward<R>(r);
       }
@@ -1002,6 +1042,10 @@ namspace std::uc {
   inline constexpr @*unspecified*@ as_utf32;
 }
 ```
+
+`unpacked_owning_view` is comprised of an owned range of type `R` and an
+associated view `V` that results from unpacking `R` using
+`unpack_iterator_and_sentinel`.
 
 `utf_view` produces a view in UTF format `Format` of the elements from another
 UTF view.  `utf8_view` produces a UTF-8 view of the elements from another UTF
@@ -1015,12 +1059,15 @@ The names `as_utf8`, `as_utf16`, and `as_utf32` denote range adaptor objects
 produces `utf16_view`s, and `as_utf32` produces `utf32_view`s.  Let `as_utfN`
 denote any one of `as_utf8`, `as_utf16`, and `as_utf32`, and let `V` denote
 the `utfN_view` associated with that object.  Let `E` be an expression and let
-`T` be `remove_cvref_t<decltype((E))>`.  If `decltype((E))` does not model
+`T` be `remove_cvref_t<decltype((E))>`.  Let `F` be the `format` enumerator
+associated with `as_utfN`.  If `decltype((E))` does not model
 `utf_range_like`, `as_utfN(E)` is ill-formed.  The expression `as_utfN(E)` is
 expression-equivalent to:
 
 - If `T` is a specialization of `empty_view` ([range.empty.view]), then
-  `@*decay-copy*@(E)`.
+  `empty_view<@*format-to-type-t*@<F>()>{}`.
+
+- Otherwise, if `T` is a specialization of `utfN_view`, then `V(E.base())`.
 
 - Otherwise, if `is_pointer_v<T>` is `true`, then
   `V(ranges::subrange(E, null_sentinel))`.
@@ -1047,36 +1094,96 @@ The `ostream` and `wostream` stream operators transcode the `utf_view` to
 UTF-8 and UTF-16 respectively (if transcoding is needed), and the `wostream`
 overload is only defined on Windows.
 
+### `unpacked_owning_view`
+
+To see why `unpacked_owning_view` is needed, consider:
+
+```c++
+struct my_text_type
+{
+    my_text_type() = default;
+    my_text_type(std::u8string utf8) : utf8_(std::move(utf8)) {}
+
+    auto begin() const { return utf_8_to_32_iterator(utf8_.begin(), utf8_.begin(), utf8_.end()); }
+    auto end() const { return utf_8_to_32_iterator(utf8_.begin(), utf8_.end(), utf8_.end()); }
+
+private:
+    std::u8string utf8_;
+};
+
+void f() {
+    auto view = my_text_type(u8"text") | std::uc::as_utf16;
+}
+```
+
+This type `my_text_type` is a bit odd.  We cannot just unpack a `my_text_type`
+rvalue and store the resulting unpacked range in a `utf_view`, because that
+would create a view with dangling iterators.  We also cannot just store the
+not-unpacked `my_text_type` either, because its iterator type is then not
+unpacked, and `utf_view::begin()` would not work as written above.
+
+We could just store `utf_view::base_` as it is given to us (that is, as a
+`decltype(r)` when the uers writes `r | as_utfN`), then unpack it and form a
+`utf_iterator` in each of `utf_view::begin()` and `utf_view::end()`.  If we
+did this, we'd have to call `base_.begin()` and `base_.end()` every time we
+called `utf_view::begin()`, *and* every time we called `utf_view::end()`.
+Since views' `begin()` members are allowed to amortized constant time, this
+could add up quick -- usinge such a view `v` in a range-based `for` loop could
+potentially traverse the entire underlying range twice before the loop even
+started, if `v` adapted some filtered range that found no matches for its
+filter!
+
+With `unpacked_owning_view`, the unpacking happens only once, in the adaptor
+-- just like all the other unpacking cases in the adaptor.  For the resulting
+`utf_view` `v`, `v.begin()` and `v.end()` never need to call the underlying
+view's `begin()` or `end()` members.
+
 ### More examples
 
 ```c++
 static_assert(std::is_same_v<
+              decltype(my_text_type(u8"text") | std::uc::as_utf16),
+              std::uc::utf16_view<std::uc::unpacked_owning_view<
+                  my_text_type,
+                  std::ranges::subrange<std::u8string::const_iterator>>>>);
+
+static_assert(std::is_same_v<
               decltype(u8"text" | std::uc::as_utf16),
-              std::uc::utf16_view<std::ranges::subrange<const char8_t*, const char8_t*>>>);
+              std::uc::utf16_view<std::ranges::subrange<const char8_t *>>>);
+
+static_assert(std::is_same_v<
+              decltype(std::u8string(u8"text") | std::uc::as_utf16),
+              std::uc::utf16_view<std::ranges::owning_view<std::u8string>>>);
 
 std::u8string str = u8"text";
 
 static_assert(std::is_same_v<
               decltype(str | std::uc::as_utf16),
-              std::uc::utf16_view<std::ranges::subrange<std::u8string::iterator>>>);
+              std::uc::utf16_view<
+                  std::ranges::subrange<std::u8string::iterator>>>);
 
 static_assert(std::is_same_v<
               decltype(str.c_str() | std::uc::as_utf16),
-              std::uc::utf16_view<std::ranges::subrange<const char8_t *, std::uc::null_sentinel_t>>>);
+              std::uc::utf16_view<std::ranges::subrange<
+                  const char8_t *,
+                  std::uc::null_sentinel_t>>>);
 
 static_assert(std::is_same_v<
               decltype(std::ranges::empty_view<int>{} | std::uc::as_utf16),
-              std::ranges::empty_view<int>>);
+              std::ranges::empty_view<char16_t>>);
 
 std::u16string str2 = u"text";
 
 static_assert(std::is_same_v<
               decltype(str2 | std::uc::as_utf16),
-              std::uc::utf16_view<std::ranges::subrange<std::u16string::iterator>>>);
+              std::uc::utf16_view<
+                  std::ranges::subrange<std::u16string::iterator>>>);
 
 static_assert(std::is_same_v<
               decltype(str2.c_str() | std::uc::as_utf16),
-              std::uc::utf16_view<std::ranges::subrange<const char16_t *, std::uc::null_sentinel_t>>>);
+              std::uc::utf16_view<std::ranges::subrange<
+                  const char16_t *,
+                  std::uc::null_sentinel_t>>>);
 ```
 
 ### Why `utf_view` always uses `utf_iterator`, even in UTF-N to UTF-N cases
