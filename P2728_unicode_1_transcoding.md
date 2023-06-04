@@ -878,26 +878,28 @@ namespace std::uc {
   }
 
   template<class T>
-    constexpr bool @*is-unpacked-owning-view*@ = false;
+    constexpr bool @*is-unpacking-owning-view*@ = false;
   template<class R, class V>
-    constexpr bool @*is-unpacked-owning-view*@<unpacked_owning_view<R, V>> = true;
+    constexpr bool @*is-unpacking-owning-view*@<unpacking_owning_view<R>> = true;
 
-  template<ranges::range R, ranges::view V>
+  template<ranges::range R>
     requires movable<R> && (!@*is-initializer-list*@<R>)
-  class unpacked_owning_view : public ranges::view_interface<unpacked_owning_view<R, V>> {
+  class unpacking_owning_view : public ranges::view_interface<unpacking_owning_view<R>> {
     R r_ = R();
-    V v_ = V();
 
   public:
-    constexpr unpacked_owning_view() requires default_initializable<R> && default_initializable<V> = default;
-    constexpr unpacked_owning_view(R&& r, V v) : r_(std::move(r)), v_(std::move(v)) {}
+    constexpr unpacking_owning_view() requires default_initializable<R> = default;
+    constexpr unpacking_owning_view(R&& r) : r_(std::move(r)) {}
 
     constexpr R& base() & noexcept { return r_; }
     constexpr const R& base() const & noexcept { return r_; }
     constexpr R&& base() && noexcept { return std::move(r_); }
     constexpr const R&& base() const && noexcept { return std::move(r_); }
 
-    constexpr V code_units() const noexcept { return v_; }
+    constexpr auto code_units() const noexcept {
+      auto unpacked = uc::unpack_iterator_and_sentinel(ranges::begin(r_), ranges::end(r_));
+      return ranges::subrange(unpacked.first, unpacked.last);
+    }
 
     constexpr auto begin() const { return ranges::begin(r_); }
     constexpr auto end() const { return ranges::end(r_); }
@@ -937,8 +939,8 @@ namespace std::uc {
     constexpr V base() && { return std::move(base_); }
 
     constexpr auto code_units() const noexcept
-      requires copy_constructible<V> || @*is-unpacked-owning-view*@<V> {
-      if constexpr (@*is-unpacked-owning-view*@<V>) {
+      requires copy_constructible<V> || @*is-unpacking-owning-view*@<V> {
+      if constexpr (@*is-unpacking-owning-view*@<V>) {
         return base_.code_units();
       } else {
         return base_;
@@ -947,7 +949,7 @@ namespace std::uc {
 
     constexpr auto begin() const {
       constexpr format from_format = @*format-of*@<ranges::range_value_t<V>>();
-      if constexpr (@*is-unpacked-owning-view*@<V>) {
+      if constexpr (@*is-unpacking-owning-view*@<V>) {
         return make_begin<from_format>(
           ranges::begin(base_.code_units()),
           ranges::end(base_.code_units()));
@@ -958,7 +960,7 @@ namespace std::uc {
     }
     constexpr auto end() const {
       constexpr format from_format = @*format-of*@<ranges::range_value_t<V>>();
-      if constexpr (@*is-unpacked-owning-view*@<V>) {
+      if constexpr (@*is-unpacking-owning-view*@<V>) {
         return make_end<from_format>(
           ranges::begin(base_.code_units()),
           ranges::end(base_.code_units()));
@@ -1028,7 +1030,7 @@ namspace std::uc {
           return ranges::subrange(unpacked.first, unpacked.last);
         } else if constexpr (!same_as<decltype(unpacked.first), ranges::iterator_t<T>> ||
                              !same_as<decltype(unpacked.last), ranges::sentinel_t<T>>) {
-          return unpacked_owning_view(std::move(r), ranges::subrange(unpacked.first, unpacked.last));
+          return unpacking_owning_view(std::move(r));
         } else {
           return forward<R>(r);
         }
@@ -1043,8 +1045,8 @@ namspace std::uc {
 }
 ```
 
-`unpacked_owning_view` is comprised of an owned range of type `R` and an
-associated view `V` that results from unpacking `R` using
+`unpacking_owning_view` comtains an owned range of type `R` and knows how to
+unpack that range into code unit iterators using
 `unpack_iterator_and_sentinel`.
 
 `utf_view` produces a view in UTF format `Format` of the elements from another
@@ -1117,9 +1119,9 @@ auto f(std::uc::utf_view<F, V> const & view) {
 }
 ```
 
-### `unpacked_owning_view`
+### `unpacking_owning_view`
 
-To see why `unpacked_owning_view` is needed, consider:
+To see why `unpacking_owning_view` is needed, consider:
 
 ```c++
 struct my_text_type
@@ -1147,26 +1149,41 @@ unpacked, and `utf_view::begin()` would not work as written above.
 
 We could just store `utf_view::base_` as it is given to us (that is, as a
 `decltype(r)` when the uers writes `r | as_utfN`), then unpack it and form a
-`utf_iterator` in each of `utf_view::begin()` and `utf_view::end()`.  If we
-did this, we'd have to call `base_.begin()` and `base_.end()` every time we
-called `utf_view::begin()`, *and* every time we called `utf_view::end()`.
-Since views' `begin()` members are allowed to amortized constant time, this
-could add up quick -- usinge such a view `v` in a range-based `for` loop could
-potentially traverse the entire underlying range twice before the loop even
-started, if `v` adapted some filtered range that found no matches for its
-filter!
+`utf_iterator` in each of `utf_view::begin()` and `utf_view::end()`.
 
-With `unpacked_owning_view`, the unpacking happens only once, in the adaptor
--- just like all the other unpacking cases in the adaptor.  For the resulting
-`utf_view` `v`, `v.begin()` and `v.end()` never need to call the underlying
-view's `begin()` or `end()` members.
+Of course, we could do just that -- unpack in `utf_view::begin()` and
+`utf_view::end()` before forming a `utf_iterator`.  The unpacking logic
+currently exists in the `as_utfN` adaptors, and moving it into `utf_view`
+seems to be at odds with how the existing standard adaptors work -- the
+adaptors usually contain as much of the adaptation logic as possible, leaving
+the view itself comparatively simple.  It also seems a shame to repeatedly
+unpack in `utf_view::begin()` and `utf_view::end()` when, for the vast
+majority of cases, just unpacking once in the adaptor would suffice.
+(Remember, we only need to make this special case of an rvalue with unpackable
+iterators work, like `my_text_type(u8"text") | std::uc::as_utf16`.)
+
+Another option would be to give `utf_view` and all the `utfN_view`s knowledge
+of the special case, in the form of a `bool` template parameter indicating
+that the adapted view needs to be unpacked.  Adding an NTTP like that to
+`utfN_view` would make it awkward to use outside the context of the `as_utfN`
+adaptors.  For instance:
+
+```c++
+template<typename V>
+void f(std::uc::utf32_view<V, /* ??? */> const & utf32) {
+}
+```
+
+What do we write for the `/* ??? */`, the NTTP that indicates whether `V` is
+already unpacked, or we need to unpack `V` it?  We have to do a nontrivial
+amount of work involving `V` to know what to write there.
 
 ### More examples
 
 ```c++
 static_assert(std::is_same_v<
               decltype(my_text_type(u8"text") | std::uc::as_utf16),
-              std::uc::utf16_view<std::uc::unpacked_owning_view<
+              std::uc::utf16_view<std::uc::unpacking_owning_view<
                   my_text_type,
                   std::ranges::subrange<std::u8string::const_iterator>>>>);
 
