@@ -51,6 +51,10 @@ monofont: "DejaVu Sans Mono"
 
 ## Changes since R3
 
+- Removed the utility functions and Unicode-related constants, except
+  `replacement_character`.
+- Changed the constraint on `utf_iterator` slightly.
+
 # TODO
 
 # Motivation
@@ -497,12 +501,27 @@ namespace std::uc {
     constexpr char32_t operator()(string_view error_msg) const noexcept;
   };
 
+  template<format Format>
+  constexpr auto @*format-to-type*@() {                                   // @*exposition only*@
+    if constexpr (Format == format::utf8) {
+      return char8_t{};
+    } else if constexpr (Format == format::utf16) {
+      return char16_t{};
+    } else {
+      return char32_t{};
+    }
+  }
+
+  template<class I>
+  using @*format-to-type-t*@ = decltype(@*format-to-type*@<I>());             // @*exposition only*@
+
   template<
     format FromFormat,
     format ToFormat,
-    code_unit_iter<FromFormat> I,
+    input_iterator I,
     sentinel_for<I> S = I,
     transcoding_error_handler ErrorHandler = use_replacement_character>
+    requires convertible_to<iter_value_t<I>, @*format-to-type-t*@<FromFormat>>
   class utf_iterator;
 }
 ```
@@ -521,23 +540,9 @@ namespace std::uc {
       return input_iterator_tag{};
     }
   }
-  
+
   template<class I>
   using @*bidirectional-at-most-t*@ = decltype(@*bidirectional-at-most*@<I>()); // @*exposition only*@
-
-  template<format Format>
-  constexpr auto @*format-to-type*@() {           // @*exposition only*@
-    if constexpr (Format == format::utf8) {
-      return char8_t{};
-    } else if constexpr (Format == format::utf16) {
-      return char16_t{};
-    } else {
-      return char32_t{};
-    }
-  }
-
-  template<class I>
-  using @*format-to-type-t*@ = decltype(@*format-to-type*@<I>()); // @*exposition only*@
 
   template<typename I, bool SupportReverse = bidirectional_iterator<I>>
   struct @*first-and-curr*@ {                         // @*exposition only*@
@@ -568,9 +573,10 @@ namespace std::uc {
   template<
     format FromFormat,
     format ToFormat,
-    code_unit_iter<FromFormat> I,
+    input_iterator I,
     sentinel_for<I> S,
     transcoding_error_handler ErrorHandler>
+    requires convertible_to<iter_value_t<I>, @*format-to-type-t*@<FromFormat>>
   class utf_iterator : public iterator_interface<
                          utf_iterator<FromFormat, ToFormat, I, S, ErrorHandler>,
                          @*bidirectional-at-most*@<I>,
@@ -763,6 +769,90 @@ units read while decoding `c`; encodes `c` as `ToFormat` into `buf_`; sets
 `buf_last_` to the number of code units encoded into `buf_`; and sets
 `buf_index_` to `buf_last_ - 1`.  If an exception is thrown during a call to
 `read_reverse`, the call to `read_reverse` has no effect.
+
+### Why `utf_iterator` is constrained the way it is
+
+The template parameter `I` to `utf_iterator` is not cosntrined with
+`code_unit_iter<FromFormat>` as it was in earlier revisions of this paper.
+Instead, `I` must be an `input_iterator` whose value type is convertible to
+`@*format-to-type-t*@<FromFormat>`.  This allows two uses of `utf_iterator`
+that the previous constraint would not.
+
+First, `utf_iterator` can be used to adapt an iterator whose value type is
+some non-character type.  This is useful in general, since lots of existing
+Unicode-aware user code uses `uint32_t` for UTF-32, or `short` for UTF-16 or
+whatever.  It is useful in particular because ICU uses `int` for its
+UTF-32/code point type.
+
+Second, because of the first point, adaptations of ranges of non-charcter
+types can be made more efficient.  Consider:
+
+```c++
+std::vector<int> code_points_from_icu = /* ... */;
+auto v = code_points_from_icu | std::uc::as_char32_t | std::uc::as_utf8;
+auto first = v.begin();
+```
+
+The type of `first` is:
+
+```c++
+std::uc::utf_iterator<std::uc::format::utf8, std::uc::format::utf32, std::vector<int>::iterator>
+```
+
+That is, the adapting iterator that `as_char32_t` is gone.  This makes using
+`as_char32_t` more efficient, when used in conjunction with `as_utfN`.
+
+If `utf_iterator`'s `I` were required to be a `utf_iter`, this optimization
+would not work.
+
+### Why `utf_iterator` is not a nested type in `utf_view`
+
+Most user will use views most of the time.  However, it can be useful to use
+iterators some of the time.  For example, say I wanted to track some
+user-visible cursor within some bit of text.  If I wanted to represent that
+cursor independently from the view within which it is found, it can be awkward
+to do so without an independent iterator template.
+
+```c++
+// This is the easy case.  We have the View right there, and can use
+// ranges::iterator_t to get its iterator type.
+
+template<typename View>
+struct my_state_type
+{
+    View all_text_;
+    std::ranges::iterator_t<View>> current_position_;
+    // other state ...
+};
+
+// This one, not so much.  Since we don't have the View type, we have to make
+// the type of current_position_ a template parameter, even if there's only one
+// type ever in use.
+
+template<typename Iterator>
+struct my_other_state_type
+{
+    Iterator current_position_;
+    // other state ...
+};
+```
+
+Using `utf_iterator` allows us to write more specific code.  Sometimes,
+generic code is more desireable; sometimes nongeneric code is more desireable.
+
+```c++
+struct my_other_state_type
+{
+    std::uc::utf_iterator<format::utf8, format::utf32, char const*> current_position_;
+    // other state ...
+};
+```
+
+Further, `utf_iterator` has configurability options that do not work for
+`utfN_view`, like the `ErrorHandler` template parameter.  This will not be
+used often, but some users will want it sometimes.  I don't think such
+alternate uses are going to be common enough to justify complicating
+`utfN_view`; those uses belong in a lower-level interface like `utf_iterator`.
 
 ### Optional: Add aliases for common `utf_iterator` specializations
 
@@ -1001,20 +1091,27 @@ proposed right now.
 
 ## Add a transcoding view and adaptors
 
+The macro `CODE_UNIT_CONCEPT_OPTION_2` is used below to indicate the two
+options for how to define `@*format-of*@`, based on the definition of
+`code_unit`.
+
 ```cpp
 namespace std::uc {
   template<typename T>
   constexpr format @*format-of*@() {              // @*exposition only*@
-    constexpr uint32_t size = sizeof(T);
-    static_assert(is_integral<T>::value, "");
-    static_assert(size == 1 || size == 2 || size == 4, "");
-    constexpr format formats[] = {
-      format::utf8,
-      format::utf8,
-      format::utf16,
-      format::utf32,
-      format::utf32};
-    return formats[size];
+    if constexpr (same_as<T, char8_t>) {
+      return format::utf8{};
+    } else if constexpr (same_as<T, char16_t>) {
+      return format::utf16{};
+    } else if constexpr (same_as<T, char32_t>) {
+      return format::utf32{};
+#if CODE_UNIT_CONCEPT_OPTION_2
+    } else if constexpr (same_as<T, char>) {
+      return format::utf8{};
+    } else if constexpr (same_as<T, wchar_t>) {
+      return @*wchar-t-format*@;
+#endif
+    }
   }
 
   template<class T>
