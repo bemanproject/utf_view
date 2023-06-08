@@ -1266,16 +1266,16 @@ exception of `empty_view<T>{} | as_utfN`, the following are always true:
 These should be added to the list of "the debug-enabled string type
 specializations" in [format.formatter.spec].  This allows `utf_view` and
 `utfN_view` to be used in `std::format()` and `std::print()`.  The intention
-is that the formatter will transcode to UTF-8 if the formatter's `charT` is
+is that the formatter will transcode to UTF-8 if the formatter's `CharT` is
 `char`, or to UTF-16 or UTF-32 (which one is implementation defined) if the
-formatter's `charT` is `wchar_t` -- if transcoding is necessary at all.
+formatter's `CharT` is `wchar_t` -- if transcoding is necessary at all.
 
 ```cpp
 namespace std {
   template<uc::format Format, class V, class CharT>
   struct formatter<uc::utf_view<Format, V>, CharT> {
   private:
-    formatter<basic_string<charT>, charT> @*underlying_*@;                // @*exposition only*@
+    formatter<basic_string<CharT>, CharT> @*underlying_*@;                // @*exposition only*@
 
   public:
     template<class ParseContext>
@@ -1335,11 +1335,20 @@ template<class FormatContext>
 Effects: Equivalent to:
 ```c++
 auto adaptor = @*see below*@;
-return @*underlying_*@.format(basic_string<charT>(from_range, view | adaptor, ctx);
+return @*underlying_*@.format(basic_string<CharT>(from_range, view | adaptor), ctx);
 ```
 
-`adaptor` is `uc::as_utf8` if `charT` is `char`.  Otherwise, it is
+`adaptor` is `uc::as_utf8` if `CharT` is `char`.  Otherwise, it is
 implementation defined whether `adaptor` is `uc::as_utf16` or `uc::as_utf32`.
+
+```c++
+constexpr void set_debug_format() noexcept;
+```
+
+Effects: Equivalent to:
+```c++
+@*underlying_*@.set_debug_format();
+```
 
 ## Add a feature test macro
 
