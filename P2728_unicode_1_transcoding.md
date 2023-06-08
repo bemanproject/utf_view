@@ -23,7 +23,7 @@ monofont: "DejaVu Sans Mono"
 - Remove each eager algorithm, leaving in its corresponding view.
 - Remove all the output iterators.
 - Change template parameters to `utfN_view` to the types of the from-range,
-  instead of thetypes of the transcoding iterators used to implement the view.
+  instead of the types of the transcoding iterators used to implement the view.
 - Remove all make-functions.
 - Replace the misbegotten `as_utfN()` functions with the `as_utfN` view
   adaptors that should have been there all along.
@@ -83,7 +83,7 @@ requirements that I think are important; I hope you'll agree:
   a convenient way to access the underlying sequence of code units being
   transcoded.
 - Memory safety is important.  Ensuring that the Unicode part of the standard
-  library is as meory safe as possible should be a priority.
+  library is as memory safe as possible should be a priority.
 
 ## A note about P1629
 
@@ -117,7 +117,9 @@ value. Examples are U+0041 "A" "LATIN CAPITAL LETTER A" and U+0308 "¨"
 A code point may be consist of multiple code units.  For instance, 3 UTF-8
 code units in sequence may encode a particular code point.
 
-# Use cases
+# A few examples
+
+# TODO: Add as_charN_t examples.
 
 ## Case 1: Adapt to an existing range interface taking a different UTF
 
@@ -187,13 +189,26 @@ This proposal depends on the existence of
 
 ## Add concepts that describe parameters to transcoding APIs
 
+The macro `CODE_UNIT_CONCEPT_OPTION_2` is used below to indicate the two
+options for how to define `code_unit`.  See below for a description of the two
+options.
+
 ```cpp
 namespace std::uc {
 
   enum class format { utf8 = 1, utf16 = 2, utf32 = 4 };
 
+  inline constexpr format @*wchar-t-format*@ = @*see below*@;       // @*exposition only*@
+
   template<class T, format F>
-    concept code_unit = integral<T> && sizeof(T) == (int)F;
+    concept code_unit = (same_as<T, char8_t> && F == format::utf8) ||
+                        (same_as<T, char16_t> && F == format::utf16) ||
+                        (same_as<T, char32_t> && F == format::utf32)
+#if CODE_UNIT_CONCEPT_OPTION_2
+                        || (same_as<T, char> && F == format::utf8)
+                        || (same_as<T, wchar_t> && F == @*wchar-t-format*@)
+#endif
+        ;
 
   template<class T>
     concept utf8_code_unit = code_unit<T, format::utf8>;
@@ -272,6 +287,127 @@ namespace std::uc {
 
 }
 ```
+
+There are two options for how the `code_unit` concept is defined.
+
+### Code unit option 1
+
+This is represented by `CODE_UNIT_CONCEPT_OPTION_2 == 0` in the code above.
+In this option, a code unit must be one of `char8_t`, `char16_t`, and
+`char32_t`.
+
+### Code unit option 2
+
+This is represented by `CODE_UNIT_CONCEPT_OPTION_2 == 1` in the code above.
+In this option, a code unit must be a character type.  This includes the
+`charN_t` character types from Option 1, plus `char` and `wchar_t`.  The value
+of `@*wchar-t-format*@` is implementation defined, but must be
+`uc::format::utf16` or `uc::format::utf32`.
+
+### The impact of options 1 and 2
+
+Here are some examples of the differences between Options 1 and 2.  Note the
+use of `charN_t` below with `std::wstring`.  That's there because whether you
+write `as_char16_t` or `as_char32_t` is implementation-dependent.
+
+::: tonytable
+
+### Option 1
+```c++
+using namespace std::uc;
+
+auto v1  = u8"text" | as_utf32;  // Ok.
+auto v2  = u"text"  | as_utf8;   // Ok.
+auto v3  = U"text"  | as_utf16;  // Ok.
+
+auto v4  = std::u8string(u8"text") | as_utf32;  // Ok.
+auto v5  = std::u16string(u"text") | as_utf8;   // Ok.
+auto v6  = std::u32string(U"text") | as_utf16;  // Ok.
+
+auto v7  = std::string  | as_utf32; // Error; ill-formed.
+auto v8  = std::wstring | as_utf8;  // Error; ill-formed.
+
+auto v9  = std::string  | as_char8_t | as_utf32; // Ok.
+auto v10 = std::wstring | as_charN_t | as_utf8;  // Ok.
+```
+
+### Option 2
+```c++
+using namespace std::uc;
+
+auto v1  = u8"text" | as_utf32;  // Ok.
+auto v2  = u"text"  | as_utf8;   // Ok.
+auto v3  = U"text"  | as_utf16;  // Ok.
+
+auto v4  = std::u8string(u8"text") | as_utf32;  // Ok.
+auto v5  = std::u16string(u"text") | as_utf8;   // Ok.
+auto v6  = std::u32string(U"text") | as_utf16;  // Ok.
+
+auto v7  = std::string  | as_utf32; // Ok.
+auto v8  = std::wstring | as_utf8;  // Ok.
+
+auto v9  = std::string  | as_char8_t | as_utf32; // Ok.
+auto v10 = std::wstring | as_charN_t | as_utf8;  // Ok.
+```
+
+:::
+
+In short, Option 1 forces you to write "`| as_char8_t`" everywhere you want to
+use a `std::string` with the interfaces proposed in this paper.
+
+Option 1 is supported by most of SG-16.  Here is the relevant SG-16 poll:
+
+*UTF transcoding interfaces provided by the C++ standard library should operate
+on charN_t types, with support for other types provided by adapters, possibly
+with a special case for char and wchar_t when their associated literal
+encodings are UTF.*
+
++----+---+---+---+----+
+| SF | F | N | A | SA |
++====+===+===+===+====+
+| 6  |1  |0  |0  | 1  |
++----+---+---+---+----+
+
+(I have chosen to ignore the "possibly with a special case for char and
+wchar_t when their associated literal encodings are UTF" part.  Making the
+evaluation of a concept change based on the literal encoding seems like a
+flaky move to me; the literal encoding can change TU to TU.)
+
+The feeling in SG-16 is that the `charN_t` types are designed to represent UTF
+encodings, and `char` is not.  A `char const *` string could be in any one of
+dozens (hundreds?) of encodings.  The addition of "`| as_char8_t`" to adapt
+ranges of `char` is meant to act as a lexical indicator of user intent.
+
+I believe this decision is a mistake.  I would very, very much *not* like to
+standardize Unicode interfaces that do not easily interoperate with
+`std::string`.  This is my reasoning:
+
+First, `char` and `char8_t` maintain exactly the same set of invariants -- the
+empty set.  Note that this is true even for string literals.  The encoding of
+`u8"text"` is not necessarily UTF-8!  It depends on the flags you pass to your
+compiler.  Those flags are allowed to vary TU by TU.  I have been bitten by
+the "`u8` does not necessarily mean UTF-8" oddity of MSVC before.
+
+Second, "`| as_char8_t`" is a no-op when used with `utfN_view`/`utf_view`.  It
+does not actually do anything to help you get your program's text into UTF-8
+encoding, nor to detect that you have non-UTF-8 encoded text in your program.
+
+Third, people use `std::string` a lot.  They use `char` string literals a lot.
+They use `std::u8string` and `char8_t` string literals almost not at all.
+Using Github Code Search, I found 15.3M references to `std::string` and 6.7k
+references to `std::u8string`.  Even were everyone to switch from
+`std::string` to `std::u8string` today, we should still have to deal with lots
+and lots of `char const *` strings for C API compatibility.
+
+Finally, whether a given range of code units is properly UTF encoded may be a
+precondition of a given API that the user writes, but it is not a precondition
+of *any* API proposed in this paper, nor is it a precondition of any API I'm
+proposing in the papers that will follow this one.
+
+In short, I think `"text" | std::uc::as_utf32` should "just work".  Making
+users write `"text" | std::uc::as_char8_t | std::uc::as_utf32`, when that does
+not increase correctness or efficiency seems wrongheaded to me.  Users that
+want to can still write the longer version under both options.
 
 ## Add a null-terminated sequence sentinel
 
@@ -559,7 +695,7 @@ namespace std::uc {
 
 `use_replacement_character` is an error handler type that can be used with
 `utf_iterator`.  It accepts a `string_view` error message, and returns the
-replacement character.  The user can subtitute their own type here, which may
+replacement character.  The user can substitute their own type here, which may
 throw, abort, log, etc.
 
 `utf_iterator` is an iterator that transcodes from UTF-N to UTF-M, where N and
@@ -575,7 +711,7 @@ invoking the error handler returns; using the default error handler, this is
 `utf_iterator` maintains certain invariants; the invariants differ based on
 whether `utf_iterator` is an input iterator.
 
-For input iterators the invairants are that either: `*this` is at the end of
+For input iterators the invariants are that either: `*this` is at the end of
 the range being adapted, and `curr()` == `last_`; or the position of `curr()`
 is always at the end of the current code point `c` within the range being
 adapted, and `buf_` contains the code units in `ToFormat` that comprise `c`.
@@ -1015,7 +1151,7 @@ namespace std::ranges {
     inline constexpr bool enable_borrowed_range<uc::utf32_view<V>> = enable_borrowed_range<V>;
 }
 
-namspace std::uc {
+namespace std::uc {
   template<class R>
     constexpr decltype(auto) unpack_range(R && r) {
       using T = remove_cvref_t<R>;
@@ -1045,7 +1181,7 @@ namspace std::uc {
 }
 ```
 
-`unpacking_owning_view` comtains an owned range of type `R` and knows how to
+`unpacking_owning_view` contains an owned range of type `R` and knows how to
 unpack that range into code unit iterators using
 `unpack_iterator_and_sentinel`.
 
@@ -1054,7 +1190,7 @@ UTF view.  `utf8_view` produces a UTF-8 view of the elements from another UTF
 view.  `utf16_view` produces a UTF-16 view of the elements from another UTF
 view.  `utf32_view` produces a UTF-32 view of the elements from another UTF
 view.  Let `utfN_view` denote any one of the views `utf8_view`, `utf16_view`,
-amd `utf32_view`.
+and `utf32_view`.
 
 The names `as_utf8`, `as_utf16`, and `as_utf32` denote range adaptor objects
 ([range.adaptor.object]).  `as_utf8` produces `utf8_view`s, `as_utf16`
@@ -1148,7 +1284,7 @@ not-unpacked `my_text_type` either, because its iterator type is then not
 unpacked, and `utf_view::begin()` would not work as written above.
 
 We could just store `utf_view::base_` as it is given to us (that is, as a
-`decltype(r)` when the uers writes `r | as_utfN`), then unpack it and form a
+`decltype(r)` when the users writes `r | as_utfN`), then unpack it and form a
 `utf_iterator` in each of `utf_view::begin()` and `utf_view::end()`.
 
 Of course, we could do just that -- unpack in `utf_view::begin()` and
