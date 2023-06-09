@@ -128,8 +128,6 @@ code units in sequence may encode a particular code point.
 
 # A few examples
 
-# TODO: Add as_charN_t examples.
-
 ## Case 1: Adapt to an existing range interface taking a different UTF
 
 In this case, we have a generic range interface to transcode into, so we use a
@@ -142,7 +140,7 @@ void process_input(R r);
 void process_input_again(std::uc::utf_view<std::uc::format::utf16, std::ranges::ref_view<std::string>> r);
 
 std::u8string input = get_utf8_input();
-auto input_utf16 = std::views::all(input) | std::uc::as_utf16;
+auto input_utf16 = input | std::uc::as_utf16;
 
 process_input(input_utf16);
 process_input_again(input_utf16);
@@ -171,7 +169,26 @@ auto const utf16_view = input | std::uc::as_utf16;
 process_input(utf16_view.begin(), utf16.end());
 ```
 
-## Case 3: Print the results of transcoding
+## Case 3: Adapt a range of non-character-type values
+
+Let's say that we want to take code points that we got from ICU, and transcode
+them to UTF-8.  The problem is that ICU's code point type is `int`.  Since
+`int` is not a character type, it's not deduced by `as_utf8` to be UTF-32
+data.
+
+```cpp
+// A generic function that accepts sequences of UTF-16.
+template<std::uc::utf8_range R>
+void process_input(R r);
+
+std::vector<int> input = get_icu_code_points();
+// This is ill formed without the as_char32_t adaptation.
+auto input_utf8 = input | std::uc::as_char32_t | std::uc::as_utf8;
+
+process_input(input_utf8);
+```
+
+## Case 4: Print the results of transcoding
 
 Text processing is pretty useless without I/O.  All of the Unicode algorithms
 operate on code points, and so the output of any of those algorithms will be
@@ -1298,21 +1315,21 @@ options for how to define `@*format-of*@`, based on the definition of
 ```cpp
 namespace std::uc {
   template<typename T>
-  constexpr format @*format-of*@() {                                      // @*exposition only*@
-    if constexpr (same_as<T, char8_t>) {
-      return format::utf8{};
-    } else if constexpr (same_as<T, char16_t>) {
-      return format::utf16{};
-    } else if constexpr (same_as<T, char32_t>) {
-      return format::utf32{};
-#if CODE_UNIT_CONCEPT_OPTION_2
-    } else if constexpr (same_as<T, char>) {
-      return format::utf8{};
-    } else if constexpr (same_as<T, wchar_t>) {
-      return @*wchar-t-format*@;
-#endif
+    constexpr format @*format-of*@() {                                    // @*exposition only*@
+      if constexpr (same_as<T, char8_t>) {
+        return format::utf8{};
+      } else if constexpr (same_as<T, char16_t>) {
+        return format::utf16{};
+      } else if constexpr (same_as<T, char32_t>) {
+        return format::utf32{};
+  #if CODE_UNIT_CONCEPT_OPTION_2
+      } else if constexpr (same_as<T, char>) {
+        return format::utf8{};
+      } else if constexpr (same_as<T, wchar_t>) {
+        return @*wchar-t-format*@;
+  #endif
+      }
     }
-  }
 
   template<ranges::range R>
     requires movable<R> && (!@*is-initializer-list*@<R>)
