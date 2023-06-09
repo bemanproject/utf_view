@@ -51,11 +51,12 @@ monofont: "DejaVu Sans Mono"
 
 ## Changes since R3
 
+- Changed the definition of the `code_unit` concept, and added `as_charN_t`
+  adaptors.
 - Removed the utility functions and Unicode-related constants, except
   `replacement_character`.
 - Changed the constraint on `utf_iterator` slightly.
-
-# TODO
+- Change `null_sentinel_t` back to being Unicode-specific.
 
 # Motivation
 
@@ -805,7 +806,7 @@ That is, the adapting iterator that `as_char32_t` is gone.  This makes using
 If `utf_iterator`'s `I` were required to be a `utf_iter`, this optimization
 would not work.
 
-### Why `utf_iterator` is not a nested type in `utf_view`
+### Why `utf_iterator` is not a nested type within `utf_view`
 
 Most user will use views most of the time.  However, it can be useful to use
 iterators some of the time.  For example, say I wanted to track some
@@ -1089,7 +1090,206 @@ This is all weird.  It's also a pretty small use case.  People don't use input
 iterators that often.  Since this can always be added later, it is not being
 proposed right now.
 
-## Add a transcoding view and adaptors
+## Add code unit views and adaptors
+
+```c++
+namespace std::uc {
+  template<class I>
+    constexpr auto @*iterator-to-tag*@() {                                // @*exposition only*@
+      if constexpr (contiguous_iterator<I>) {
+        return contiguous_iterator_tag{};
+      } else if constexpr (random_access_iterator<I>) {
+        return random_access_iterator_tag{};
+      } else if constexpr (bidirectional_iterator<I>) {
+        return bidirectional_iterator_tag{};
+      } else if constexpr (forward_iterator<I>) {
+        return forward_iterator_tag{};
+      } else {
+        return input_iterator_tag{};
+      }
+    }
+
+  template<class I>
+    using @*iterator-to-tag_t*@ = decltype(@*iterator-to-tag*@<I>());         // @*exposition only*@
+
+  template<class I, class T>
+  struct @*charn-projection-iterator*@                                    // @*exposition only*@
+    : proxy_iterator_interface<@*charn-projection-iterator*@<I, T>, @*iterator-to-tag_t*@<I>, T> {
+    constexpr @*charn-projection-iterator*@() = default;
+    constexpr @*charn-projection-iterator*@(I it) : it_(std::move(it)) {}
+
+    constexpr T operator*() const { return T(*it_); }
+
+    friend constexpr bool operator==(@*charn-projection-iterator*@ lhs, null_sentinel_t rhs)
+      requires sentinel_for<null_sentinel_t, I>
+        { return lhs.it_ == rhs; }
+
+  private:
+    friend boost::stl_interfaces::access;
+    I & base_reference() noexcept { return it_; }
+    I base_reference() const noexcept { return it_; }
+
+    I it_;
+  };
+
+  template<ranges::view V>
+    requires convertible_to<ranges::range_value_t<V>, char8_t>
+  class char8_view : public ranges::view_interface<char8_view<V>>
+  {
+    V base_ = V();  // @*exposition only*@
+
+  public:
+    using iterator = @*charn-projection-iterator*@<ranges::iterator_t<const V>, char8_t>;
+
+    constexpr char8_view() requires default_initializable<V> = default;
+    constexpr char8_view(V base) : base_{std::move(base)} {}
+
+    constexpr V & base() & { return base_; }
+    constexpr const V & base() const & { return base_; }
+    constexpr V base() && { return std::move(base_); }
+
+    constexpr auto begin() const { return iterator{ranges::begin(base_)}; }
+    constexpr auto end() const {
+      if constexpr (ranges::common_range<const V>) {
+        return iterator{ranges::end(base_)};
+      } else {
+        return ranges::end(base_);
+      }
+    }
+  };
+
+  template<ranges::view V>
+    requires convertible_to<ranges::range_value_t<V>, char16_t>
+  class char16_view : public ranges::view_interface<char16_view<V>>
+  {
+    V base_ = V();  // @*exposition only*@
+
+  public:
+    using iterator = @*charn-projection-iterator*@<ranges::iterator_t<const V>, char16_t>;
+
+    constexpr char16_view() requires default_initializable<V> = default;
+    constexpr char16_view(V base) : base_{std::move(base)} {}
+
+    constexpr V & base() & { return base_; }
+    constexpr const V & base() const & { return base_; }
+    constexpr V base() && { return std::move(base_); }
+
+    constexpr auto begin() const { return iterator{ranges::begin(base_)}; }
+    constexpr auto end() const {
+      if constexpr (ranges::common_range<const V>) {
+        return iterator{ranges::end(base_)};
+      } else {
+        return ranges::end(base_);
+      }
+    }
+  };
+
+  template<ranges::view V>
+    requires convertible_to<ranges::range_value_t<V>, char32_t>
+  class char32_view : public ranges::view_interface<char32_view<V>>
+  {
+    V base_ = V();  // @*exposition only*@
+
+  public:
+    using iterator = @*charn-projection-iterator*@<ranges::iterator_t<const V>, char32_t>;
+
+    constexpr char32_view() requires default_initializable<V> = default;
+    constexpr char32_view(V base) : base_{std::move(base)} {}
+
+    constexpr V & base() & { return base_; }
+    constexpr const V & base() const & { return base_; }
+    constexpr V base() && { return std::move(base_); }
+
+    constexpr auto begin() const { return iterator{ranges::begin(base_)}; }
+    constexpr auto end() const {
+      if constexpr (ranges::common_range<const V>) {
+        return iterator{ranges::end(base_)};
+      } else {
+        return ranges::end(base_);
+      }
+    }
+  };
+
+  template<class R>
+  char8_view(R &&) -> char8_view<views::all_t<R>>;
+  template<class R>
+  char16_view(R &&) -> char16_view<views::all_t<R>>;
+  template<class R>
+  char32_view(R &&) -> char32_view<views::all_t<R>>;
+}
+
+namespace std::ranges {
+    template<class V>
+    inline constexpr bool enable_borrowed_range<uc::char8_view<V>> = enable_borrowed_range<V>;
+    template<class V>
+    inline constexpr bool enable_borrowed_range<uc::char16_view<V>> = enable_borrowed_range<V>;
+    template<class V>
+    inline constexpr bool enable_borrowed_range<uc::char32_view<V>> = enable_borrowed_range<V>;
+}
+
+namespace std::uc {
+  inline constexpr @*unspecified*@ as_char8_t;
+  inline constexpr @*unspecified*@ as_char16_t;
+  inline constexpr @*unspecified*@ as_char32_t;
+}
+```
+
+`char8_view` produces a view of elements from another view as `char8_t`
+values.  `char16_view` produces a view of elements from another view as
+`char16_t` values.  `char32_view` produces a view of elements from another
+view as `char32_t` values.  Let `charN_view` denote any one of the views
+`char8_view`, `char16_view`, and `char32_view`.
+
+The names `as_char8_t`, `as_char16_t`, and `as_char32_t` denote range adaptor
+objects ([range.adaptor.object]).  `as_char8_t` produces `char8_view`s,
+`as_char16_t` produces `char16_view`s, and `as_char32_t` produces
+`char32_view`s.  Let `as_charN_t` denote any one of `as_char8_t`,
+`as_char16_t`, and `as_char32_t`, and let `V` denote the `charN_view`
+associated with that object.  Let `E` be an expression and let `T` be
+`remove_cvref_t<decltype((E))>`.  Let `F` be the `format` enumerator
+associated with `as_charN_t`.  If `decltype((E))` does not model
+`utf_pointer<T>` and if `convertible_to<ranges::range_value_t<T>,
+@*format-to-type-t*@<Format>>` is `false`, `as_charN_t(E)` is ill-formed.  The
+expression `as_charN_t(E)` is expression-equivalent to:
+
+- If `T` is a specialization of `empty_view` ([range.empty.view]), then
+  `empty_view<@*format-to-type-t*@<F>>{}`.
+
+- Otherwise, if `is_pointer_v<T>` is `true`, then
+  `V(ranges::subrange(E, null_sentinel))`.
+
+- Otherwise, `V(E)`.
+
+\[Example 1:
+```c++
+char32_t chars[] = U"Unicode";
+std::vector<int> v(std::ranges::begin(chars), std::ranges::end(chars));
+for (char8_t c : s | std::uc::as_utf32)
+  cout << (char)c << ' '; // prints U n i c o d e 
+```
+— end example\]
+
+### Why `as_charN_t` requires `utf_pointer`
+
+It may seem odd that `foo | as_charN_t` is well formed if `decltype(foo)` is
+`std::vector<int>`, but ill formed if `decltype(foo)` is `int *`.  However,
+this is intentional.
+
+If you write `std::vector<int>{/* ... */} | as_char32_t`, the result is always a
+view whose value type is `char32_t`.  If you write:
+
+```c++
+int * ptr = /* ... */;
+auto v = ptr | as_char32_t;
+```
+
+`v` may be a view of `char32_t` values that ends in a null terminator, or it
+may be an error that results in UB.  Null-terminated strings are very common,
+but null-terminated strings of values that are not a character type are not.
+It seems far more safe and idiomatic to restrict the pointer-adaptation case
+only to `utf_pointer`s.
+
+## Add transcoding views and adaptors
 
 The macro `CODE_UNIT_CONCEPT_OPTION_2` is used below to indicate the two
 options for how to define `@*format-of*@`, based on the definition of
@@ -1098,7 +1298,7 @@ options for how to define `@*format-of*@`, based on the definition of
 ```cpp
 namespace std::uc {
   template<typename T>
-  constexpr format @*format-of*@() {              // @*exposition only*@
+  constexpr format @*format-of*@() {                                      // @*exposition only*@
     if constexpr (same_as<T, char8_t>) {
       return format::utf8{};
     } else if constexpr (same_as<T, char16_t>) {
@@ -1113,11 +1313,6 @@ namespace std::uc {
 #endif
     }
   }
-
-  template<class T>
-    constexpr bool @*is-unpacking-owning-view*@ = false;
-  template<class R, class V>
-    constexpr bool @*is-unpacking-owning-view*@<unpacking_owning_view<R>> = true;
 
   template<ranges::range R>
     requires movable<R> && (!@*is-initializer-list*@<R>)
@@ -1141,6 +1336,20 @@ namespace std::uc {
     constexpr auto begin() const { return ranges::begin(r_); }
     constexpr auto end() const { return ranges::end(r_); }
   };
+
+  template<class T>
+    constexpr bool @*is-unpacking-owning-view*@ = false;                  // @*exposition only*@
+  template<class R, class V>
+    constexpr bool @*is-unpacking-owning-view*@<unpacking_owning_view<R>> = true; // @*exposition only*@
+
+  template<class T>
+    constexpr bool @*is-charn-view*@ = false;                             // @*exposition only*@
+  template<class V>
+    constexpr bool @*is-charn-view*@<char8_view<V>> = true;               // @*exposition only*@
+  template<class V>
+    constexpr bool @*is-charn-view*@<char16_view<V>> = true;              // @*exposition only*@
+  template<class V>
+    constexpr bool @*is-charn-view*@<char32_view<V>> = true;              // @*exposition only*@
 
   template<format Format, utf_range V>
     requires ranges::view<V>
@@ -1186,24 +1395,22 @@ namespace std::uc {
 
     constexpr auto begin() const {
       constexpr format from_format = @*format-of*@<ranges::range_value_t<V>>();
-      if constexpr (@*is-unpacking-owning-view*@<V>) {
-        return make_begin<from_format>(
-          ranges::begin(base_.code_units()),
-          ranges::end(base_.code_units()));
+      if constexpr(@*is-charn-view*@<V>) {
+         return make_begin<from_format>(std::ranges::begin(base_.base()), std::ranges::end(base_.base()));
+      } else if constexpr (@*is-unpacking-owning-view*@<V>) {
+        return make_begin<from_format>(ranges::begin(base_.code_units()), ranges::end(base_.code_units()));
       } else {
-        return make_begin<from_format>(
-          ranges::begin(base_), ranges::end(base_));
+        return make_begin<from_format>(ranges::begin(base_), ranges::end(base_));
       }
     }
     constexpr auto end() const {
       constexpr format from_format = @*format-of*@<ranges::range_value_t<V>>();
-      if constexpr (@*is-unpacking-owning-view*@<V>) {
-        return make_end<from_format>(
-          ranges::begin(base_.code_units()),
-          ranges::end(base_.code_units()));
+      if constexpr(@*is-charn-view*@<V>) {
+         return make_end<from_format>(std::ranges::begin(base_.base()), std::ranges::end(base_.base()));
+      } else if constexpr (@*is-unpacking-owning-view*@<V>) {
+        return make_end<from_format>(ranges::begin(base_.code_units()), ranges::end(base_.code_units()));
       } else {
-        return make_end<from_format>(
-          ranges::begin(base_), ranges::end(base_));
+        return make_end<from_format>(ranges::begin(base_), ranges::end(base_));
       }
     }
 
@@ -1297,16 +1504,19 @@ The names `as_utf8`, `as_utf16`, and `as_utf32` denote range adaptor objects
 ([range.adaptor.object]).  `as_utf8` produces `utf8_view`s, `as_utf16`
 produces `utf16_view`s, and `as_utf32` produces `utf32_view`s.  Let `as_utfN`
 denote any one of `as_utf8`, `as_utf16`, and `as_utf32`, and let `V` denote
-the `utfN_view` associated with that object.  Let `E` be an expression and let
-`T` be `remove_cvref_t<decltype((E))>`.  Let `F` be the `format` enumerator
-associated with `as_utfN`.  If `decltype((E))` does not model
+the `utfN_view` associated with that object.  Let `charN_view` denote any one
+of `char8_view`, `char16_view`, and `char32_view`.  Let `E` be an expression
+and let `T` be `remove_cvref_t<decltype((E))>`.  Let `F` be the `format`
+enumerator associated with `as_utfN`.  If `decltype((E))` does not model
 `utf_range_like`, `as_utfN(E)` is ill-formed.  The expression `as_utfN(E)` is
 expression-equivalent to:
 
 - If `T` is a specialization of `empty_view` ([range.empty.view]), then
-  `empty_view<@*format-to-type-t*@<F>()>{}`.
+  `empty_view<@*format-to-type-t*@<F>>{}`.
 
 - Otherwise, if `T` is a specialization of `utfN_view`, then `V(E.base())`.
+
+- Otherwise, if `T` is a specialization of `charN_view`, then `V(E)`.
 
 - Otherwise, if `is_pointer_v<T>` is `true`, then
   `V(ranges::subrange(E, null_sentinel))`.
@@ -1316,7 +1526,7 @@ expression-equivalent to:
 \[Example 1:
 ```c++
 std::u32string s = U"Unicode";
-for (char8_t c : s | as_utf8)
+for (char8_t c : s | std::uc::as_utf8)
   cout << (char)c << ' '; // prints U n i c o d e 
 ```
 — end example\]
@@ -1324,7 +1534,7 @@ for (char8_t c : s | as_utf8)
 \[Example 2:
 ```c++
 auto * s = L"is weird.";
-for (char8_t c : s | as_utf8)
+for (char8_t c : s | std::uc::as_utf8)
   cout << (char)c << ' '; // prints i s   w e i r d . 
 ```
 — end example\]
@@ -1446,7 +1656,7 @@ static_assert(std::is_same_v<
                   std::uc::null_sentinel_t>>>);
 
 static_assert(std::is_same_v<
-              decltype(std::ranges::empty_view<int>{} | std::uc::as_utf16),
+              decltype(std::ranges::empty_view<char32_t>{} | std::uc::as_utf16),
               std::ranges::empty_view<char16_t>>);
 
 std::u16string str2 = u"text";
