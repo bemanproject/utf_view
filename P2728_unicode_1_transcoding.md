@@ -739,13 +739,13 @@ invoking the error handler returns; using the default error handler, this is
 `utf_iterator` maintains certain invariants; the invariants differ based on
 whether `utf_iterator` is an input iterator.
 
-For input iterators the invariants are that either: `*this` is at the end of
-the range being adapted, and `curr()` == `last_`; or the position of `curr()`
+For input iterators the invariant is: if `*this` is at the end of the range
+being adapted, then `curr()` == `last_`; otherwise, the position of `curr()`
 is always at the end of the current code point `c` within the range being
 adapted, and `buf_` contains the code units in `ToFormat` that comprise `c`.
 
-For forward and bidirectional iterators, the invariants are either: `*this` is
-at the end of the range being adapted, and `curr()` == `last_`; or the
+For forward and bidirectional iterators, the invariant is: if `*this` is at
+the end of the range being adapted, then `curr()` == `last_`; otherwise, the
 position of `curr()` is always at the beginning of the current code point `c`
 within the range being adapted, and `buf_` contains the code units in
 `ToFormat` that comprise `c`.
@@ -790,7 +790,7 @@ units read while decoding `c`; encodes `c` as `ToFormat` into `buf_`; sets
 
 ### Why `utf_iterator` is constrained the way it is
 
-The template parameter `I` to `utf_iterator` is not cosntrined with
+The template parameter `I` to `utf_iterator` is not constrained with
 `code_unit_iter<FromFormat>` as it was in earlier revisions of this paper.
 Instead, `I` must be an `input_iterator` whose value type is convertible to
 `@*format-to-type-t*@<FromFormat>`.  This allows two uses of `utf_iterator`
@@ -802,7 +802,7 @@ Unicode-aware user code uses `uint32_t` for UTF-32, or `short` for UTF-16 or
 whatever.  It is useful in particular because ICU uses `int` for its
 UTF-32/code point type.
 
-Second, because of the first point, adaptations of ranges of non-charcter
+Second, because of the first point, adaptations of ranges of non-character
 types can be made more efficient.  Consider:
 
 ```c++
@@ -817,15 +817,14 @@ The type of `first` is:
 std::uc::utf_iterator<std::uc::format::utf8, std::uc::format::utf32, std::vector<int>::iterator>
 ```
 
-That is, the adapting iterator that `as_char32_t` is gone.  This makes using
-`as_char32_t` more efficient, when used in conjunction with `as_utfN`.
-
+That is, the adapting iterator that `as_char32_t` uses is gone.  This makes
+using `as_char32_t` more efficient, when used in conjunction with `as_utfN`.
 If `utf_iterator`'s `I` were required to be a `utf_iter`, this optimization
 would not work.
 
 ### Why `utf_iterator` is not a nested type within `utf_view`
 
-Most user will use views most of the time.  However, it can be useful to use
+Most users will use views most of the time.  However, it can be useful to use
 iterators some of the time.  For example, say I wanted to track some
 user-visible cursor within some bit of text.  If I wanted to represent that
 cursor independently from the view within which it is found, it can be awkward
@@ -845,7 +844,7 @@ struct my_state_type
 
 // This one, not so much.  Since we don't have the View type, we have to make
 // the type of current_position_ a template parameter, even if there's only one
-// type ever in use.
+// type ever in use for a given view.
 
 template<typename Iterator>
 struct my_other_state_type
@@ -856,7 +855,7 @@ struct my_other_state_type
 ```
 
 Using `utf_iterator` allows us to write more specific code.  Sometimes,
-generic code is more desireable; sometimes nongeneric code is more desireable.
+generic code is more desirable; sometimes nongeneric code is more desirable.
 
 ```c++
 struct my_other_state_type
@@ -1069,7 +1068,7 @@ transcode_result<I, O> transcode_to_utf32(I first, S last, O out)
 Note the call to `r.repack`.  This is an invocable created by the unpacking
 process itself.
 
-If this all sounds way too complicated, it's not that bad at all.  Here's the
+If this all sounds way too complicated, it's not bad at all.  Here's the
 unpacking/repacking implementation from Boost.Text:
 [unpack.hpp](https://github.com/tzlaine/text/blob/develop/include/boost/text/unpack.hpp).
 
@@ -1702,7 +1701,7 @@ always a specialization of `utf_iterator`.  `utfv.end()` is also a
 specialization of `utf_iterator` (if `common_range<V>`), or otherwise the
 sentinel value for `V`.
 
-This gives `r | as_utfN` some nice properties that are consistent.  With the
+This gives `r | as_utfN` some nice, consistent properties.  With the
 exception of `empty_view<T>{} | as_utfN`, the following are always true:
 
 - `r | as_utfN` produces well-formed UTF.  Since the default `ErrorHandler`
@@ -1844,21 +1843,17 @@ of some UTF can be done with `foo | std::uc::as_utf16 |
 std::ranges::views::take(10)`.
 
 Error handling is explicitly configurable in the transcoding iterators.  This
-gives complete control to those who want to do something other than the
-default.  The default, according to Unicode, is to produce a replacement
-character (`0xfffd`) in the output when broken UTF encoding is seen in the
-input.  This is what all these interfaces do, unless you configure one of the
-iterators as mentioned above.
+gives control to those who want to do something other than the default.  The
+default, according to Unicode, is to produce a replacement character
+(`0xfffd`) in the output when broken UTF encoding is seen in the input.  This
+is what all these interfaces do, unless you configure one of the iterators as
+mentioned above.
 
 The production of replacement characters as error-handling strategy is good
 for memory compactness and safety.  It allows us to store all our text as
 UTF-8 (or, less compactly, as UTF-16), and then process code points as
 transcoding views.  If an error occurs, the transcoding views will simply
 produce a replacement character; there is no danger of UB.
-
-Code units are just numbers.  All of these interfaces treat integral types as
-code units of various sizes (at least the ones that are 8-, 16-, or 32-bit).
-Signedness is ignored.
 
 A null-terminated pointer `p` to an 8-, 16-, or 32-bit string of code units is
 considered the implicit range `[p, null_sentinel)`.  This makes user code much
