@@ -1,7 +1,7 @@
 ---
 title: "Unicode in the Library, Part 1: UTF Transcoding"
 document: P2728R4
-date: 2023-06-08
+date: 2023-06-10
 audience:
   - SG-16 Unicode
   - LEWG-I
@@ -1112,9 +1112,7 @@ proposed right now.
 namespace std::uc {
   template<class I>
     constexpr auto @*iterator-to-tag*@() {                                // @*exposition only*@
-      if constexpr (contiguous_iterator<I>) {
-        return contiguous_iterator_tag{};
-      } else if constexpr (random_access_iterator<I>) {
+      if constexpr (random_access_iterator<I>) {
         return random_access_iterator_tag{};
       } else if constexpr (bidirectional_iterator<I>) {
         return bidirectional_iterator_tag{};
@@ -1143,19 +1141,20 @@ namespace std::uc {
   private:
     friend boost::stl_interfaces::access;
     I & base_reference() noexcept { return it_; }
-    I base_reference() const noexcept { return it_; }
+    I base_reference() const { return it_; }
 
     I it_;
   };
 
   template<ranges::view V>
-    requires convertible_to<ranges::range_value_t<V>, char8_t>
+    requires ranges::input_range<V> && convertible_to<ranges::range_reference_t<V>, char8_t>
   class char8_view : public ranges::view_interface<char8_view<V>>
   {
     V base_ = V();  // @*exposition only*@
 
   public:
     using iterator = @*charn-projection-iterator*@<ranges::iterator_t<const V>, char8_t>;
+    using sentinel = conditional_t<ranges::common_range<V>, iterator, ranges::sentinel_t<V>>;
 
     constexpr char8_view() requires default_initializable<V> = default;
     constexpr char8_view(V base) : base_{std::move(base)} {}
@@ -1164,24 +1163,40 @@ namespace std::uc {
     constexpr const V & base() const & { return base_; }
     constexpr V base() && { return std::move(base_); }
 
-    constexpr auto begin() const { return iterator{ranges::begin(base_)}; }
-    constexpr auto end() const {
+    constexpr iterator begin() { return iterator{ranges::begin(base_)}; }
+    constexpr sentinel end() {
+      if constexpr (ranges::common_range<V>) {
+        return iterator{ranges::end(base_)};
+      } else {
+        return ranges::end(base_);
+      }
+    }
+
+    constexpr auto begin() const requires ranges::view<const V>
+      { return iterator{ranges::begin(base_)}; }
+    constexpr auto end() const requires ranges::view<const V> {
       if constexpr (ranges::common_range<const V>) {
         return iterator{ranges::end(base_)};
       } else {
         return ranges::end(base_);
       }
     }
+
+    constexpr auto size() requires ranges::sized_range<V>
+      { return ranges::size(base_); }
+    constexpr auto size() const requires ranges::sized_range<const V>
+      { return ranges::size(base_); }
   };
 
   template<ranges::view V>
-    requires convertible_to<ranges::range_value_t<V>, char16_t>
+    requires ranges::input_range<V> && convertible_to<ranges::range_reference_t<V>, char16_t>
   class char16_view : public ranges::view_interface<char16_view<V>>
   {
     V base_ = V();  // @*exposition only*@
 
   public:
     using iterator = @*charn-projection-iterator*@<ranges::iterator_t<const V>, char16_t>;
+    using sentinel = conditional_t<ranges::common_range<V>, iterator, ranges::sentinel_t<V>>;
 
     constexpr char16_view() requires default_initializable<V> = default;
     constexpr char16_view(V base) : base_{std::move(base)} {}
@@ -1190,24 +1205,40 @@ namespace std::uc {
     constexpr const V & base() const & { return base_; }
     constexpr V base() && { return std::move(base_); }
 
-    constexpr auto begin() const { return iterator{ranges::begin(base_)}; }
-    constexpr auto end() const {
+    constexpr iterator begin() { return iterator{ranges::begin(base_)}; }
+    constexpr sentinel end() {
+      if constexpr (ranges::common_range<V>) {
+        return iterator{ranges::end(base_)};
+      } else {
+        return ranges::end(base_);
+      }
+    }
+
+    constexpr auto begin() const requires ranges::view<const V>
+      { return iterator{ranges::begin(base_)}; }
+    constexpr auto end() const requires ranges::view<const V> {
       if constexpr (ranges::common_range<const V>) {
         return iterator{ranges::end(base_)};
       } else {
         return ranges::end(base_);
       }
     }
+
+    constexpr auto size() requires ranges::sized_range<V>
+      { return ranges::size(base_); }
+    constexpr auto size() const requires ranges::sized_range<const V>
+      { return ranges::size(base_); }
   };
 
   template<ranges::view V>
-    requires convertible_to<ranges::range_value_t<V>, char32_t>
+    requires ranges::input_range<V> && convertible_to<ranges::range_reference_t<V>, char32_t>
   class char32_view : public ranges::view_interface<char32_view<V>>
   {
     V base_ = V();  // @*exposition only*@
 
   public:
     using iterator = @*charn-projection-iterator*@<ranges::iterator_t<const V>, char32_t>;
+    using sentinel = conditional_t<ranges::common_range<V>, iterator, ranges::sentinel_t<V>>;
 
     constexpr char32_view() requires default_initializable<V> = default;
     constexpr char32_view(V base) : base_{std::move(base)} {}
@@ -1216,14 +1247,29 @@ namespace std::uc {
     constexpr const V & base() const & { return base_; }
     constexpr V base() && { return std::move(base_); }
 
-    constexpr auto begin() const { return iterator{ranges::begin(base_)}; }
-    constexpr auto end() const {
+    constexpr iterator begin() { return iterator{ranges::begin(base_)}; }
+    constexpr sentinel end() {
+      if constexpr (ranges::common_range<V>) {
+        return iterator{ranges::end(base_)};
+      } else {
+        return ranges::end(base_);
+      }
+    }
+
+    constexpr auto begin() const requires ranges::view<const V>
+      { return iterator{ranges::begin(base_)}; }
+    constexpr auto end() const requires ranges::view<const V> {
       if constexpr (ranges::common_range<const V>) {
         return iterator{ranges::end(base_)};
       } else {
         return ranges::end(base_);
       }
     }
+
+    constexpr auto size() requires ranges::sized_range<V>
+      { return ranges::size(base_); }
+    constexpr auto size() const requires ranges::sized_range<const V>
+      { return ranges::size(base_); }
   };
 
   template<class R>
@@ -1264,9 +1310,8 @@ objects ([range.adaptor.object]).  `as_char8_t` produces `char8_view`s,
 associated with that object.  Let `E` be an expression and let `T` be
 `remove_cvref_t<decltype((E))>`.  Let `F` be the `format` enumerator
 associated with `as_charN_t`.  If `decltype((E))` does not model
-`utf_pointer<T>` and if `convertible_to<ranges::range_value_t<T>,
-@*format-to-type-t*@<Format>>` is `false`, `as_charN_t(E)` is ill-formed.  The
-expression `as_charN_t(E)` is expression-equivalent to:
+`utf_pointer<T>` and if `charN_view(E)` is ill-formed, `as_charN_t(E)` is
+ill-formed.  The expression `as_charN_t(E)` is expression-equivalent to:
 
 - If `T` is a specialization of `empty_view` ([range.empty.view]), then
   `empty_view<@*format-to-type-t*@<F>>{}`.
