@@ -465,6 +465,10 @@ range terminated by a default-constructed value.
 Because this type is potentially useful for lots of ranges unrelated to
 Unicode or text, it is in the `std` namespace, not `std::uc`.
 
+If you're wondering why `@*ITER_CONCEPT*@` is used instead of directly
+requiring `forward_iterator<I>`, it's because the latter causes recursion in a
+check of `equality_comparable` within `forward_iterator`.
+
 
 ## Add the transcoding iterator template
 
