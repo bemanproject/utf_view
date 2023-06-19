@@ -1,10 +1,9 @@
 ---
 title: "Unicode in the Library, Part 1: UTF Transcoding"
-document: P2728R4
-date: 2023-06-10
+document: P2728R5
+date: 2023-06-18
 audience:
   - SG-16 Unicode
-  - LEWG-I
   - LEWG
 author:
   - name: Zach Laine
@@ -57,6 +56,12 @@ monofont: "DejaVu Sans Mono"
   `replacement_character`.
 - Changed the constraint on `utf_iterator` slightly.
 - Change `null_sentinel_t` back to being Unicode-specific.
+
+## Changes since R4
+
+- TODO
+- Move `null_sentinel_t` to `std`, remove its `base` member function, and make
+  it useful for more than just pointers, based on SG-9 guidance.
 
 # Motivation
 
@@ -438,70 +443,27 @@ want to can still write the longer version under both options.
 ## Add a null-terminated sequence sentinel
 
 ```cpp
-namespace std::uc {
+namespace std {
   struct null_sentinel_t {
-    constexpr null_sentinel_t base() const noexcept { return {}; }
-
-    template<class T>
-      friend constexpr bool operator==(const T* p, null_sentinel_t)
-        { return *p == T{}; }
+    template<class I>
+      requires requires { typename @*ITER_CONCEPT*@(I); } &&
+               derived_from<@*ITER_CONCEPT*@(I), forward_iterator_tag> &&
+               default_initializable<iter_value_t<I>> &&
+               equality_comparable<iter_value_t<I>>
+    friend constexpr auto operator==(I it, null_sentinel_t) { return *it == iter_value_t<I>{}; }
   };
 
   inline constexpr null_sentinel_t null_sentinel;
 }
 ```
 
-The `base()` member bears explanation.  It is there to make iterator/sentinel
-pairs easy to use in a generic context.  Consider a range `r1` of code points
-delimited by a pair of `utf_iterator<format::utf8, format::utf32, char const
-*>` transcoding iterators (defined later in this paper).  The range of
-underlying UTF-8 code units is [`r1.begin().base()`, `r1.end().base()`).
+This sentinel type matches any iterator position `it` at which `*it` is equal
+to a default-constructed object of type `iter_value_t<I>`.  This works for
+null-terminated strings, but can also serve as the sentinel for any forward
+range terminated by a default-constructed value.
 
-Now consider a range `r2` of code points that is delimited by a
-`utf_iterator<format::utf8, format::utf32, char const *, null_sentinel_t>`
-transcoding iterator and a `null_sentinel`.  Now our underlying range of UTF-8
-is [`r.begin().base()`, `null_sentinel`).
-
-Instead of making people writing generic code have to special-case the use of
-`null_sentinel`, `null_sentinel` has a `base()` member that lets us write
-`r.end().base()` instead of `null_sentinel`.  This means that for either `r` or
-`r2`, the underlying range of UTF-8 code units is just [`r1.begin().base()`,
-`r1.end().base()`).
-
-::: tonytable
-
-### Without `null_sentinel_t::base()`
-```c++
-template<typename UTF8To32Iter1, typename UTF8To32Iter2>
-auto f(UTF8To32Iter1 first, UTF8To32Iter2 last) {
-  if constexpr (std::same_as<UTF8To32Iter1, UTF8To32Iter2>) {
-    auto utf8_first = first.base();
-    auto utf8_last = last;
-    return /* use utf8_{first,last} ... */;
-  } else {
-    auto utf8_first = first.base();
-    auto utf8_last = last.base();
-    return /* use utf8_{first,last} ... */;
-  }
-}
-```
-
-### With `null_sentinel_t::base()`
-```c++
-template<typename UTF8To32Iter1, typename UTF8To32Iter2>
-auto f(UTF8To32Iter1 first, UTF8To32Iter2 last) {
-  auto utf8_first = first.base();
-  auto utf8_last = last.base();
-  return /* use utf8_{first,last} ... */;
-}
-```
-
-:::
-
-Without `null_sentinel_t::base()`, we have to account for the case in which
-the null sentinel is passed for the second function parameter.  This makes our
-very simple logic for getting the underlying range out of an iterator/sentinel
-pair more than twice as long.
+Because this type is potentially useful for lots of ranges unrelated to
+Unicode or text, it is in the `std` namespace, not `std::uc`.
 
 
 ## Add the transcoding iterator template
