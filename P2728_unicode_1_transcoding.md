@@ -566,7 +566,6 @@ namespace std::uc {
     transcoding_error_handler ErrorHandler>
     requires convertible_to<iter_value_t<I>, @*format-to-type-t*@<FromFormat>>
   class utf_iterator : public iterator_interface<
-                         utf_iterator<FromFormat, ToFormat, I, S, ErrorHandler>,
                          @*bidirectional-at-most*@<I>,
                          @*format-to-type-t*@<ToFormat>,
                          @*format-to-type-t*@<ToFormat>> {
@@ -653,11 +652,7 @@ namespace std::uc {
     }
 
     using base_type =                   // @*exposition only*@
-      iterator_interface<
-        utf_iterator<FromFormat, ToFormat, I, S, ErrorHandler>,
-        @*bidirectional-at-most-t*@<I>,
-        value_type,
-        value_type>;
+      iterator_interface<@*bidirectional-at-most-t*@<I>, value_type, value_type>;
     using base_type::operator++;
     using base_type::operator--;
 
