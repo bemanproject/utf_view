@@ -643,7 +643,7 @@ namespace std::uc {
       }
     }
 
-    friend constexpr bool operator==(utf_iterator lhs, S rhs) requires (!same_as<I, S>) {
+    friend constexpr bool operator==(utf_iterator lhs, S rhs)
       if constexpr (forward_iterator<I>) {
         return lhs.curr() == rhs;
       } else {
