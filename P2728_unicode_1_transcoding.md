@@ -1279,17 +1279,17 @@ namespace std::uc {
   template<utf_range V>
     requires ranges::view<V>
   class unpacking_view : public ranges::view_interface<unpacking_view<V>> {
-    V base_ = V();                                                        // @*exposition only*@
+    V @*base_*@ = V();                                                        // @*exposition only*@
 
   public:
     constexpr unpacking_view() requires default_initializable<V> = default;
-    constexpr unpacking_view(V base) : base_(std::move(base)) {}
+    constexpr unpacking_view(V base) : @*base_*@(std::move(base)) {}
 
-    constexpr V base() const & requires copy_constructible<V> { return base_; }
-    constexpr V base() && { return std::move(base_); }
+    constexpr V base() const & requires copy_constructible<V> { return @*base_*@; }
+    constexpr V base() && { return std::move(@*base_*@); }
 
     constexpr auto code_units() const noexcept {
-      auto unpacked = uc::unpack_iterator_and_sentinel(ranges::begin(base_), ranges::end(base_));
+      auto unpacked = uc::unpack_iterator_and_sentinel(ranges::begin(@*base_*@), ranges::end(@*base_*@));
       return ranges::subrange(unpacked.first, unpacked.last);
     }
 
@@ -1315,7 +1315,7 @@ namespace std::uc {
   template<format Format, utf_range V>
     requires ranges::view<V>
   class utf_view : public ranges::view_interface<utf_view<Format, V>> {
-    V base_ = V();                                          // @*exposition only*@
+    V @*base_*@ = V();                                          // @*exposition only*@
 
     template<format FromFormat, class I, class S>
       static constexpr auto make_begin(I first, S last) {   // @*exposition only*@
@@ -1340,42 +1340,42 @@ namespace std::uc {
 
   public:
     constexpr utf_view() requires default_initializable<V> = default;
-    constexpr utf_view(V base) : base_{std::move(base)} {}
+    constexpr utf_view(V base) : @*base_*@{std::move(base)} {}
 
-    constexpr V base() const & requires copy_constructible<V> { return base_; }
-    constexpr V base() && { return std::move(base_); }
+    constexpr V base() const & requires copy_constructible<V> { return @*base_*@; }
+    constexpr V base() && { return std::move(@*base_*@); }
 
     constexpr auto begin() {
       constexpr format from_format = @*format-of*@<ranges::range_value_t<V>>();
       if constexpr(@*is-charn-view*@<V>) {
-        return make_begin<from_format>(base_.impl_.begin().base(), base_.impl_.end().base());
+        return make_begin<from_format>(@*base_*@.impl_.begin().base(), @*base_*@.impl_.end().base());
       } else {
-        return make_begin<from_format>(ranges::begin(base_), ranges::end(base_));
+        return make_begin<from_format>(ranges::begin(@*base_*@), ranges::end(@*base_*@));
       }
     }
     constexpr auto begin() const {
       constexpr format from_format = @*format-of*@<ranges::range_value_t<const V>>();
       if constexpr(@*is-charn-view*@<V>) {
-        return make_begin<from_format>(ranges::begin(base_.base()), ranges::end(base_.base()));
+        return make_begin<from_format>(ranges::begin(@*base_*@.base()), ranges::end(@*base_*@.base()));
       } else {
-        return make_begin<from_format>(ranges::begin(base_), ranges::end(base_));
+        return make_begin<from_format>(ranges::begin(@*base_*@), ranges::end(@*base_*@));
       }
     }
 
     constexpr auto end() {
       constexpr format from_format = @*format-of*@<ranges::range_value_t<V>>();
       if constexpr(@*is-charn-view*@<V>) {
-        return make_end<from_format>(base_.impl_.begin().base(), base_.impl_.end().base());
+        return make_end<from_format>(@*base_*@.impl_.begin().base(), @*base_*@.impl_.end().base());
       } else {
-        return make_end<from_format>(ranges::begin(base_), ranges::end(base_));
+        return make_end<from_format>(ranges::begin(@*base_*@), ranges::end(@*base_*@));
       }
     }
     constexpr auto end() const {
       constexpr format from_format = @*format-of*@<ranges::range_value_t<const V>>();
       if constexpr(@*is-charn-view*@<V>) {
-        return make_end<from_format>(ranges::begin(base_.base()), ranges::end(base_.base()));
+        return make_end<from_format>(ranges::begin(@*base_*@.base()), ranges::end(@*base_*@.base()));
       } else {
-        return make_end<from_format>(ranges::begin(base_), ranges::end(base_));
+        return make_end<from_format>(ranges::begin(@*base_*@), ranges::end(@*base_*@));
       }
     }
 
@@ -1426,7 +1426,7 @@ namespace std::ranges {
 
 namespace std::uc {
   template<class R>
-    constexpr decltype(auto) unpack_range(R && r) {
+    constexpr decltype(auto) @*unpack-range*@(R && r) {
       using T = remove_cvref_t<R>;
       if constexpr (ranges::forward_range<T>) {
         auto unpacked = uc::unpack_iterator_and_sentinel(ranges::begin(r), ranges::end(r));
