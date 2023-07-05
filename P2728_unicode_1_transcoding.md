@@ -341,9 +341,20 @@ of `@*wchar-t-format*@` is implementation defined, but must be
 
 ### The impact of options 1 and 2
 
-Here are some examples of the differences between Options 1 and 2.  Note the
-use of `charN_t` below with `std::wstring`.  That's there because whether you
-write `as_char16_t` or `as_char32_t` is implementation-dependent.
+Here are some examples of the differences between Options 1 and 2.  The
+`as_utfN` and `as_charN` adaptors are discussed later in this paper.
+
+The `as_utfN` adaptors produce `utfN_view`s, which do transcoding.
+
+The `as_utfN` adaptors produce `charN_view`s that are each very similar to a
+`transform_view` that casts each element of the adapted range to a `charN_t`
+value.  A `charN_view` differs from the equivalent transform in that it may be
+a borrowed range, and that the `utfN_view` views know about the `charN_view`s,
+and can optimize away the work that would be done by the `charN_view`.  This
+turns `charN_view` into a no-op when nested within a `utfN_view`.
+
+Note the use of `charN_t` below with `std::wstring`.  That's there because
+whether you write `as_char16_t` or `as_char32_t` is implementation-dependent.
 
 ::: tonytable
 
