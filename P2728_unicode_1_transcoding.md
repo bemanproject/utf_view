@@ -452,8 +452,10 @@ proposing in the papers that will follow this one.
 
 In short, I think `"text" | std::uc::as_utf32` should "just work".  Making
 users write `"text" | std::uc::as_char8_t | std::uc::as_utf32`, when that does
-not increase correctness or efficiency seems wrongheaded to me.  Users that
-want to can still write the longer version under both options.
+not increase correctness or efficiency -- and produces no different object
+code -- seems wrongheaded to me.  Users that want the extra explicitness can
+still write the longer version under both options.  Users that do not want
+this explicitness should not be forced to write it.
 
 ## Add a null-terminated sequence sentinel
 
