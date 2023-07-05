@@ -1144,7 +1144,8 @@ namespace std::uc {
 
     template<bool OtherConst>
       requires sentinel_for<@*sentinel*@, ranges::iterator_t<maybe_const<OtherConst, V>>>
-        friend constexpr bool operator==(const @*charn-projection-iterator*@<OtherConst, V, T> & x, const @*charn-projection-sentinel*@ & y)
+        friend constexpr bool operator==(const @*charn-projection-iterator*@<OtherConst, V, T> & x,
+                                         const @*charn-projection-sentinel*@ & y)
           { return x.@*it_*@ == y.@*end_*@; }
 
     template<bool OtherConst>
@@ -1183,12 +1184,14 @@ namespace std::uc {
     constexpr V base() && { return std::move(@*base_*@); }
 
     constexpr @*iterator*@<false> begin() { return @*iterator*@<false>{ranges::begin(@*base_*@)}; }
-    constexpr @*iterator*@<true> begin() const requires ranges::range<const V> { return @*iterator*@<true>{ranges::begin(@*base_*@)}; }
+    constexpr @*iterator*@<true> begin() const requires ranges::range<const V>
+      { return @*iterator*@<true>{ranges::begin(@*base_*@)}; }
 
     constexpr @*sentinel*@<false> end() { return @*sentinel*@<false>{ranges::end(@*base_*@)}; }
     constexpr @*iterator*@<false> end() requires ranges::common_range<V> { return @*iterator*@<false>{ranges::end(@*base_*@)}; }
     constexpr @*sentinel*@<true> end() const requires ranges::range<const V> { return @*sentinel*@<true>{ranges::end(@*base_*@)}; }
-    constexpr @*iterator*@<true> end() const requires ranges::common_range<const V> { return @*iterator*@<true>{ranges::end(@*base_*@)}; }
+    constexpr @*iterator*@<true> end() const requires ranges::common_range<const V>
+      { return @*iterator*@<true>{ranges::end(@*base_*@)}; }
 
     constexpr auto size() requires ranges::sized_range<V> { return ranges::size(@*base_*@); }
     constexpr auto size() const requires ranges::sized_range<const V> { return ranges::size(@*base_*@); }
@@ -1217,12 +1220,14 @@ namespace std::uc {
     constexpr V base() && { return std::move(@*base_*@); }
 
     constexpr @*iterator*@<false> begin() { return @*iterator*@<false>{ranges::begin(@*base_*@)}; }
-    constexpr @*iterator*@<true> begin() const requires ranges::range<const V> { return @*iterator*@<true>{ranges::begin(@*base_*@)}; }
+    constexpr @*iterator*@<true> begin() const requires ranges::range<const V>
+      { return @*iterator*@<true>{ranges::begin(@*base_*@)}; }
 
     constexpr @*sentinel*@<false> end() { return @*sentinel*@<false>{ranges::end(@*base_*@)}; }
     constexpr @*iterator*@<false> end() requires ranges::common_range<V> { return @*iterator*@<false>{ranges::end(@*base_*@)}; }
     constexpr @*sentinel*@<true> end() const requires ranges::range<const V> { return @*sentinel*@<true>{ranges::end(@*base_*@)}; }
-    constexpr @*iterator*@<true> end() const requires ranges::common_range<const V> { return @*iterator*@<true>{ranges::end(@*base_*@)}; }
+    constexpr @*iterator*@<true> end() const requires ranges::common_range<const V>
+      { return @*iterator*@<true>{ranges::end(@*base_*@)}; }
 
     constexpr auto size() requires ranges::sized_range<V> { return ranges::size(@*base_*@); }
     constexpr auto size() const requires ranges::sized_range<const V> { return ranges::size(@*base_*@); }
@@ -1251,12 +1256,14 @@ namespace std::uc {
     constexpr V base() && { return std::move(@*base_*@); }
 
     constexpr @*iterator*@<false> begin() { return @*iterator*@<false>{ranges::begin(@*base_*@)}; }
-    constexpr @*iterator*@<true> begin() const requires ranges::range<const V> { return @*iterator*@<true>{ranges::begin(@*base_*@)}; }
+    constexpr @*iterator*@<true> begin() const requires ranges::range<const V>
+      { return @*iterator*@<true>{ranges::begin(@*base_*@)}; }
 
     constexpr @*sentinel*@<false> end() { return @*sentinel*@<false>{ranges::end(@*base_*@)}; }
     constexpr @*iterator*@<false> end() requires ranges::common_range<V> { return @*iterator*@<false>{ranges::end(@*base_*@)}; }
     constexpr @*sentinel*@<true> end() const requires ranges::range<const V> { return @*sentinel*@<true>{ranges::end(@*base_*@)}; }
-    constexpr @*iterator*@<true> end() const requires ranges::common_range<const V> { return @*iterator*@<true>{ranges::end(@*base_*@)}; }
+    constexpr @*iterator*@<true> end() const requires ranges::common_range<const V>
+      { return @*iterator*@<true>{ranges::end(@*base_*@)}; }
 
     constexpr auto size() requires ranges::sized_range<V> { return ranges::size(@*base_*@); }
     constexpr auto size() const requires ranges::sized_range<const V> { return ranges::size(@*base_*@); }
@@ -1271,12 +1278,12 @@ namespace std::uc {
 }
 
 namespace std::ranges {
-    template<class V>
-    inline constexpr bool enable_borrowed_range<uc::char8_view<V>> = enable_borrowed_range<V>;
-    template<class V>
-    inline constexpr bool enable_borrowed_range<uc::char16_view<V>> = enable_borrowed_range<V>;
-    template<class V>
-    inline constexpr bool enable_borrowed_range<uc::char32_view<V>> = enable_borrowed_range<V>;
+  template<class V>
+  inline constexpr bool enable_borrowed_range<uc::char8_view<V>> = enable_borrowed_range<V>;
+  template<class V>
+  inline constexpr bool enable_borrowed_range<uc::char16_view<V>> = enable_borrowed_range<V>;
+  template<class V>
+  inline constexpr bool enable_borrowed_range<uc::char32_view<V>> = enable_borrowed_range<V>;
 }
 
 namespace std::uc {
@@ -1503,14 +1510,14 @@ namespace std::uc {
 }
 
 namespace std::ranges {
-    template<uc::format Format, class V>
-    inline constexpr bool enable_borrowed_range<uc::utf_view<Format, V>> = enable_borrowed_range<V>;
-    template<class V>
-    inline constexpr bool enable_borrowed_range<uc::utf8_view<V>> = enable_borrowed_range<V>;
-    template<class V>
-    inline constexpr bool enable_borrowed_range<uc::utf16_view<V>> = enable_borrowed_range<V>;
-    template<class V>
-    inline constexpr bool enable_borrowed_range<uc::utf32_view<V>> = enable_borrowed_range<V>;
+  template<uc::format Format, class V>
+  inline constexpr bool enable_borrowed_range<uc::utf_view<Format, V>> = enable_borrowed_range<V>;
+  template<class V>
+  inline constexpr bool enable_borrowed_range<uc::utf8_view<V>> = enable_borrowed_range<V>;
+  template<class V>
+  inline constexpr bool enable_borrowed_range<uc::utf16_view<V>> = enable_borrowed_range<V>;
+  template<class V>
+  inline constexpr bool enable_borrowed_range<uc::utf32_view<V>> = enable_borrowed_range<V>;
 }
 
 namespace std::uc {
