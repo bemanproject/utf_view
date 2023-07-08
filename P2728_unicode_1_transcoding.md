@@ -191,7 +191,7 @@ template<std::uc::utf8_range R>
 void process_input(R r);
 
 std::vector<int> input = get_icu_code_points();
-// This is ill formed without the as_char32_t adaptation.
+// This is ill-formed without the as_char32_t adaptation.
 auto input_utf8 = input | std::uc::as_char32_t | std::uc::as_utf8;
 
 process_input(input_utf8);
@@ -1330,7 +1330,7 @@ for (char8_t c : s | std::uc::as_utf32)
 ### Why `as_charN_t` requires `utf_pointer`
 
 It may seem odd that `foo | as_charN_t` is well formed if `decltype(foo)` is
-`std::vector<int>`, but ill formed if `decltype(foo)` is `int *`.  However,
+`std::vector<int>`, but ill-formed if `decltype(foo)` is `int *`.  However,
 this is intentional.
 
 If you write `std::vector<int>{/* ... */} | as_char32_t`, the result is always a
