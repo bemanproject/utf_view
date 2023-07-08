@@ -1117,7 +1117,7 @@ namespace std::uc {
 
     @*iterator*@ @*it_*@ = @*iterator*@();                                        // @*exposition only*@
 
-    friend @*charn-projection-sentinel*@<Const, V, T>;                    // @*exposition only*@
+    friend @*charn-projection-sentinel*@<Const, V, T>;
 
   public:
     constexpr @*charn-projection-iterator*@() = default;
@@ -1174,7 +1174,7 @@ namespace std::uc {
 
     template<format Format2, utf_range V2>
       requires ranges::view<V2>
-    friend class utf_view;                                            // @*exposition only*@
+    friend class utf_view;
 
   public:
     constexpr char8_view() requires default_initializable<V> = default;
@@ -1210,7 +1210,7 @@ namespace std::uc {
 
     template<format Format2, utf_range V2>
       requires ranges::view<V2>
-    friend class utf_view;                                            // @*exposition only*@
+    friend class utf_view;
 
   public:
     constexpr char16_view() requires default_initializable<V> = default;
@@ -1246,7 +1246,7 @@ namespace std::uc {
 
     template<format Format2, utf_range V2>
       requires ranges::view<V2>
-    friend class utf_view;                                            // @*exposition only*@
+    friend class utf_view;
 
   public:
     constexpr char32_view() requires default_initializable<V> = default;
