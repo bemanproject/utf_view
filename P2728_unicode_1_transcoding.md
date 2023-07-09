@@ -1663,7 +1663,7 @@ example, if you start with an lvalue `vector`, then keeping
 `vector` itself with a chain of `base()` calls. You lose that if it's a
 `subrange<typename vector<T>::iterator, typename vector<T>::iterator>`.
 
-### More examples
+### Adaptor examples
 
 ```c++
 static_assert(std::is_same_v<
