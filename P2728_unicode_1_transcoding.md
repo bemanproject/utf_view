@@ -61,8 +61,6 @@ monofont: "DejaVu Sans Mono"
 
 - Replace `unpacking_owning_view` with `unpacking_view`, and use it to do
   unpacking, rather than sometimes doing the unpacking in the adaptor.
-- Respecify `charN_view` in terms of a `ranges::transform_view` data member
-  for simplicity.
 - Ensure `const` and non-`const` overloads for `begin` and `end` in all views.
 - Move `null_sentinel_t` to `std`, remove its `base` member function, and make
   it useful for more than just pointers, based on SG-9 guidance.
@@ -1322,7 +1320,7 @@ ill-formed.  The expression `as_charN_t(E)` is expression-equivalent to:
 ```c++
 char32_t chars[] = U"Unicode";
 std::vector<int> v(std::ranges::begin(chars), std::ranges::end(chars));
-for (char8_t c : s | std::uc::as_utf32)
+for (char8_t c : s | std::uc::as_char32_t)
   cout << (char)c << ' '; // prints U n i c o d e 
 ```
 — end example\]
@@ -1666,6 +1664,24 @@ example, if you start with an lvalue `vector`, then keeping
 ### Adaptor examples
 
 ```c++
+struct my_text_type
+{
+    my_text_type() = default;
+    my_text_type(std::u8string utf8) : utf8_(std::move(utf8)) {}
+
+    auto begin() const {
+        return std::uc::utf_8_to_32_iterator(
+            utf8_.begin(), utf8_.begin(), utf8_.end());
+    }
+    auto end() const {
+        return std::uc::utf_8_to_32_iterator(
+            utf8_.begin(), utf8_.end(), utf8_.end());
+    }
+
+private:
+    std::u8string utf8_;
+};
+
 static_assert(std::is_same_v<
               decltype(my_text_type(u8"text") | std::uc::as_utf16),
               std::uc::utf16_view<std::uc::unpacking_view<std::ranges::owning_view<my_text_type>>>>);
