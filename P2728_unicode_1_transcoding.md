@@ -1,7 +1,7 @@
 ---
 title: "Unicode in the Library, Part 1: UTF Transcoding"
-document: P2728R5
-date: 2023-07-05
+document: P2728R6
+date: 2023-07-11
 audience:
   - SG-16 Unicode
   - LEWG
@@ -64,6 +64,11 @@ monofont: "DejaVu Sans Mono"
 - Ensure `const` and non-`const` overloads for `begin` and `end` in all views.
 - Move `null_sentinel_t` to `std`, remove its `base` member function, and make
   it useful for more than just pointers, based on SG-9 guidance.
+
+## Changes since R5
+
+- Simplify the complicated constraint on the compariason operator for
+  `null_sentinel_t`.
 
 # Motivation
 
@@ -460,11 +465,9 @@ this explicitness should not be forced to write it.
 ```cpp
 namespace std {
   struct null_sentinel_t {
-    template<class I>
-      requires requires { typename @*ITER_CONCEPT*@(I); } &&
-               derived_from<@*ITER_CONCEPT*@(I), forward_iterator_tag> &&
-               default_initializable<iter_value_t<I>> &&
-               equality_comparable<iter_value_t<I>>
+    template<input_iterator I>
+      requires default_initializable<iter_value_t<I>> &&
+               equality_comparable<iter_reference_t<I>, iter_value_t<I>>
     friend constexpr auto operator==(I it, null_sentinel_t) { return *it == iter_value_t<I>{}; }
   };
 
