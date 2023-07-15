@@ -1364,12 +1364,12 @@ namespace std::uc {
         return format::utf16{};
       } else if constexpr (same_as<T, char32_t>) {
         return format::utf32{};
-  #if CODE_UNIT_CONCEPT_OPTION_2
+#if CODE_UNIT_CONCEPT_OPTION_2
       } else if constexpr (same_as<T, char>) {
         return format::utf8{};
       } else if constexpr (same_as<T, wchar_t>) {
         return @*wchar-t-format*@;
-  #endif
+#endif
       }
     }
 
