@@ -1054,6 +1054,13 @@ unpacking/repacking implementation from Boost.Text:
 that provide their own unpacking implementation.  It returns an
 `unpack_result`.
 
+In telecon review, some concerns were voiced about the name
+`uc::unpack_iterator_and_sentinel`.  Some people felt that the name should
+include some mention of "UTF" or "transcoding" or "Unicode".  I think that
+it's fine as-is, since it's in namesapce `std::uc`, but a poll on renaming
+might be in order.  I suggest `uc::unpack_utf_iterator_and_sentinel` as a
+possible alternative.
+
 ### Why input iterators are not unpackable
 
 Input iterators are messed up.  They barely resemble the other iterators.  For
