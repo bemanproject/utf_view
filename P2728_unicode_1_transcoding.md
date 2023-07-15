@@ -1461,34 +1461,15 @@ namespace std::uc {
     friend wostream & operator<<(wostream & os, utf_view v);
   };
 
-  template<utf_range V>
-    requires ranges::view<V>
-  class utf8_view : public utf_view<format::utf8, V> {
-  public:
-    constexpr utf8_view() requires default_initializable<V> = default;
-    constexpr utf8_view(V base) : utf_view<format::utf8, V>{std::move(base)} {}
-  };
-  template<utf_range V>
-    requires ranges::view<V>
-  class utf16_view : public utf_view<format::utf16, V> {
-  public:
-    constexpr utf16_view() requires default_initializable<V> = default;
-    constexpr utf16_view(V base) : utf_view<format::utf16, V>{std::move(base)} {}
-  };
-  template<utf_range V>
-    requires ranges::view<V>
-  class utf32_view : public utf_view<format::utf32, V> {
-  public:
-    constexpr utf32_view() requires default_initializable<V> = default;
-    constexpr utf32_view(V base) : utf_view<format::utf32, V>{std::move(base)} {}
-  };
+  template<format Format, class R>
+  utf_view(R &&) -> utf_view<Format, views::all_t<R>>;
 
-  template<class R>
-  utf8_view(R &&) -> utf8_view<views::all_t<R>>;
-  template<class R>
-  utf16_view(R &&) -> utf16_view<views::all_t<R>>;
-  template<class R>
-  utf32_view(R &&) -> utf32_view<views::all_t<R>>;
+  template<class V>
+  using utf8_view = utf_view<format::utf8, V>;
+  template<class V>
+  using utf16_view = utf_view<format::utf16, V>;
+  template<class V>
+  using utf32_view = utf_view<format::utf32, V>;
 }
 
 namespace std::ranges {
@@ -1496,12 +1477,6 @@ namespace std::ranges {
   inline constexpr bool enable_borrowed_range<uc::unpacking_view<V>> = enable_borrowed_range<V>;
   template<uc::format Format, class V>
   inline constexpr bool enable_borrowed_range<uc::utf_view<Format, V>> = enable_borrowed_range<V>;
-  template<class V>
-  inline constexpr bool enable_borrowed_range<uc::utf8_view<V>> = enable_borrowed_range<V>;
-  template<class V>
-  inline constexpr bool enable_borrowed_range<uc::utf16_view<V>> = enable_borrowed_range<V>;
-  template<class V>
-  inline constexpr bool enable_borrowed_range<uc::utf32_view<V>> = enable_borrowed_range<V>;
 }
 
 namespace std::uc {
@@ -1766,30 +1741,6 @@ namespace std {
         format(const uc::utf_view<Format, V>& view, FormatContext& ctx) const;
 
     constexpr void set_debug_format() noexcept;
-  };
-
-  template<class V, class CharT>
-  struct formatter<uc::utf8_view<V>, CharT> : formatter<uc::utf_view<uc::format::utf8, V>, CharT> {
-    template<class FormatContext>
-    auto format(const uc::utf8_view<V>& view, FormatContext& ctx) const {
-      return formatter<uc::utf_view<uc::format::utf8, V>,CharT>::format(view, ctx);
-    }
-  };
-
-  template<class V, class CharT>
-  struct formatter<uc::utf16_view<V>, CharT> : formatter<uc::utf_view<uc::format::utf16, V>, CharT> {
-    template<class FormatContext>
-    auto format(const uc::utf16_view<V>& view, FormatContext& ctx) const {
-      return formatter<uc::utf_view<uc::format::utf16, V>,CharT>::format(view, ctx);
-    }
-  };
-
-  template<class V, class CharT>
-  struct formatter<uc::utf32_view<V>, CharT> : formatter<uc::utf_view<uc::format::utf32, V>, CharT> {
-    template<class FormatContext>
-    auto format(const uc::utf32_view<V>& view, FormatContext& ctx) const {
-      return formatter<uc::utf_view<uc::format::utf32, V>,CharT>::format(view, ctx);
-    }
   };
 }
 ```
