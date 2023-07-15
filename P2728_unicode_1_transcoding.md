@@ -1084,6 +1084,151 @@ This is all weird.  It's also a pretty small use case.  People don't use input
 iterators that often.  Since this can always be added later, it is not being
 proposed right now.
 
+## Add `project_view`
+
+This template is a `std::ranges` view and adaptor that makes the
+implementation of the code unit views and adaptors nearly trivial.  It is
+being added based on input from SG-9.  No one in the SG-9 telecon could think
+of a name everyone liked; suggestions are welcome.
+
+```c++
+namespace std::ranges {
+  template<input_range V, auto F>
+    requires view<V> &&
+             regular_invocable<decltype(F)&, range_reference_t<V>> &&
+             @*can-reference*@<invoke_result_t<decltype(F)&, range_reference_t<V>>>
+  class project_view : public view_interface<project_view<V, F>>
+  {
+    V @*base_*@ = V();                                                    // @*exposition only*@
+
+    template<bool Const>
+    class @*iterator*@;                                                   // @*exposition only*@
+    template<bool Const>
+    class @*sentinel*@;                                                   // @*exposition only*@
+
+  public:
+    constexpr project_view() requires default_initializable<V> = default;
+    constexpr explicit project_view(V base) : @*base_*@(std::move(base)) {}
+
+    constexpr V& base() & { return @*base_*@; }
+    constexpr const V& base() const& { return @*base_*@; }
+    constexpr V base() && { return std::move(@*base_*@); }
+
+    constexpr @*iterator*@<false> begin() { return @*iterator*@<false>{ranges::begin(@*base_*@)}; }
+    constexpr @*iterator*@<true> begin() const requires range<const V>
+      { return @*iterator*@<true>{ranges::begin(@*base_*@)}; }
+
+    constexpr @*sentinel*@<false> end() { return @*sentinel*@<false>{ranges::end(@*base_*@)}; }
+    constexpr @*iterator*@<false> end() requires common_range<V> { return @*iterator*@<false>{ranges::end(@*base_*@)}; }
+    constexpr @*sentinel*@<true> end() const requires range<const V> { return @*sentinel*@<true>{ranges::end(@*base_*@)}; }
+    constexpr @*iterator*@<true> end() const requires common_range<const V>
+      { return @*iterator*@<true>{ranges::end(@*base_*@)}; }
+
+    constexpr auto size() requires sized_range<V> { return ranges::size(@*base_*@); }
+    constexpr auto size() const requires sized_range<const V> { return ranges::size(@*base_*@); }
+  };
+
+  template<input_range V, auto F>
+    requires view<V> &&
+             regular_invocable<decltype(F)&, range_reference_t<V>> &&
+             @*can-reference*@<invoke_result_t<decltype(F)&, range_reference_t<V>>>
+  template<bool Const>
+  class project_view<V, F>::@*iterator*@
+    : public std::proxy_iterator_interface<
+        iterator_to_tag_t<iterator_t<@*maybe-const*@<Const, V>>>,
+        invoke_result_t<decltype(F)&, range_reference_t<V>>>
+  {
+  public:
+    using reference_type = invoke_result_t<decltype(F)&, range_reference_t<V>>;
+
+  private:
+    using @*iterator_type*@ = iterator_t<@*maybe-const*@<Const, V>>;          // @*exposition only*@
+
+    friend std::iterator_interface_access;
+    @*iterator_type*@ & base_reference() noexcept { return @*it_*@; }         // @*exposition only*@
+    @*iterator_type*@ base_reference() const { return @*it_*@; }              // @*exposition only*@
+
+    @*iterator_type*@ @*it_*@ = @*iterator_type*@();                              // @*exposition only*@
+
+    friend project_view<V, F>::@*sentinel*@<Const>;
+
+  public:
+    constexpr @*iterator*@() = default;
+    constexpr @*iterator*@(@*iterator_type*@ it) : @*it_*@(std::move(it)) {}
+
+    constexpr reference_type operator*() const { return F(*@*it_*@); }
+  };
+
+  template<input_range V, auto F>
+    requires view<V> &&
+             regular_invocable<decltype(F)&, range_reference_t<V>> &&
+             @*can-reference*@<invoke_result_t<decltype(F)&, range_reference_t<V>>>
+  template<bool Const>
+  class project_view<V, F>::@*sentinel*@
+  {
+    using @*Base*@ = @*maybe-const*@<Const, V>;                               // @*exposition only*@
+    using @*sentinel_type*@ = sentinel_t<@*Base*@>;                           // @*exposition only*@
+
+    @*sentinel_type*@ @*end_*@ = @*sentinel_type*@();                             // @*exposition only*@
+
+  public:
+    constexpr @*sentinel*@() = default;
+    constexpr explicit @*sentinel*@(@*sentinel_type*@ end) : @*end_*@(std::move(end)) {}
+    constexpr @*sentinel*@(@*sentinel*@<!Const> i) requires Const
+      && convertible_to<sentinel_t<V>, sentinel_t<@*Base*@>>;
+
+    constexpr @*sentinel_type*@ base() const { return @*end_*@; }
+
+    template<bool OtherConst>
+      requires sentinel_for<@*sentinel_type*@, iterator_t<@*maybe-const*@<OtherConst, V>>>
+    friend constexpr bool operator==(const @*iterator*@<OtherConst> & x, const @*sentinel*@ & y)
+      { return x.@*it_*@ == y.@*end_*@; }
+
+    template<bool OtherConst>
+      requires sized_sentinel_for<@*sentinel_type*@, iterator_t<@*maybe-const*@<OtherConst, V>>>
+    friend constexpr range_difference_t<@*maybe-const*@<OtherConst, V>>
+    operator-(const @*iterator*@<OtherConst> & x, const @*sentinel*@ & y)
+      { return x.@*it_*@ - y.@*end_*@; }
+
+    template<bool OtherConst>
+      requires sized_sentinel_for<@*sentinel_type*@, iterator_t<@*maybe-const*@<OtherConst, V>>>
+    friend constexpr range_difference_t<@*maybe-const*@<OtherConst, V>>
+    operator-(const @*sentinel*@ & y, const @*iterator*@<OtherConst> & x)
+      { return y.@*end_*@ - x.@*it_*@; }
+  };
+
+  template<class R, auto F>
+  project_view(R &&) -> project_view<views::all_t<R>, F>;
+}
+```
+
+`project_view` presents a view of an underlying sequence after applying a
+transformation function to each element.
+
+The name `views::project` denotes a range adaptor object
+([range.adaptor.object]). Given subexpression `E` and the non-type template
+parameter `F`, let `A` be:
+
+```c++
+template<class R>
+using A = project_view<R, F>;
+```
+
+`views​::​project<F>(E)` is expression-equivalent to `A(E)`.
+
+\[Example 1:
+```c++
+vector<int> is{ 0, 1, 2, 3, 4 };
+struct f {
+  static int operator()(int i) const { return i * i; }
+};
+auto squares = views::project<f{}>(is);
+for (int i : squares)
+  cout << i << ' '; // prints 0 1 4 9 16
+```
+— end example\]
+
+
 ## Add code unit views and adaptors
 
 ```c++
@@ -1104,190 +1249,18 @@ namespace std::uc {
   template<class I>
     using @*iterator-to-tag_t*@ = decltype(@*iterator-to-tag*@<I>());         // @*exposition only*@
 
-  template<bool Const, class V, class T>
-  class @*charn-projection-iterator*@                                     // @*exposition only*@
-    : public proxy_iterator_interface<
-        @*iterator-to-tag*@<ranges::iterator_t<maybe_const<Const, V>>>,
-        T>
-  {
-    using @*iterator*@ = ranges::iterator_t<maybe_const<Const, V>>;       // @*exposition only*@
-
-    friend std::iterator_interface_access;                            // @*exposition only*@
-    @*iterator*@ & base_reference() noexcept { return @*it_*@; }              // @*exposition only*@
-    @*iterator*@ base_reference() const { return @*it_*@; }                   // @*exposition only*@
-
-    @*iterator*@ @*it_*@ = @*iterator*@();                                        // @*exposition only*@
-
-    friend @*charn-projection-sentinel*@<Const, V, T>;
-
-  public:
-    constexpr @*charn-projection-iterator*@() = default;
-    constexpr @*charn-projection-iterator*@(@*iterator*@ it) : @*it_*@(std::move(it)) {}
-
-    constexpr T operator*() const { return T(*@*it_*@); }
+  template<class Char>
+  struct @*cast-to-charn*@ {                                              // @*exposition only*@
+    static constexpr Char operator()(Char c) const { return c; }
   };
 
-  template<bool Const, class V, class T>
-  class @*charn-projection-sentinel*@                                     // @*exposition only*@
-  {
-    using @*Base*@ = maybe_const<Const, V>;                               // @*exposition only*@
-    using @*sentinel*@ = ranges::sentinel_t<@*Base*@>;                        // @*exposition only*@
-
-    @*sentinel*@ @*end_*@ = @*sentinel*@();                                       // @*exposition only*@
-
-  public:
-    constexpr @*charn-projection-sentinel*@() = default;
-    constexpr explicit @*charn-projection-sentinel*@(@*sentinel*@ end) : @*end_*@(std::move(end)) {}
-    constexpr @*charn-projection-sentinel*@(@*charn-projection-sentinel*@<!Const, V, T> i) requires Const
-      && convertible_to<ranges::sentinel_t<V>, ranges::sentinel_t<@*Base*@>>;
-
-    constexpr @*sentinel*@ base() const { return @*end_*@; }
-
-    template<bool OtherConst>
-      requires sentinel_for<@*sentinel*@, ranges::iterator_t<maybe_const<OtherConst, V>>>
-        friend constexpr bool operator==(const @*charn-projection-iterator*@<OtherConst, V, T> & x,
-                                         const @*charn-projection-sentinel*@ & y)
-          { return x.@*it_*@ == y.@*end_*@; }
-
-    template<bool OtherConst>
-      requires sized_sentinel_for<@*sentinel*@, ranges::iterator_t<maybe_const<OtherConst, V>>>
-        friend constexpr ranges::range_difference_t<maybe_const<OtherConst, V>>
-          operator-(const @*charn-projection-iterator*@<OtherConst, V, T> & x, const @*charn-projection-sentinel*@ & y)
-            { return x.@*it_*@ - y.@*end_*@; }
-
-    template<bool OtherConst>
-      requires sized_sentinel_for<@*sentinel*@, ranges::iterator_t<maybe_const<OtherConst, V>>>
-        friend constexpr ranges::range_difference_t<maybe_const<OtherConst, V>>
-          operator-(const @*charn-projection-sentinel*@ & y, const @*charn-projection-iterator*@<OtherConst, V, T> & x)
-            { return y.@*end_*@ - x.@*it_*@; }
-  };
-
-  template<ranges::view V>
-    requires ranges::input_range<V> && convertible_to<ranges::range_reference_t<V>, char8_t>
-  class char8_view : public ranges::view_interface<char8_view<V>>
-  {
-    V @*base_*@ = V();                                                    // @*exposition only*@
-
-    template<bool Const>
-    using @*iterator*@ = @*charn-projection-iterator*@<Const, V, char8_t>;    // @*exposition only*@
-    template<bool Const>
-    using @*sentinel*@ = @*charn-projection-sentinel*@<Const, V, char8_t>;    // @*exposition only*@
-
-    template<format Format2, utf_range V2>
-      requires ranges::view<V2>
-    friend class utf_view;
-
-  public:
-    constexpr char8_view() requires default_initializable<V> = default;
-    constexpr explicit char8_view(V base) : @*base_*@(std::move(base)) {}
-
-    constexpr V base() const & requires copy_constructible<V> { return @*base_*@; }
-    constexpr V base() && { return std::move(@*base_*@); }
-
-    constexpr @*iterator*@<false> begin() { return @*iterator*@<false>{ranges::begin(@*base_*@)}; }
-    constexpr @*iterator*@<true> begin() const requires ranges::range<const V>
-      { return @*iterator*@<true>{ranges::begin(@*base_*@)}; }
-
-    constexpr @*sentinel*@<false> end() { return @*sentinel*@<false>{ranges::end(@*base_*@)}; }
-    constexpr @*iterator*@<false> end() requires ranges::common_range<V> { return @*iterator*@<false>{ranges::end(@*base_*@)}; }
-    constexpr @*sentinel*@<true> end() const requires ranges::range<const V> { return @*sentinel*@<true>{ranges::end(@*base_*@)}; }
-    constexpr @*iterator*@<true> end() const requires ranges::common_range<const V>
-      { return @*iterator*@<true>{ranges::end(@*base_*@)}; }
-
-    constexpr auto size() requires ranges::sized_range<V> { return ranges::size(@*base_*@); }
-    constexpr auto size() const requires ranges::sized_range<const V> { return ranges::size(@*base_*@); }
-  };
-
-  template<ranges::view V>
-    requires ranges::input_range<V> && convertible_to<ranges::range_reference_t<V>, char16_t>
-  class char16_view : public ranges::view_interface<char16_view<V>>
-  {
-    V @*base_*@ = V();                                                    // @*exposition only*@
-
-    template<bool Const>
-    using @*iterator*@ = @*charn-projection-iterator*@<Const, V, char16_t>;   // @*exposition only*@
-    template<bool Const>
-    using @*sentinel*@ = @*charn-projection-sentinel*@<Const, V, char16_t>;   // @*exposition only*@
-
-    template<format Format2, utf_range V2>
-      requires ranges::view<V2>
-    friend class utf_view;
-
-  public:
-    constexpr char16_view() requires default_initializable<V> = default;
-    constexpr explicit char16_view(V base) : @*base_*@(std::move(base)) {}
-
-    constexpr V base() const & requires copy_constructible<V> { return @*base_*@; }
-    constexpr V base() && { return std::move(@*base_*@); }
-
-    constexpr @*iterator*@<false> begin() { return @*iterator*@<false>{ranges::begin(@*base_*@)}; }
-    constexpr @*iterator*@<true> begin() const requires ranges::range<const V>
-      { return @*iterator*@<true>{ranges::begin(@*base_*@)}; }
-
-    constexpr @*sentinel*@<false> end() { return @*sentinel*@<false>{ranges::end(@*base_*@)}; }
-    constexpr @*iterator*@<false> end() requires ranges::common_range<V> { return @*iterator*@<false>{ranges::end(@*base_*@)}; }
-    constexpr @*sentinel*@<true> end() const requires ranges::range<const V> { return @*sentinel*@<true>{ranges::end(@*base_*@)}; }
-    constexpr @*iterator*@<true> end() const requires ranges::common_range<const V>
-      { return @*iterator*@<true>{ranges::end(@*base_*@)}; }
-
-    constexpr auto size() requires ranges::sized_range<V> { return ranges::size(@*base_*@); }
-    constexpr auto size() const requires ranges::sized_range<const V> { return ranges::size(@*base_*@); }
-  };
-
-  template<ranges::view V>
-    requires ranges::input_range<V> && convertible_to<ranges::range_reference_t<V>, char32_t>
-  class char32_view : public ranges::view_interface<char32_view<V>>
-  {
-    V @*base_*@ = V();                                                    // @*exposition only*@
-
-    template<bool Const>
-    using @*iterator*@ = @*charn-projection-iterator*@<Const, V, char32_t>;   // @*exposition only*@
-    template<bool Const>
-    using @*sentinel*@ = @*charn-projection-sentinel*@<Const, V, char32_t>;   // @*exposition only*@
-
-    template<format Format2, utf_range V2>
-      requires ranges::view<V2>
-    friend class utf_view;
-
-  public:
-    constexpr char32_view() requires default_initializable<V> = default;
-    constexpr explicit char32_view(V base) : @*base_*@(std::move(base)) {}
-
-    constexpr V base() const & requires copy_constructible<V> { return @*base_*@; }
-    constexpr V base() && { return std::move(@*base_*@); }
-
-    constexpr @*iterator*@<false> begin() { return @*iterator*@<false>{ranges::begin(@*base_*@)}; }
-    constexpr @*iterator*@<true> begin() const requires ranges::range<const V>
-      { return @*iterator*@<true>{ranges::begin(@*base_*@)}; }
-
-    constexpr @*sentinel*@<false> end() { return @*sentinel*@<false>{ranges::end(@*base_*@)}; }
-    constexpr @*iterator*@<false> end() requires ranges::common_range<V> { return @*iterator*@<false>{ranges::end(@*base_*@)}; }
-    constexpr @*sentinel*@<true> end() const requires ranges::range<const V> { return @*sentinel*@<true>{ranges::end(@*base_*@)}; }
-    constexpr @*iterator*@<true> end() const requires ranges::common_range<const V>
-      { return @*iterator*@<true>{ranges::end(@*base_*@)}; }
-
-    constexpr auto size() requires ranges::sized_range<V> { return ranges::size(@*base_*@); }
-    constexpr auto size() const requires ranges::sized_range<const V> { return ranges::size(@*base_*@); }
-  };
-
-  template<class R>
-  char8_view(R &&) -> char8_view<views::all_t<R>>;
-  template<class R>
-  char16_view(R &&) -> char16_view<views::all_t<R>>;
-  template<class R>
-  char32_view(R &&) -> char32_view<views::all_t<R>>;
-}
-
-namespace std::ranges {
   template<class V>
-  inline constexpr bool enable_borrowed_range<uc::char8_view<V>> = enable_borrowed_range<V>;
+  using char8_view = project_view<V, @*cast-to-charn*@<char8_t>{}>;
   template<class V>
-  inline constexpr bool enable_borrowed_range<uc::char16_view<V>> = enable_borrowed_range<V>;
+  using char16_view = project_view<V, @*cast-to-charn*@<char16_t>{}>;
   template<class V>
-  inline constexpr bool enable_borrowed_range<uc::char32_view<V>> = enable_borrowed_range<V>;
-}
+  using char32_view = project_view<V, @*cast-to-charn*@<char32_t>{}>;
 
-namespace std::uc {
   inline constexpr @*unspecified*@ as_char8_t;
   inline constexpr @*unspecified*@ as_char16_t;
   inline constexpr @*unspecified*@ as_char32_t;
@@ -1321,10 +1294,11 @@ ill-formed.  The expression `as_charN_t(E)` is expression-equivalent to:
 
 \[Example 1:
 ```c++
-char32_t chars[] = U"Unicode";
-std::vector<int> v(std::ranges::begin(chars), std::ranges::end(chars));
-for (char8_t c : s | std::uc::as_char32_t)
+vector<int> v = {'U', 'n', 'i', 'c', 'o', 'd', 'e'};
+for (auto c : v | uc::as_char8_t) {
+  static_assert(same_as<decltype(c), char8_t>);
   cout << (char)c << ' '; // prints U n i c o d e 
+}
 ```
 — end example\]
 
