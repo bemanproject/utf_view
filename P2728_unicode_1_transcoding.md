@@ -1511,6 +1511,8 @@ namespace std::uc {
 }
 
 namespace std::ranges {
+  template<class V>
+  inline constexpr bool enable_borrowed_range<uc::unpacking_view<V>> = enable_borrowed_range<V>;
   template<uc::format Format, class V>
   inline constexpr bool enable_borrowed_range<uc::utf_view<Format, V>> = enable_borrowed_range<V>;
   template<class V>
