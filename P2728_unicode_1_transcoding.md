@@ -1355,7 +1355,7 @@ namespace std::uc {
     }
 
   template<utf_range V>
-    requires ranges::view<V>
+    requires ranges::view<V> && ranges::forward_range<V>
   class unpacking_view : public ranges::view_interface<unpacking_view<V>> {
     V @*base_*@ = V();                                                        // @*exposition only*@
 
