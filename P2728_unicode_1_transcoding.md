@@ -69,6 +69,9 @@ monofont: "DejaVu Sans Mono"
 
 - Simplify the complicated constraint on the compariason operator for
   `null_sentinel_t`.
+- Introduce `ranges::project_view`, and inplement `charN_view`s in terms of
+  that.
+- Convert the `utfN_view`s to aliases, rather than individual classes.
 
 # Motivation
 
