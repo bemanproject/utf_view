@@ -1,0 +1,3 @@
+[submodule "thirdparty/null_term"]
+	path = thirdparty/null_term
+	url = git@github.com:ednolan/null_term.git
