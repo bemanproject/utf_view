@@ -1,3 +1,6 @@
 [submodule "thirdparty/null_term"]
 	path = thirdparty/null_term
 	url = git@github.com:ednolan/null_term.git
+[submodule "thirdparty/std_archetypes"]
+	path = thirdparty/std_archetypes
+	url = git@github.com:ednolan/std_archetypes.git

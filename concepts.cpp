@@ -1,0 +1,42 @@
+module;
+
+#include <concepts>
+#include <iterator>
+#include <ranges>
+#include <type_traits>
+
+module p2728:concepts;
+
+import null_term;
+
+namespace p2728 {
+
+  using namespace std;
+
+  template <class T>
+    concept code_unit = same_as<T, char8_t> || same_as<T, char16_t> ||
+                        same_as<T, char32_t>
+#ifdef WCHAR_T_IS_CODE_UNIT
+                        || same_as<T, wchar_t>
+#ifdef CHAR_IS_CODE_UNIT
+                        || same_as<T, char>
+#endif
+#endif
+        ;
+
+  template<class T>
+    concept utf_iter = input_iterator<T> && code_unit<iter_value_t<T>>;
+#ifdef CHARN_T_POINTERS_ARE_RANGE_LIKE
+  template<class T>
+    concept utf_pointer = is_pointer_v<T> && code_unit<iter_value_t<T>>;
+#endif
+  template<class T>
+    concept utf_range = ranges::input_range<T> && code_unit<iter_value_t<T>>;
+
+#ifdef CHARN_T_POINTERS_ARE_RANGE_LIKE
+  template<class T>
+    concept utf_range_like =
+      utf_range<remove_reference_t<T>> || utf_pointer<remove_reference_t<T>>;
+#endif
+
+} // namespace p2728
