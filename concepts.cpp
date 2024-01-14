@@ -5,7 +5,7 @@ module;
 #include <ranges>
 #include <type_traits>
 
-module p2728:concepts;
+export module p2728:concepts;
 
 import null_term;
 
