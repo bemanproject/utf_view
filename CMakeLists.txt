@@ -44,7 +44,7 @@ add_custom_command(
   OUTPUT concepts.cpp
   COMMAND ${CMAKE_SOURCE_DIR}/preprocess.py
   ARGS ${CMAKE_SOURCE_DIR}/concepts.cpp.in
-       -o ${CMAKE_CURRENT_BINARY_DIR}/concepts.cpp)
+       --out-dir ${CMAKE_CURRENT_BINARY_DIR})
 
 add_library(p2728)
 target_sources(p2728
