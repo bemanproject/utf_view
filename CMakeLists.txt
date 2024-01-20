@@ -31,6 +31,14 @@ if (NOT TARGET std_archetypes)
   add_subdirectory(thirdparty/std_archetypes)
 endif()
 
+set(P2728_INPUT_FILES
+     ${CMAKE_SOURCE_DIR}/concepts.cpp.in
+     ${CMAKE_SOURCE_DIR}/concepts_test.cpp.in
+     ${CMAKE_SOURCE_DIR}/traits.cpp.in
+     ${CMAKE_SOURCE_DIR}/traits_test.cpp.in
+     ${CMAKE_SOURCE_DIR}/utf_iterator.cpp.in
+     ${CMAKE_SOURCE_DIR}/utf_iterator_test.cpp.in)
+
 set(P2728_FILE_SET
     ${CMAKE_CURRENT_BINARY_DIR}/concepts.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/traits.cpp
@@ -46,15 +54,9 @@ set(P2728_LIB_DEPS
 
 add_custom_command(
   OUTPUT ${P2728_FILE_SET} ${P2728_TEST_FILE_SET}
+  DEPENDS ${CMAKE_SOURCE_DIR}/preprocess.py ${P2728_INPUT_FILES}
   COMMAND ${CMAKE_SOURCE_DIR}/preprocess.py
-  ARGS
-     --out-dir ${CMAKE_CURRENT_BINARY_DIR}
-     ${CMAKE_SOURCE_DIR}/concepts.cpp.in
-     ${CMAKE_SOURCE_DIR}/concepts_test.cpp.in
-     ${CMAKE_SOURCE_DIR}/traits.cpp.in
-     ${CMAKE_SOURCE_DIR}/traits_test.cpp.in
-     ${CMAKE_SOURCE_DIR}/utf_iterator.cpp.in
-     ${CMAKE_SOURCE_DIR}/utf_iterator_test.cpp.in)
+  ARGS --out-dir ${CMAKE_CURRENT_BINARY_DIR} ${P2728_INPUT_FILES})
 
 add_library(p2728)
 target_sources(p2728

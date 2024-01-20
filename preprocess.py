@@ -6,7 +6,7 @@ import re
 
 def kebab_to_snake(text):
     """Convert kebab-case to snake_case."""
-    return text.replace('-', '_')
+    return "exposition_only_" + text.replace('-', '_')
 
 def process_file(input_path, output_path):
     """Process the file: read, convert, and write."""
