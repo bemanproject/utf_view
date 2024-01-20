@@ -18,5 +18,9 @@ namespace p2728 {
     std::is_same_v<
       std::forward_iterator_tag,
       @*bidirectional-at-most-t*@<std_archetypes::forward_iterator_archetype>>);
+  static_assert(
+    std::is_same_v<
+      std::bidirectional_iterator_tag,
+      @*bidirectional-at-most-t*@<std_archetypes::bidirectional_iterator_archetype>>);
 
 } // namespace p2728
