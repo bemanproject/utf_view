@@ -32,24 +32,35 @@ if (NOT TARGET std_archetypes)
 endif()
 
 set(P2728_FILE_SET
-    iface.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/concepts.cpp
-    traits.cpp
-    utf_iterator.cpp)
+    ${CMAKE_CURRENT_BINARY_DIR}/traits.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/utf_iterator.cpp)
+
+set(P2728_TEST_FILE_SET
+    ${CMAKE_CURRENT_BINARY_DIR}/concepts_test.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/traits_test.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/utf_iterator_test.cpp)
 
 set(P2728_LIB_DEPS
     null_term std_archetypes)
 
 add_custom_command(
-  OUTPUT concepts.cpp
+  OUTPUT ${P2728_FILE_SET} ${P2728_TEST_FILE_SET}
   COMMAND ${CMAKE_SOURCE_DIR}/preprocess.py
-  ARGS ${CMAKE_SOURCE_DIR}/concepts.cpp.in
-       --out-dir ${CMAKE_CURRENT_BINARY_DIR})
+  ARGS
+     --out-dir ${CMAKE_CURRENT_BINARY_DIR}
+     ${CMAKE_SOURCE_DIR}/concepts.cpp.in
+     ${CMAKE_SOURCE_DIR}/concepts_test.cpp.in
+     ${CMAKE_SOURCE_DIR}/traits.cpp.in
+     ${CMAKE_SOURCE_DIR}/traits_test.cpp.in
+     ${CMAKE_SOURCE_DIR}/utf_iterator.cpp.in
+     ${CMAKE_SOURCE_DIR}/utf_iterator_test.cpp.in)
 
 add_library(p2728)
 target_sources(p2728
   PUBLIC
     FILE_SET cxx_modules TYPE CXX_MODULES FILES
+   iface.cpp
    ${P2728_FILE_SET}
 )
 target_link_libraries(p2728 PUBLIC ${P2728_LIB_DEPS})
@@ -57,7 +68,9 @@ add_library(p2728_test)
 target_sources(p2728_test
   PUBLIC
     FILE_SET cxx_modules TYPE CXX_MODULES FILES
-   ${P2728_FILE_SET} concepts_test.cpp traits_test.cpp utf_iterator_test.cpp
+   iface.cpp
+   ${P2728_FILE_SET}
+   ${P2728_TEST_FILE_SET}
 )
 target_link_libraries(p2728_test PUBLIC ${P2728_LIB_DEPS})
 add_executable(test_p2728 test.cpp)
