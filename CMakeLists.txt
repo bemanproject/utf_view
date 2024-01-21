@@ -34,19 +34,15 @@ endif()
 set(P2728_INPUT_FILES
      ${CMAKE_SOURCE_DIR}/concepts.cpp.in
      ${CMAKE_SOURCE_DIR}/concepts_test.cpp.in
-     ${CMAKE_SOURCE_DIR}/traits.cpp.in
-     ${CMAKE_SOURCE_DIR}/traits_test.cpp.in
      ${CMAKE_SOURCE_DIR}/utf_iterator.cpp.in
      ${CMAKE_SOURCE_DIR}/utf_iterator_test.cpp.in)
 
 set(P2728_FILE_SET
     ${CMAKE_CURRENT_BINARY_DIR}/concepts.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/traits.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/utf_iterator.cpp)
 
 set(P2728_TEST_FILE_SET
     ${CMAKE_CURRENT_BINARY_DIR}/concepts_test.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/traits_test.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/utf_iterator_test.cpp)
 
 set(P2728_LIB_DEPS

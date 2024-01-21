@@ -4,6 +4,7 @@ module;
 #include <iterator>
 
 export module p2728:utf_iterator;
+import :concepts;
 
 namespace p2728 {
 
@@ -29,6 +30,125 @@ namespace p2728 {
 
     I first;
     I curr;
+  };
+
+  template<
+    @*code-unit*@ ToType,
+    input_iterator I,
+    sentinel_for<I> S>
+    requires @*code-unit*@<iter_value_t<I>>
+  class utf_iterator {
+  public:
+    using value_type = ToType;
+
+    constexpr utf_iterator() = default;
+
+    constexpr utf_iterator(I first, I it, S last) requires bidirectional_iterator<I>
+      : first_and_curr_{first, it}, last_(last) {
+      if (curr() != last_)
+        read();
+    }
+    constexpr utf_iterator(I, I it, S last) requires (!bidirectional_iterator<I>)
+      : first_and_curr_{it}, last_(last) {
+      if (curr() != last_)
+        read();
+    }
+    constexpr utf_iterator(I it, S last) requires (!bidirectional_iterator<I>)
+      : first_and_curr_{it}, last_(last) {
+      if (curr() != last_)
+        read();
+    }
+
+    template<class I2, class S2>
+      requires convertible_to<I2, I> && convertible_to<S2, S>
+        constexpr utf_iterator(const utf_iterator<ToType, I2, S2>& other) :
+      buf_(other.buf_),
+      first_and_curr_(other.first_and_curr_),
+      buf_index_(other.buf_index_),
+      buf_last_(other.buf_last_),
+      last_(other.last_)
+    {}
+
+    constexpr I begin() const requires bidirectional_iterator<I> { return first(); }
+    constexpr S end() const { return last_; }
+
+    constexpr I base() const requires forward_iterator<I> { return curr(); }
+
+    constexpr value_type operator*() const { return buf_[buf_index_]; }
+
+    constexpr utf_iterator& operator++() {
+      if (buf_index_ + 1 == buf_last_ && curr() != last_) {
+        if constexpr (forward_iterator<I>) {
+          advance(curr(), to_increment_);
+        }
+        if (curr() == last_)
+          buf_index_ = 0;
+        else
+          read();
+      } else if (buf_index_ + 1 < buf_last_) {
+        ++buf_index_;
+      }
+      return *this;
+    }
+
+    constexpr utf_iterator& operator--() requires bidirectional_iterator<I> {
+      if (!buf_index_ && curr() != first())
+        read_reverse();
+      else if (buf_index_)
+        --buf_index_;
+      return *this;
+    }
+
+    friend constexpr bool operator==(utf_iterator lhs, utf_iterator rhs)
+      requires forward_iterator<I> || requires (I i) { i != i; } {
+      if constexpr (forward_iterator<I>) {
+        return lhs.curr() == rhs.curr() && lhs.buf_index_ == rhs.buf_index_;
+      } else {
+        if (lhs.curr() != rhs.curr())
+          return false;
+
+        if (lhs.buf_index_ == rhs.buf_index_ &&
+          lhs.buf_last_ == rhs.buf_last_) {
+          return true;
+        }
+
+        return lhs.buf_index_ == lhs.buf_last_ &&
+             rhs.buf_index_ == rhs.buf_last_;
+      }
+    }
+
+    friend constexpr bool operator==(utf_iterator lhs, S rhs) {
+      if constexpr (forward_iterator<I>) {
+        return lhs.curr() == rhs;
+      } else {
+        return lhs.curr() == rhs && lhs.buf_index_ == lhs.buf_last_;
+      }
+    }
+
+  private:
+    constexpr void read();                                            // @*exposition only*@
+    constexpr void read_reverse();                                    // @*exposition only*@
+
+    constexpr I first() const requires bidirectional_iterator<I>      // @*exposition only*@
+      { return first_and_curr_.first; }
+    constexpr I& curr() { return first_and_curr_.curr; }              // @*exposition only*@
+    constexpr I curr() const { return first_and_curr_.curr; }         // @*exposition only*@
+
+    array<value_type, 4 / sizeof(ToType)> buf_;           // @*exposition only*@
+
+    @*first-and-curr*@<I> first_and_curr_;                                // @*exposition only*@
+
+    uint8_t buf_index_ = 0;                                           // @*exposition only*@
+    uint8_t buf_last_ = 0;                                            // @*exposition only*@
+    uint8_t to_increment_ = 0;                                        // @*exposition only*@
+
+    [[no_unique_address]] S last_;                                    // @*exposition only*@
+
+    template<
+      @*code-unit*@ ToType2,
+      input_iterator I2,
+      sentinel_for<I2> S2>
+    friend class utf_iterator;
   };
 
 } // namespace p2728

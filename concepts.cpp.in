@@ -6,7 +6,6 @@ module;
 #include <type_traits>
 
 export module p2728:concepts;
-
 import null_term;
 
 namespace p2728 {
