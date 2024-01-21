@@ -34,16 +34,16 @@ endif()
 set(P2728_INPUT_FILES
      ${CMAKE_SOURCE_DIR}/concepts.cpp.in
      ${CMAKE_SOURCE_DIR}/concepts_test.cpp.in
-     ${CMAKE_SOURCE_DIR}/utf_iterator.cpp.in
-     ${CMAKE_SOURCE_DIR}/utf_iterator_test.cpp.in)
+     ${CMAKE_SOURCE_DIR}/utf_view.cpp.in
+     ${CMAKE_SOURCE_DIR}/utf_view_test.cpp.in)
 
 set(P2728_FILE_SET
     ${CMAKE_CURRENT_BINARY_DIR}/concepts.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/utf_iterator.cpp)
+    ${CMAKE_CURRENT_BINARY_DIR}/utf_view.cpp)
 
 set(P2728_TEST_FILE_SET
     ${CMAKE_CURRENT_BINARY_DIR}/concepts_test.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/utf_iterator_test.cpp)
+    ${CMAKE_CURRENT_BINARY_DIR}/utf_view_test.cpp)
 
 set(P2728_LIB_DEPS
     null_term std_archetypes)

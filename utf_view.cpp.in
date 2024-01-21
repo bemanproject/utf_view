@@ -3,7 +3,7 @@ module;
 #include <concepts>
 #include <iterator>
 
-export module p2728:utf_iterator;
+export module p2728:utf_view;
 import :concepts;
 
 namespace p2728 {
