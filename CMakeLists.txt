@@ -55,7 +55,7 @@ set(P2728_LIB_DEPS
 add_custom_command(
   OUTPUT ${P2728_FILE_SET} ${P2728_TEST_FILE_SET}
   DEPENDS ${CMAKE_SOURCE_DIR}/preprocess.py ${P2728_INPUT_FILES}
-  COMMAND ${CMAKE_SOURCE_DIR}/preprocess.py
+  COMMAND python3 ${CMAKE_SOURCE_DIR}/preprocess.py
   ARGS --out-dir ${CMAKE_CURRENT_BINARY_DIR} ${P2728_INPUT_FILES})
 
 add_library(p2728)
