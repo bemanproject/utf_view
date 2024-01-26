@@ -1,6 +1,7 @@
 module;
 
 #include <concepts>
+#include <cstdint>
 #include <iterator>
 
 export module p2728:utf_view;
