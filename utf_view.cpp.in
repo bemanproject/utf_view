@@ -210,11 +210,7 @@ namespace p2728 {
       }
 
       friend constexpr bool operator==(utf_iterator const& lhs, @*sent*@ rhs) requires (!copyable<@*iter*@>) {
-        if constexpr (forward_iterator<@*iter*@>) {
-          return lhs.curr() == rhs;
-        } else {
-          return lhs.curr() == rhs && lhs.buf_index_ == lhs.buf_last_;
-        }
+        return lhs.curr() == rhs && lhs.buf_index_ == lhs.buf_last_;
       }
 
     private:
@@ -281,8 +277,8 @@ namespace p2728 {
 
     constexpr bool empty() const { return ranges::empty(@*base_*@); }
 
-    friend ostream & operator<<(ostream & os, utf_view v);
-    friend wostream & operator<<(wostream & os, utf_view v);
+    friend ostream & operator<<(ostream & os, utf_view v) {}
+    friend wostream & operator<<(wostream & os, utf_view v) {}
 
     // todo friendship with other utf_view/iterator
   };
