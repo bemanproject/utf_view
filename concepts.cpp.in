@@ -30,7 +30,7 @@ namespace p2728 {
     concept @*utf-pointer*@ = is_pointer_v<T> && @*code-unit*@<iter_value_t<T>>;
 #endif
   template<class T>
-    concept @*utf-range*@ = ranges::input_range<T> && @*code-unit*@<iter_value_t<T>>;
+    concept @*utf-range*@ = ranges::input_range<T> && @*code-unit*@<ranges::range_value_t<T>>;
 
 #ifdef CHARN_T_POINTERS_ARE_RANGE_LIKE
   template<class T>

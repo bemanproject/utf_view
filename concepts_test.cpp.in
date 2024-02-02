@@ -76,4 +76,6 @@ namespace p2728 {
   static_assert(!@*utf-pointer*@<int*>);
 #endif
 
+// todo: utf-range tests
+
 } // namespace p2728
