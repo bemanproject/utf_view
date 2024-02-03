@@ -24,10 +24,10 @@ namespace p2728 {
       template<class I>
       struct @*first-and-curr*@ {                         // @*exposition only*@
         @*first-and-curr*@() = default;
-        @*first-and-curr*@(I curr) : curr{move(curr)} {}
+        constexpr @*first-and-curr*@(I curr) : curr{move(curr)} {}
         template<class I2>
           requires convertible_to<I2, I>
-          @*first-and-curr*@(const @*first-and-curr*@<I2>& other)
+          constexpr @*first-and-curr*@(const @*first-and-curr*@<I2>& other)
           : curr{other.curr} {}
 
         I curr;
@@ -35,10 +35,10 @@ namespace p2728 {
       template<bidirectional_iterator I>
       struct @*first-and-curr*@<I> {                // @*exposition only*@
         @*first-and-curr*@() = default;
-        @*first-and-curr*@(I first, I curr) : first{first}, curr{curr} {}
+        constexpr @*first-and-curr*@(I first, I curr) : first{first}, curr{curr} {}
         template<class I2>
           requires convertible_to<I2, I>
-          @*first-and-curr*@(const @*first-and-curr*@<I2>& other)
+          constexpr @*first-and-curr*@(const @*first-and-curr*@<I2>& other)
           : first{other.first}, curr{other.curr} {}
 
         I first;
