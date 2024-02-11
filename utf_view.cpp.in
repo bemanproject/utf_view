@@ -1,8 +1,13 @@
 module;
 
+#include <bit>
 #include <concepts>
 #include <cstdint>
 #include <iterator>
+#include <limits>
+#include <optional>
+#include <type_traits>
+#include <utility>
 
 export module p2728:utf_view;
 import :concepts;
@@ -10,6 +15,17 @@ import :concepts;
 namespace p2728 {
 
   using namespace std;
+
+  enum class transcoding_error {
+    invalid_start, // e.g. utf8 0xC0
+    truncated, // e.g. utf8 0xE1 0x80 utf16 0xD800
+    unexpected_continuation, // e.g. utf8 0x80 utf16 0xDC00
+    start_of_overlong, // e.g. utf8 0xE0 0x80
+    start_of_surrogate, // e.g. utf8 0xED 0xA0
+    start_of_out_of_range, // e.g. utf8 0xF4 0x90
+    surrogate, // e.g. utf32 0x0000D800
+    out_of_range, // e.g. utf32 0x00110000
+  };
 
   export template<@*code_unit*@ ToType, @*utf_range*@ V>
     requires ranges::view<V>
@@ -214,7 +230,294 @@ namespace p2728 {
       }
 
     private:
-      constexpr void read() {};                                            // @*exposition only*@
+
+    template<typename>
+      struct guard
+      {
+        constexpr guard(void*, @*iter*@&) { }
+      };
+
+    template<typename It> requires forward_iterator<It>
+      struct guard<It>
+      {
+        constexpr ~guard() { iter->curr() = std::move(orig); }
+        utf_iterator* iter;
+        It orig;
+      };
+
+      // A code point that can be encoded in a single code unit of type CharT.
+      template<typename CharT>
+        constexpr bool
+        is_single_code_unit(char32_t c)
+        {
+          if constexpr (std::numeric_limits<CharT>::max() <= 0xFF)
+            return c < 0x7F; // ASCII character
+          else
+            return c < std::numeric_limits<CharT>::max();
+        }
+
+
+      constexpr void
+      read_utf8()
+      {
+        guard<@*iter*@> g{this, curr()};
+	char32_t c{};
+	uint8_t u = *curr();
+        ++curr();
+	const uint8_t lo_bound = 0x80, hi_bound = 0xBF;
+	uint8_t to_incr = 1;
+        error_.reset();
+
+        auto const error{
+          [&](transcoding_error const error) {
+            error_ = error;
+            c = U'\N{REPLACEMENT CHARACTER}';
+          }};
+
+	if (u <= 0x7F) [[likely]]      // 0x00 to 0x7F
+	  c = u;
+	else if (u < 0xC2) [[unlikely]] {
+	  error(transcoding_error::invalid_start);
+	} else if (curr() == last_) [[unlikely]] {
+          error(transcoding_error::truncated);
+	} else if (u <= 0xDF) // 0xC2 to 0xDF
+	  {
+	    c = u & 0x1F;
+	    u = *curr();
+
+	    if (u < lo_bound || u > hi_bound) [[unlikely]]
+	      error(transcoding_error::truncated);
+	    else
+	      {
+		c = (c << 6) | (u & 0x3F);
+		++curr();
+		++to_incr;
+	      }
+	  }
+	else if (u <= 0xEF) // 0xE0 to 0xEF
+	  {
+            uint8_t orig = u;
+	    c = u & 0x0F;
+	    u = *curr();
+
+	    if (orig == 0xE0 && 0x80 <= c && c < 0xA0) [[unlikely]]
+              error(transcoding_error::start_of_overlong);
+            else if (orig == 0xED && 0xA0 <= c && c < 0xC0) [[unlikely]]
+              error(transcoding_error::start_of_surrogate);
+            else if (u < lo_bound || u > hi_bound) [[unlikely]]
+	      error(transcoding_error::truncated);
+	    else if (++curr() == last_) { [[unlikely]]
+              ++to_incr;
+	      error(transcoding_error::truncated);
+	    } else
+	      {
+		++to_incr;
+		c = (c << 6) | (u & 0x3F);
+		u = *curr();
+
+		if (u < lo_bound || u > hi_bound) [[unlikely]]
+                  error(transcoding_error::truncated);
+		else
+		  {
+		    c = (c << 6) | (u & 0x3F);
+		    ++curr();
+		    ++to_incr;
+		  }
+	      }
+	  }
+	else if (u <= 0xF4) // 0xF0 to 0xF4
+	  {
+            uint8_t orig = u;
+	    c = u & 0x07;
+	    u = *curr();
+
+	    if (orig == 0xF0 && 0x80 <= c && c < 0x90) [[unlikely]]
+              error(transcoding_error::start_of_overlong);
+            else if (orig == 0xF4 && 0x90 <= c && c < 0xC0) [[unlikely]]
+              error(transcoding_error::start_of_out_of_range);
+            if (u < lo_bound || u > hi_bound) [[unlikely]]
+	      error(transcoding_error::truncated);
+	    else if (++curr() == last_) { [[unlikely]]
+              ++to_incr;
+	      error(transcoding_error::truncated);
+	    } else
+	      {
+		++to_incr;
+		c = (c << 6) | (u & 0x3F);
+		u = *curr();
+
+		if (u < lo_bound || u > hi_bound) [[unlikely]]
+		  error(transcoding_error::truncated);
+		else if (++curr() == last_) { [[unlikely]]
+                  ++to_incr;
+		  error(transcoding_error::truncated);
+		} else
+		  {
+		    ++to_incr;
+		    c = (c << 6) | (u & 0x3F);
+		    u = *curr();
+
+		    if (u < lo_bound || u > hi_bound) [[unlikely]]
+		      error(transcoding_error::truncated);
+		    else
+		      {
+			c = (c << 6) | (u & 0x3F);
+			++curr();
+			++to_incr;
+		      }
+		  }
+	      }
+	  }
+	else [[unlikely]]
+	  error(transcoding_error::invalid_start);
+
+	update(c, to_incr);
+      }
+
+      constexpr void
+      read_utf16()
+      {
+        guard<@*iter*@> g{this, curr()};
+	char32_t c{};
+	uint16_t u = *curr();
+        ++curr();
+	uint8_t to_incr = 1;
+
+        auto const error{
+          [&](transcoding_error const error) {
+            error_ = error;
+            c = U'\N{REPLACEMENT CHARACTER}';
+          }};
+
+	if (u < 0xD800 || u > 0xDFFF) [[likely]]
+	  c = u;
+	else if (u < 0xDC00) {
+          if (curr() == last_) [[unlikely]] {
+            error(transcoding_error::truncated);
+          } else {
+	    uint16_t u2 = *curr();
+	    if (u2 < 0xDC00 || u2 > 0xDFFF) [[unlikely]]
+              error(transcoding_error::truncated);
+	    else
+	      {
+		++curr();
+		to_incr = 2;
+		uint32_t x = (u & 0x3F) << 10 | u2 & 0x3FF;
+		uint32_t w = (u >> 6) & 0x1F;
+		c = (w + 1) << 16 | x;
+	      }
+            }
+	  }
+	else
+	  error(transcoding_error::unexpected_continuation);
+
+	update(c, to_incr);
+      }
+
+      constexpr void
+      read_utf32()
+      {
+        guard<@*iter*@> g{this, curr()};
+	char32_t c = *curr();
+        ++curr();
+        auto const error{
+          [&](transcoding_error const error) {
+            error_ = error;
+            c = U'\N{REPLACEMENT CHARACTER}';
+          }};
+        if (c >= 0xD800) {
+          if (c < 0xE000) {
+            error(transcoding_error::surrogate);
+          }
+          if (c > 0x10FFFF) {
+            error(transcoding_error::out_of_range);
+          }
+        }
+	update(c, 1);
+      }
+
+      // Encode the code point c as one or more code units in buf.
+      constexpr void
+      update(char32_t c, uint8_t to_incr)
+      {
+	to_increment_ = to_incr;
+	buf_index_ = 0;
+	if constexpr (std::is_same_v<ToType, char32_t>)
+	  {
+	    buf_[0] = c;
+	    buf_last_ = 1;
+	  }
+	else if constexpr (std::is_same_v<ToType, char16_t>)
+	  {
+	    if (is_single_code_unit<ToType>(c))
+	      {
+		buf_[0] = c;
+		buf_[1] = 0;
+		buf_last_ = 1;
+	      }
+	    else
+	      {
+		// From http://www.unicode.org/faq/utf_bom.html#utf16-4
+		const char32_t lead_offset = 0xD800 - (0x10000 >> 10);
+		char16_t lead = lead_offset + (c >> 10);
+		char16_t trail = 0xDC00 + (c & 0x3FF);
+		buf_[0] = lead;
+		buf_[1] = trail;
+		buf_last_ = 2;
+	      }
+	  }
+	else if constexpr (std::is_same_v<ToType, char8_t>)
+	  {
+	    int bits = std::bit_width((uint32_t)c);
+	    if (bits <= 7) [[likely]]
+	      {
+		buf_[0] = c;
+		buf_[1] = buf_[2] = buf_[3] = 0;
+		buf_last_ = 1;
+	      }
+	    else if (bits <= 11)
+	      {
+		buf_[0] = 0xC0 | (c >> 6);
+		buf_[1] = 0x80 | (c & 0x3F);
+		buf_[2] = buf_[3] = 0;
+		buf_last_ = 2;
+	      }
+	    else if (bits <= 16)
+	      {
+		buf_[0] = 0xE0 | (c >> 12);
+		buf_[1] = 0x80 | ((c >> 6) & 0x3F);
+		buf_[2] = 0x80 | (c & 0x3F);
+		buf_[3] = 0;
+		buf_last_ = 3;
+	      }
+	    else
+	      {
+		buf_[0] = 0xF0 | ((c >> 18) & 0x07);
+		buf_[1] = 0x80 | ((c >> 12) & 0x3F);
+		buf_[2] = 0x80 | ((c >> 6) & 0x3F);
+		buf_[3] = 0x80 | (c & 0x3F);
+		buf_last_ = 4;
+	      }
+	  }
+        else {
+          std::unreachable(); // todo: static_assert(false) once CWG2518 is available
+        }
+      }
+
+      constexpr void read() {                                            // @*exposition only*@
+        error_.reset();
+        // todo: support char
+        if constexpr (is_same_v<iter_value_t<@*iter*@>, char8_t>)
+          read_utf8();
+        // todo: support wchar_t
+        else if constexpr (is_same_v<iter_value_t<@*iter*@>, char16_t>)
+          read_utf16();
+        else
+          {
+            static_assert(is_same_v<iter_value_t<@*iter*@>, char32_t>);
+            read_utf32();
+          }
+      }
       constexpr void read_reverse() {};                                    // @*exposition only*@
 
       constexpr @*iter*@ first() const requires bidirectional_iterator<@*iter*@>      // @*exposition only*@
@@ -234,6 +537,8 @@ namespace p2728 {
       uint8_t to_increment_ = 0;                                        // @*exposition only*@
 
       [[no_unique_address]] @*sent*@ last_;                                    // @*exposition only*@
+
+      optional<transcoding_error> error_;                             // @*exposition only*@
     };
 
   private:
