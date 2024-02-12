@@ -20,11 +20,9 @@ namespace p2728 {
     invalid_start, // e.g. utf8 0xC0
     truncated, // e.g. utf8 0xE1 0x80 utf16 0xD800
     unexpected_continuation, // e.g. utf8 0x80 utf16 0xDC00
-    start_of_overlong, // e.g. utf8 0xE0 0x80
-    start_of_surrogate, // e.g. utf8 0xED 0xA0
-    start_of_out_of_range, // e.g. utf8 0xF4 0x90
-    surrogate, // e.g. utf32 0x0000D800
-    out_of_range, // e.g. utf32 0x00110000
+    overlong, // e.g. utf8 0xE0 0x80
+    surrogate, // e.g. utf8 0xED 0xA0, utf32 0x0000D800
+    out_of_range, // e.g. utf8 0xF4 0x90, utf32 0x00110000
   };
 
   export template<@*code_unit*@ ToType, @*utf_range*@ V>
@@ -169,7 +167,7 @@ namespace p2728 {
             buf_index_ = 0;
           else
             read();
-        } else if (buf_index_ + 1 < buf_last_) {
+        } else if (buf_index_ + 1 <= buf_last_) {
           ++buf_index_;
         }
         return *this;
@@ -301,9 +299,9 @@ namespace p2728 {
 	    u = *curr();
 
 	    if (orig == 0xE0 && 0x80 <= c && c < 0xA0) [[unlikely]]
-              error(transcoding_error::start_of_overlong);
+              error(transcoding_error::overlong);
             else if (orig == 0xED && 0xA0 <= c && c < 0xC0) [[unlikely]]
-              error(transcoding_error::start_of_surrogate);
+              error(transcoding_error::surrogate);
             else if (u < lo_bound || u > hi_bound) [[unlikely]]
 	      error(transcoding_error::truncated);
 	    else if (++curr() == last_) { [[unlikely]]
@@ -332,9 +330,9 @@ namespace p2728 {
 	    u = *curr();
 
 	    if (orig == 0xF0 && 0x80 <= c && c < 0x90) [[unlikely]]
-              error(transcoding_error::start_of_overlong);
+              error(transcoding_error::overlong);
             else if (orig == 0xF4 && 0x90 <= c && c < 0xC0) [[unlikely]]
-              error(transcoding_error::start_of_out_of_range);
+              error(transcoding_error::out_of_range);
             if (u < lo_bound || u > hi_bound) [[unlikely]]
 	      error(transcoding_error::truncated);
 	    else if (++curr() == last_) { [[unlikely]]

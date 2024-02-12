@@ -53,7 +53,8 @@ test_input_iterator(std::array<CharT, Size>) -> test_input_iterator<CharT, Size>
 constexpr bool input_iterator_test() {
   std::array<char8_t, 1> const single_arr{u8'x'};
   test_input_iterator single_begin{single_arr};
-  utf_view<char32_t, std::ranges::subrange<decltype(single_begin), std::default_sentinel_t>> single_view{std::ranges::subrange{std::move(single_begin), std::default_sentinel}};
+  std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
+  utf_view<char32_t, decltype(subrange)> single_view{std::move(subrange)};
   std::u32string single_u32{single_view | std::ranges::to<std::u32string>()};
   if (single_u32.size() != 1 && single_u32.at(0) != U'x') {
     return false;
