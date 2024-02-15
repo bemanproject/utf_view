@@ -80,7 +80,7 @@ namespace p2728 {
       using difference_type = std::ptrdiff_t;
       using iterator_concept = @*bidirectional-at-most-t*@<@*iter*@>;
 
-      constexpr utf_iterator() = default;
+      //constexpr utf_iterator() requires default_initializable<V> = default;
 
       constexpr utf_iterator(@*iter*@ first, @*iter*@ it, @*sent*@ last)
         requires bidirectional_iterator<@*iter*@>
@@ -105,7 +105,7 @@ namespace p2728 {
         requires convertible_to<ranges::iterator_t<V2>, @*iter*@> &&
                  convertible_to<ranges::sentinel_t<V2>, @*sent*@> &&
                  copyable<V2>
-          constexpr utf_iterator(const utf_view<ToType, V2>::utf_iterator& other) :
+          constexpr utf_iterator(const typename utf_view<ToType, V2>::utf_iterator& other) :
         buf_(other.buf_),
         first_and_curr_(other.first_and_curr_),
         buf_index_(other.buf_index_),
@@ -117,7 +117,7 @@ namespace p2728 {
         requires convertible_to<ranges::iterator_t<V2>, @*iter*@> &&
                  convertible_to<ranges::sentinel_t<V2>, @*sent*@> &&
                  copyable<V2>
-          constexpr utf_iterator& operator=(const utf_view<ToType, V2>::utf_iterator& other) {
+          constexpr utf_iterator& operator=(const typename utf_view<ToType, V2>::utf_iterator& other) {
         buf_ = other.buf_;
         first_and_curr_ = other.first_and_curr_;
         buf_index_ = other.buf_index_;
@@ -129,7 +129,7 @@ namespace p2728 {
         requires convertible_to<ranges::iterator_t<V2>, @*iter*@> &&
                  convertible_to<ranges::sentinel_t<V2>, @*sent*@> &&
                  movable<V2>
-          constexpr utf_iterator(utf_view<ToType, V2>::utf_iterator&& other) :
+          constexpr utf_iterator(typename utf_view<ToType, V2>::utf_iterator&& other) :
         buf_(other.buf_),
         first_and_curr_(move(other.first_and_curr_)),
         buf_index_(other.buf_index_),
@@ -141,7 +141,7 @@ namespace p2728 {
         requires convertible_to<ranges::iterator_t<V2>, @*iter*@> &&
                  convertible_to<ranges::sentinel_t<V2>, @*sent*@> &&
                  movable<V2>
-          constexpr utf_iterator& operator=(const utf_view<ToType, V2>::utf_iterator& other) {
+          constexpr utf_iterator& operator=(const typename utf_view<ToType, V2>::utf_iterator& other) {
         buf_ = other.buf_;
         first_and_curr_ = move(other.first_and_curr_);
         buf_index_ = other.buf_index_;
@@ -269,7 +269,7 @@ namespace p2728 {
         auto const error{
           [&](transcoding_error const error) {
             error_ = error;
-            c = U'\N{REPLACEMENT CHARACTER}';
+            c = U'\uFFFD';
           }};
 
 	if (u <= 0x7F) [[likely]]      // 0x00 to 0x7F
@@ -384,7 +384,7 @@ namespace p2728 {
         auto const error{
           [&](transcoding_error const error) {
             error_ = error;
-            c = U'\N{REPLACEMENT CHARACTER}';
+            c = U'\uFFFD';
           }};
 
 	if (u < 0xD800 || u > 0xDFFF) [[likely]]
@@ -421,7 +421,7 @@ namespace p2728 {
         auto const error{
           [&](transcoding_error const error) {
             error_ = error;
-            c = U'\N{REPLACEMENT CHARACTER}';
+            c = U'\uFFFD';
           }};
         if (c >= 0xD800) {
           if (c < 0xE000) {
@@ -521,10 +521,7 @@ namespace p2728 {
       constexpr @*iter*@ first() const requires bidirectional_iterator<@*iter*@>      // @*exposition only*@
         { return first_and_curr_.first; }
       constexpr @*iter*@& curr() { return first_and_curr_.curr; }              // @*exposition only*@
-      constexpr @*iter*@ curr() const
-        requires copyable<@*iter*@> { return first_and_curr_.curr; }         // @*exposition only*@
-      constexpr @*iter*@ const& curr() const
-        requires (not copyable<@*iter*@>) { return first_and_curr_.curr; }         // @*exposition only*@
+      constexpr @*iter*@ const& curr() const { return first_and_curr_.curr; }         // @*exposition only*@
 
       array<value_type, 4 / sizeof(ToType)> buf_;           // @*exposition only*@
 

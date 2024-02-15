@@ -19,8 +19,8 @@ struct test_input_iterator {
   using difference_type = std::ptrdiff_t;
   using iterator_concept = std::input_iterator_tag;
   constexpr explicit test_input_iterator(std::array<CharT, Size> const& arr)
-    : ptr{arr.begin()},
-      end{arr.end()}
+    : ptr{arr.data()},
+      end{arr.data() + arr.size()}
   {}
   test_input_iterator(test_input_iterator const&) = delete;
   test_input_iterator& operator=(
