@@ -80,7 +80,10 @@ namespace p2728 {
       using difference_type = std::ptrdiff_t;
       using iterator_concept = @*bidirectional-at-most-t*@<@*iter*@>;
 
-      //constexpr utf_iterator() requires default_initializable<V> = default;
+// https://developercommunity.visualstudio.com/t/MSVC-complains-about-uninvoked-implicitl/10585513
+#ifndef _MSC_VER
+      constexpr utf_iterator() requires default_initializable<V> = default;
+#endif
 
       constexpr utf_iterator(@*iter*@ first, @*iter*@ it, @*sent*@ last)
         requires bidirectional_iterator<@*iter*@>
