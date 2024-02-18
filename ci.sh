@@ -9,7 +9,7 @@ function test() {
     rm -rf "${ci_script_dir}/build"
     mkdir -p "${ci_script_dir}/build"
     cd "${ci_script_dir}/build"
-    cmake .. -DCMAKE_BUILD_TYPE=Debug -GNinja -DCMAKE_CXX_FLAGS='-stdlib=libc++' "${args[@]}"
+    cmake .. -DCMAKE_BUILD_TYPE=Debug -GNinja "${args[@]}"
     cmake --build . -j$(nproc)
     "${ci_script_dir}/build/test_p2728"
 }
