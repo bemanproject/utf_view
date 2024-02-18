@@ -1,6 +1,7 @@
 module;
 
 #include <array>
+#include <cassert>
 #include <cstddef>
 #include <iterator>
 #include <ranges>
@@ -56,7 +57,7 @@ constexpr bool input_iterator_test() {
   std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
   utf_view<char32_t, decltype(subrange)> single_view{std::move(subrange)};
   std::u32string single_u32{single_view | std::ranges::to<std::u32string>()};
-  if (single_u32.size() != 1 && single_u32.at(0) != U'x') {
+  if (single_u32.size() != 1 || single_u32.at(0) != U'x') {
     return false;
   }
   return true;
@@ -69,6 +70,14 @@ export constexpr bool utf_view_test() {
   return true;
 }
 
-static_assert(input_iterator_test());
+static_assert(utf_view_test());
+
+// GCC bug workaround
+export bool utf_view_test2() {
+  if (!input_iterator_test()) {
+    return false;
+  }
+  return true;
+}
 
 } // namespace p2728::utf_view_test
