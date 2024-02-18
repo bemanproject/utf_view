@@ -4,6 +4,8 @@ project(p2728 CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 option(WCHAR_T_IS_CODE_UNIT Off)
 option(CHAR_IS_CODE_UNIT Off)
 option(CHARN_T_POINTERS_ARE_RANGE_LIKE Off)
@@ -71,7 +73,7 @@ add_library(p2728_test)
 target_sources(p2728_test
   PUBLIC
     FILE_SET cxx_modules TYPE CXX_MODULES FILES
-   iface.cpp
+   iface_test.cpp
    ${P2728_FILE_SET}
    ${P2728_TEST_FILE_SET}
 )

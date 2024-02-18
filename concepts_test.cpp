@@ -1,4 +1,4 @@
-module p2728:concepts_test;
+export module p2728:concepts_test;
 
 import std_archetypes;
 import :concepts;

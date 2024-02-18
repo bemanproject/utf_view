@@ -1,6 +1,6 @@
 module;
 
-module p2728:unpack_test;
+export module p2728:unpack_test;
 
 import :unpack;
 

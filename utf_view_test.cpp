@@ -6,7 +6,7 @@ module;
 #include <ranges>
 #include <string>
 
-module p2728:utf_view_test;
+export module p2728:utf_view_test;
 
 import :utf_view;
 
@@ -57,6 +57,13 @@ constexpr bool input_iterator_test() {
   utf_view<char32_t, decltype(subrange)> single_view{std::move(subrange)};
   std::u32string single_u32{single_view | std::ranges::to<std::u32string>()};
   if (single_u32.size() != 1 && single_u32.at(0) != U'x') {
+    return false;
+  }
+  return true;
+}
+
+export constexpr bool utf_view_test() {
+  if (!input_iterator_test()) {
     return false;
   }
   return true;
