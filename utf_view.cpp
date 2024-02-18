@@ -25,34 +25,34 @@ namespace p2728 {
     out_of_range, // e.g. utf8 0xF4 0x90, utf32 0x00110000
   };
 
-  export template<@*code_unit*@ ToType, @*utf_range*@ V>
+  export template<EOcode_unitOE ToType, EOutf_rangeOE V>
     requires ranges::view<V>
   class utf_view : public ranges::view_interface<utf_view<ToType, V>> {
   private:
-    using @*iter*@ = ranges::iterator_t<V>;
-    using @*sent*@ = ranges::sentinel_t<V>;
+    using EOiterOE = ranges::iterator_t<V>;
+    using EOsentOE = ranges::sentinel_t<V>;
 
   public:
     class utf_iterator {
     private:
       template<class I>
-      struct @*first-and-curr*@ {                         // @*exposition only*@
-        @*first-and-curr*@() = default;
-        constexpr @*first-and-curr*@(I curr) : curr{move(curr)} {}
+      struct EOfirst_and_currOE {                         // @*exposition only*@
+        EOfirst_and_currOE() = default;
+        constexpr EOfirst_and_currOE(I curr) : curr{move(curr)} {}
         template<class I2>
           requires convertible_to<I2, I>
-          constexpr @*first-and-curr*@(const @*first-and-curr*@<I2>& other)
+          constexpr EOfirst_and_currOE(const EOfirst_and_currOE<I2>& other)
           : curr{other.curr} {}
 
         I curr;
       };
       template<bidirectional_iterator I>
-      struct @*first-and-curr*@<I> {                // @*exposition only*@
-        @*first-and-curr*@() = default;
-        constexpr @*first-and-curr*@(I first, I curr) : first{first}, curr{curr} {}
+      struct EOfirst_and_currOE<I> {                // @*exposition only*@
+        EOfirst_and_currOE() = default;
+        constexpr EOfirst_and_currOE(I first, I curr) : first{first}, curr{curr} {}
         template<class I2>
           requires convertible_to<I2, I>
-          constexpr @*first-and-curr*@(const @*first-and-curr*@<I2>& other)
+          constexpr EOfirst_and_currOE(const EOfirst_and_currOE<I2>& other)
           : first{other.first}, curr{other.curr} {}
 
         I first;
@@ -60,7 +60,7 @@ namespace p2728 {
       };
 
       template<class I>
-      static constexpr auto @*bidirectional-at-most*@() {    // @*exposition only*@
+      static constexpr auto EObidirectional_at_mostOE() {    // @*exposition only*@
         if constexpr (bidirectional_iterator<I>) {
           return bidirectional_iterator_tag{};
         } else if constexpr (forward_iterator<I>) {
@@ -71,42 +71,42 @@ namespace p2728 {
       }
 
       template<class I>
-      using @*bidirectional-at-most-t*@ = decltype(@*bidirectional-at-most*@<I>()); // @*exposition only*@
+      using EObidirectional_at_most_tOE = decltype(EObidirectional_at_mostOE<I>()); // @*exposition only*@
 
 
     public:
       using value_type = ToType;
       using reference_type = ToType&;
       using difference_type = std::ptrdiff_t;
-      using iterator_concept = @*bidirectional-at-most-t*@<@*iter*@>;
+      using iterator_concept = EObidirectional_at_most_tOE<EOiterOE>;
 
 // https://developercommunity.visualstudio.com/t/MSVC-complains-about-uninvoked-implicitl/10585513
 #ifndef _MSC_VER
       constexpr utf_iterator() requires default_initializable<V> = default;
 #endif
 
-      constexpr utf_iterator(@*iter*@ first, @*iter*@ it, @*sent*@ last)
-        requires bidirectional_iterator<@*iter*@>
+      constexpr utf_iterator(EOiterOE first, EOiterOE it, EOsentOE last)
+        requires bidirectional_iterator<EOiterOE>
         : first_and_curr_{first, it}, last_(last) {
         if (curr() != last_)
           read();
       }
-      constexpr utf_iterator(@*iter*@ /* first */, @*iter*@ it, @*sent*@ last)
-        requires (!bidirectional_iterator<@*iter*@>)
+      constexpr utf_iterator(EOiterOE /* first */, EOiterOE it, EOsentOE last)
+        requires (!bidirectional_iterator<EOiterOE>)
         : first_and_curr_{move(it)}, last_(last) {
         if (curr() != last_)
           read();
       }
-      constexpr utf_iterator(@*iter*@ it, @*sent*@ last)
-        requires (!bidirectional_iterator<@*iter*@>)
+      constexpr utf_iterator(EOiterOE it, EOsentOE last)
+        requires (!bidirectional_iterator<EOiterOE>)
         : first_and_curr_{move(it)}, last_(last) {
         if (curr() != last_)
           read();
       }
 
       template<class V2>
-        requires convertible_to<ranges::iterator_t<V2>, @*iter*@> &&
-                 convertible_to<ranges::sentinel_t<V2>, @*sent*@> &&
+        requires convertible_to<ranges::iterator_t<V2>, EOiterOE> &&
+                 convertible_to<ranges::sentinel_t<V2>, EOsentOE> &&
                  copyable<V2>
           constexpr utf_iterator(const typename utf_view<ToType, V2>::utf_iterator& other) :
         buf_(other.buf_),
@@ -117,8 +117,8 @@ namespace p2728 {
       {}
 
       template<class V2>
-        requires convertible_to<ranges::iterator_t<V2>, @*iter*@> &&
-                 convertible_to<ranges::sentinel_t<V2>, @*sent*@> &&
+        requires convertible_to<ranges::iterator_t<V2>, EOiterOE> &&
+                 convertible_to<ranges::sentinel_t<V2>, EOsentOE> &&
                  copyable<V2>
           constexpr utf_iterator& operator=(const typename utf_view<ToType, V2>::utf_iterator& other) {
         buf_ = other.buf_;
@@ -129,8 +129,8 @@ namespace p2728 {
       }
 
       template<class V2>
-        requires convertible_to<ranges::iterator_t<V2>, @*iter*@> &&
-                 convertible_to<ranges::sentinel_t<V2>, @*sent*@> &&
+        requires convertible_to<ranges::iterator_t<V2>, EOiterOE> &&
+                 convertible_to<ranges::sentinel_t<V2>, EOsentOE> &&
                  movable<V2>
           constexpr utf_iterator(typename utf_view<ToType, V2>::utf_iterator&& other) :
         buf_(other.buf_),
@@ -141,8 +141,8 @@ namespace p2728 {
       {}
 
       template<class V2>
-        requires convertible_to<ranges::iterator_t<V2>, @*iter*@> &&
-                 convertible_to<ranges::sentinel_t<V2>, @*sent*@> &&
+        requires convertible_to<ranges::iterator_t<V2>, EOiterOE> &&
+                 convertible_to<ranges::sentinel_t<V2>, EOsentOE> &&
                  movable<V2>
           constexpr utf_iterator& operator=(const typename utf_view<ToType, V2>::utf_iterator& other) {
         buf_ = other.buf_;
@@ -152,10 +152,10 @@ namespace p2728 {
         last_ = other.last_;
       }
 
-      constexpr @*iter*@ begin() const requires bidirectional_iterator<@*iter*@> { return first(); }
-      constexpr @*sent*@ end() const { return last_; }
+      constexpr EOiterOE begin() const requires bidirectional_iterator<EOiterOE> { return first(); }
+      constexpr EOsentOE end() const { return last_; }
 
-      constexpr @*iter*@ base() const requires forward_iterator<@*iter*@> { return curr(); }
+      constexpr EOiterOE base() const requires forward_iterator<EOiterOE> { return curr(); }
 
       constexpr value_type operator*() const { return buf_[buf_index_]; }
 
@@ -163,7 +163,7 @@ namespace p2728 {
 
       constexpr utf_iterator& operator++() {
         if (buf_index_ + 1 == buf_last_ && curr() != last_) {
-          if constexpr (forward_iterator<@*iter*@>) {
+          if constexpr (forward_iterator<EOiterOE>) {
             advance(curr(), to_increment_);
           }
           if (curr() == last_)
@@ -186,7 +186,7 @@ namespace p2728 {
         }
       }
 
-      constexpr utf_iterator& operator--() requires bidirectional_iterator<@*iter*@> {
+      constexpr utf_iterator& operator--() requires bidirectional_iterator<EOiterOE> {
         if (!buf_index_ && curr() != first())
           read_reverse();
         else if (buf_index_)
@@ -194,15 +194,15 @@ namespace p2728 {
         return *this;
       }
 
-      constexpr utf_iterator operator--(int) requires bidirectional_iterator<@*iter*@> {
+      constexpr utf_iterator operator--(int) requires bidirectional_iterator<EOiterOE> {
         auto retval = *this;
         --*this;
         return retval;
       }
 
       friend constexpr bool operator==(utf_iterator lhs, utf_iterator rhs)
-        requires forward_iterator<@*iter*@> || requires (@*iter*@ i) { i != i; } {
-        if constexpr (forward_iterator<@*iter*@>) {
+        requires forward_iterator<EOiterOE> || requires (EOiterOE i) { i != i; } {
+        if constexpr (forward_iterator<EOiterOE>) {
           return lhs.curr() == rhs.curr() && lhs.buf_index_ == rhs.buf_index_;
         } else {
           if (lhs.curr() != rhs.curr())
@@ -218,15 +218,15 @@ namespace p2728 {
         }
       }
 
-      friend constexpr bool operator==(utf_iterator lhs, @*sent*@ rhs) requires copyable<@*iter*@> {
-        if constexpr (forward_iterator<@*iter*@>) {
+      friend constexpr bool operator==(utf_iterator lhs, EOsentOE rhs) requires copyable<EOiterOE> {
+        if constexpr (forward_iterator<EOiterOE>) {
           return lhs.curr() == rhs;
         } else {
           return lhs.curr() == rhs && lhs.buf_index_ == lhs.buf_last_;
         }
       }
 
-      friend constexpr bool operator==(utf_iterator const& lhs, @*sent*@ rhs) requires (!copyable<@*iter*@>) {
+      friend constexpr bool operator==(utf_iterator const& lhs, EOsentOE rhs) requires (!copyable<EOiterOE>) {
         return lhs.curr() == rhs && lhs.buf_index_ == lhs.buf_last_;
       }
 
@@ -235,7 +235,7 @@ namespace p2728 {
     template<typename>
       struct guard
       {
-        constexpr guard(void*, @*iter*@&) { }
+        constexpr guard(void*, EOiterOE&) { }
       };
 
     template<typename It> requires forward_iterator<It>
@@ -261,7 +261,7 @@ namespace p2728 {
       constexpr void
       read_utf8()
       {
-        guard<@*iter*@> g{this, curr()};
+        guard<EOiterOE> g{this, curr()};
 	char32_t c{};
 	uint8_t u = *curr();
         ++curr();
@@ -378,7 +378,7 @@ namespace p2728 {
       constexpr void
       read_utf16()
       {
-        guard<@*iter*@> g{this, curr()};
+        guard<EOiterOE> g{this, curr()};
 	char32_t c{};
 	uint16_t u = *curr();
         ++curr();
@@ -418,7 +418,7 @@ namespace p2728 {
       constexpr void
       read_utf32()
       {
-        guard<@*iter*@> g{this, curr()};
+        guard<EOiterOE> g{this, curr()};
 	char32_t c = *curr();
         ++curr();
         auto const error{
@@ -508,49 +508,49 @@ namespace p2728 {
       constexpr void read() {                                            // @*exposition only*@
         error_.reset();
         // todo: support char
-        if constexpr (is_same_v<iter_value_t<@*iter*@>, char8_t>)
+        if constexpr (is_same_v<iter_value_t<EOiterOE>, char8_t>)
           read_utf8();
         // todo: support wchar_t
-        else if constexpr (is_same_v<iter_value_t<@*iter*@>, char16_t>)
+        else if constexpr (is_same_v<iter_value_t<EOiterOE>, char16_t>)
           read_utf16();
         else
           {
-            static_assert(is_same_v<iter_value_t<@*iter*@>, char32_t>);
+            static_assert(is_same_v<iter_value_t<EOiterOE>, char32_t>);
             read_utf32();
           }
       }
       constexpr void read_reverse() {};                                    // @*exposition only*@
 
-      constexpr @*iter*@ first() const requires bidirectional_iterator<@*iter*@>      // @*exposition only*@
+      constexpr EOiterOE first() const requires bidirectional_iterator<EOiterOE>      // @*exposition only*@
         { return first_and_curr_.first; }
-      constexpr @*iter*@& curr() { return first_and_curr_.curr; }              // @*exposition only*@
-      constexpr @*iter*@ const& curr() const { return first_and_curr_.curr; }         // @*exposition only*@
+      constexpr EOiterOE& curr() { return first_and_curr_.curr; }              // @*exposition only*@
+      constexpr EOiterOE const& curr() const { return first_and_curr_.curr; }         // @*exposition only*@
 
       array<value_type, 4 / sizeof(ToType)> buf_;           // @*exposition only*@
 
-      @*first-and-curr*@<@*iter*@> first_and_curr_;                                // @*exposition only*@
+      EOfirst_and_currOE<EOiterOE> first_and_curr_;                                // @*exposition only*@
 
       uint8_t buf_index_ = 0;                                           // @*exposition only*@
       uint8_t buf_last_ = 0;                                            // @*exposition only*@
       uint8_t to_increment_ = 0;                                        // @*exposition only*@
 
-      [[no_unique_address]] @*sent*@ last_;                                    // @*exposition only*@
+      [[no_unique_address]] EOsentOE last_;                                    // @*exposition only*@
 
       optional<transcoding_error> error_;                             // @*exposition only*@
     };
 
   private:
-    V @*base_*@ = V();                                          // @*exposition only*@
+    V EObase_OE = V();                                          // @*exposition only*@
 
-    static constexpr auto make_begin(@*iter*@ first, @*sent*@ last) {   // @*exposition only*@
-      if constexpr (forward_iterator<@*iter*@>) {
+    static constexpr auto make_begin(EOiterOE first, EOsentOE last) {   // @*exposition only*@
+      if constexpr (forward_iterator<EOiterOE>) {
         return utf_iterator{first, first, last};
       } else {
         return utf_iterator{move(first), last};
       }
     }
-    static constexpr auto make_end(@*iter*@ first, @*sent*@ last) {     // @*exposition only*@
-      if constexpr (!same_as<@*iter*@, @*sent*@>) {
+    static constexpr auto make_end(EOiterOE first, EOsentOE last) {     // @*exposition only*@
+      if constexpr (!same_as<EOiterOE, EOsentOE>) {
         return last;
       } else {
         return utf_iterator{move(first), last, last};
@@ -559,26 +559,26 @@ namespace p2728 {
 
   public:
     constexpr utf_view() requires default_initializable<V> = default;
-    constexpr utf_view(V base) : @*base_*@{move(base)} {}
+    constexpr utf_view(V base) : EObase_OE{move(base)} {}
 
-    constexpr V base() const & requires copy_constructible<V> { return @*base_*@; }
-    constexpr V base() && { return move(@*base_*@); }
+    constexpr V base() const & requires copy_constructible<V> { return EObase_OE; }
+    constexpr V base() && { return move(EObase_OE); }
 
-    constexpr auto begin() requires (!copyable<@*iter*@>) {
-      return make_begin(ranges::begin(@*base_*@), ranges::end(@*base_*@));
+    constexpr auto begin() requires (!copyable<EOiterOE>) {
+      return make_begin(ranges::begin(EObase_OE), ranges::end(EObase_OE));
     }
-    constexpr auto begin() const requires copyable<@*iter*@> {
-      return make_begin(ranges::begin(@*base_*@), ranges::end(@*base_*@));
-    }
-
-    constexpr auto end() requires (!copyable<@*iter*@>) {
-      return make_end(ranges::begin(@*base_*@), ranges::end(@*base_*@));
-    }
-    constexpr auto end() const requires copyable<@*iter*@> {
-      return make_end(ranges::begin(@*base_*@), ranges::end(@*base_*@));
+    constexpr auto begin() const requires copyable<EOiterOE> {
+      return make_begin(ranges::begin(EObase_OE), ranges::end(EObase_OE));
     }
 
-    constexpr bool empty() const { return ranges::empty(@*base_*@); }
+    constexpr auto end() requires (!copyable<EOiterOE>) {
+      return make_end(ranges::begin(EObase_OE), ranges::end(EObase_OE));
+    }
+    constexpr auto end() const requires copyable<EOiterOE> {
+      return make_end(ranges::begin(EObase_OE), ranges::end(EObase_OE));
+    }
+
+    constexpr bool empty() const { return ranges::empty(EObase_OE); }
 
     friend ostream & operator<<(ostream & os, utf_view v) {}
     friend wostream & operator<<(wostream & os, utf_view v) {}

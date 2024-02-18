@@ -31,32 +31,33 @@ if (NOT TARGET std_archetypes)
   add_subdirectory(thirdparty/std_archetypes)
 endif()
 
-set(P2728_INPUT_FILES
-     ${CMAKE_SOURCE_DIR}/concepts.cpp.in
-     ${CMAKE_SOURCE_DIR}/concepts_test.cpp.in
-     ${CMAKE_SOURCE_DIR}/unpack.cpp.in
-     ${CMAKE_SOURCE_DIR}/unpack_test.cpp.in
-     ${CMAKE_SOURCE_DIR}/utf_view.cpp.in
-     ${CMAKE_SOURCE_DIR}/utf_view_test.cpp.in)
-
 set(P2728_FILE_SET
-    ${CMAKE_CURRENT_BINARY_DIR}/concepts.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/unpack.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/utf_view.cpp)
+    ${CMAKE_SOURCE_DIR}/concepts.cpp
+    ${CMAKE_SOURCE_DIR}/unpack.cpp
+    ${CMAKE_SOURCE_DIR}/utf_view.cpp)
 
 set(P2728_TEST_FILE_SET
-    ${CMAKE_CURRENT_BINARY_DIR}/concepts_test.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/unpack_test.cpp
-    ${CMAKE_CURRENT_BINARY_DIR}/utf_view_test.cpp)
+    ${CMAKE_SOURCE_DIR}/concepts_test.cpp
+    ${CMAKE_SOURCE_DIR}/unpack_test.cpp
+    ${CMAKE_SOURCE_DIR}/utf_view_test.cpp)
+
+set(P2728_FORMATTED_FILES
+     ${CMAKE_CURRENT_BINARY_DIR}/markdown/concepts.cpp.md
+     ${CMAKE_CURRENT_BINARY_DIR}/markdown/unpack.cpp.md
+     ${CMAKE_CURRENT_BINARY_DIR}/markdown/utf_view.cpp.md)
 
 set(P2728_LIB_DEPS
     null_term std_archetypes)
 
 add_custom_command(
-  OUTPUT ${P2728_FILE_SET} ${P2728_TEST_FILE_SET}
-  DEPENDS ${CMAKE_SOURCE_DIR}/preprocess.py ${P2728_INPUT_FILES}
+  OUTPUT ${P2728_FORMATTED_FILES}
+  DEPENDS ${CMAKE_SOURCE_DIR}/preprocess.py ${P2728_FILE_SET}
   COMMAND python3 ${CMAKE_SOURCE_DIR}/preprocess.py
-  ARGS --out-dir ${CMAKE_CURRENT_BINARY_DIR} ${P2728_INPUT_FILES})
+  ARGS --out-dir ${CMAKE_CURRENT_BINARY_DIR}/markdown ${P2728_FILE_SET})
+
+add_custom_target(p2728_markdown
+  ALL
+  DEPENDS ${P2728_FORMATTED_FILES})
 
 add_library(p2728)
 target_sources(p2728

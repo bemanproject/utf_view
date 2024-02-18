@@ -13,7 +13,7 @@ namespace p2728 {
   using namespace std;
 
   template <class T>
-    concept @*code-unit*@ = same_as<T, char8_t> || same_as<T, char16_t> ||
+    concept EOcode_unitOE = same_as<T, char8_t> || same_as<T, char16_t> ||
                         same_as<T, char32_t>
 #ifdef WCHAR_T_IS_CODE_UNIT
                         || same_as<T, wchar_t>
@@ -24,18 +24,18 @@ namespace p2728 {
         ;
 
   template<class T>
-    concept @*utf-iter*@ = input_iterator<T> && @*code-unit*@<iter_value_t<T>>;
+    concept EOutf_iterOE = input_iterator<T> && EOcode_unitOE<iter_value_t<T>>;
 #ifdef CHARN_T_POINTERS_ARE_RANGE_LIKE
   template<class T>
-    concept @*utf-pointer*@ = is_pointer_v<T> && @*code-unit*@<iter_value_t<T>>;
+    concept EOutf_pointerOE = is_pointer_v<T> && EOcode_unitOE<iter_value_t<T>>;
 #endif
   template<class T>
-    concept @*utf-range*@ = ranges::input_range<T> && @*code-unit*@<ranges::range_value_t<T>>;
+    concept EOutf_rangeOE = ranges::input_range<T> && EOcode_unitOE<ranges::range_value_t<T>>;
 
 #ifdef CHARN_T_POINTERS_ARE_RANGE_LIKE
   template<class T>
-    concept @*utf-range-like*@ =
-      @*utf-range*@<remove_reference_t<T>> || @*utf-pointer*@<remove_reference_t<T>>;
+    concept EOutf-range-likeOE =
+      EOutf_rangeOE<remove_reference_t<T>> || EOutf_pointerOE<remove_reference_t<T>>;
 #endif
 
 } // namespace p2728
