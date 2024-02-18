@@ -16,7 +16,7 @@ namespace p2728 {
 
   using namespace std;
 
-  enum class transcoding_error {
+  export enum class transcoding_error {
     invalid_start, // e.g. utf8 0xC0
     truncated, // e.g. utf8 0xE1 0x80 utf16 0xD800
     unexpected_continuation, // e.g. utf8 0x80 utf16 0xDC00
