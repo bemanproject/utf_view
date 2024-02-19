@@ -13,7 +13,7 @@ import :utf_view;
 
 namespace p2728::utf_view_test {
 
-  template<typename CharT, std::size_t Size>
+  template<class CharT, std::size_t Size>
   struct test_input_iterator {
     using value_type = CharT;
     using reference_type = CharT const&;
@@ -37,7 +37,7 @@ namespace p2728::utf_view_test {
     CharT const* end;
   };
 
-  template<typename CharT, std::size_t Size>
+  template<class CharT, std::size_t Size>
   test_input_iterator(std::array<CharT, Size>) -> test_input_iterator<CharT, Size>;
 
   constexpr bool input_iterator_test() {

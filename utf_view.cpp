@@ -245,7 +245,7 @@ namespace p2728 {
       };
 
       // A code point that can be encoded in a single code unit of type CharT.
-      template<typename CharT>
+      template<class CharT>
       constexpr bool is_single_code_unit(char32_t c) {
         if constexpr (numeric_limits<CharT>::max() <= 0xFF)
           return c < 0x7F; // ASCII character
