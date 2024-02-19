@@ -227,6 +227,11 @@ namespace p2728 {
       }
 
     private:
+      struct decode_code_point_result {
+        char32_t c;
+        uint8_t to_incr;
+      };
+
       // A code point that can be encoded in a single code unit of type CharT.
       template<typename CharT>
       constexpr bool is_single_code_unit(char32_t c) {
@@ -236,7 +241,7 @@ namespace p2728 {
           return c < std::numeric_limits<CharT>::max();
       }
 
-      constexpr void read_utf8() {
+      constexpr decode_code_point_result decode_code_point_utf8() {
         char32_t c{};
         uint8_t u = *curr();
         ++curr();
@@ -337,10 +342,10 @@ namespace p2728 {
         } else [[unlikely]]
           error(transcoding_error::invalid_start);
 
-        update(c, to_incr);
+        return {.c{c}, .to_incr{to_incr}};
       }
 
-      constexpr void read_utf16() {
+      constexpr decode_code_point_result decode_code_point_utf16() {
         char32_t c{};
         uint16_t u = *curr();
         ++curr();
@@ -371,10 +376,10 @@ namespace p2728 {
         } else
           error(transcoding_error::unexpected_continuation);
 
-        update(c, to_incr);
+        return {.c{c}, .to_incr{to_incr}};
       }
 
-      constexpr void read_utf32() {
+      constexpr decode_code_point_result decode_code_point_utf32() {
         char32_t c = *curr();
         ++curr();
         auto const error{[&](transcoding_error const error) {
@@ -389,7 +394,7 @@ namespace p2728 {
             error(transcoding_error::out_of_range);
           }
         }
-        update(c, 1);
+        return {.c{c}, .to_incr{1}};
       }
 
       // Encode the code point c as one or more code units in buf.
@@ -444,16 +449,18 @@ namespace p2728 {
 
       constexpr void read() {                                            // @*exposition only*@
         error_.reset();
+        decode_code_point_result decode_result{};
         // todo: support char
         if constexpr (is_same_v<iter_value_t<EOiterOE>, char8_t>)
-          read_utf8();
+          decode_result = decode_code_point_utf8();
         // todo: support wchar_t
         else if constexpr (is_same_v<iter_value_t<EOiterOE>, char16_t>)
-          read_utf16();
+          decode_result = decode_code_point_utf16();
         else {
           static_assert(is_same_v<iter_value_t<EOiterOE>, char32_t>);
-          read_utf32();
+          decode_result = decode_code_point_utf32();
         }
+        update(decode_result.c, decode_result.to_incr);
       }
       constexpr void read_reverse(){};                                    // @*exposition only*@
 
