@@ -1,0 +1,5 @@
+My clang-format can't:
+- make void foo() { } be void foo() {}
+- indent requires clauses
+- remove newlines before opening braces after requires clauses
+- indent after template declarations (except for template classes(?))
