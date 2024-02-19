@@ -227,19 +227,6 @@ namespace p2728 {
       }
 
     private:
-      template<typename>
-      struct guard {
-        constexpr guard(void*, EOiterOE&) { }
-      };
-
-      template<typename It>
-      requires forward_iterator<It>
-      struct guard<It> {
-        constexpr ~guard() { iter->curr() = std::move(orig); }
-        utf_iterator* iter;
-        It orig;
-      };
-
       // A code point that can be encoded in a single code unit of type CharT.
       template<typename CharT>
       constexpr bool is_single_code_unit(char32_t c) {
@@ -250,7 +237,6 @@ namespace p2728 {
       }
 
       constexpr void read_utf8() {
-        guard<EOiterOE> g{this, curr()};
         char32_t c{};
         uint8_t u = *curr();
         ++curr();
@@ -355,7 +341,6 @@ namespace p2728 {
       }
 
       constexpr void read_utf16() {
-        guard<EOiterOE> g{this, curr()};
         char32_t c{};
         uint16_t u = *curr();
         ++curr();
@@ -390,7 +375,6 @@ namespace p2728 {
       }
 
       constexpr void read_utf32() {
-        guard<EOiterOE> g{this, curr()};
         char32_t c = *curr();
         ++curr();
         auto const error{[&](transcoding_error const error) {
