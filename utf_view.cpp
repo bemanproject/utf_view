@@ -16,6 +16,18 @@ namespace p2728 {
 
   using namespace std;
 
+  constexpr char16_t high_surrogate_base = 0xd7c0;
+  constexpr char16_t low_surrogate_base = 0xdc00;
+  constexpr char32_t high_surrogate_min = 0xd800;
+  constexpr char32_t high_surrogate_max = 0xdbff;
+  constexpr char32_t low_surrogate_min = 0xdc00;
+  constexpr char32_t low_surrogate_max = 0xdfff;
+  constexpr char32_t replacement_character = 0xfffd;
+
+  constexpr bool surrogate(char32_t c) { return high_surrogate_min <= c && c <= low_surrogate_max; }
+
+  constexpr bool high_surrogate(char32_t c) { return high_surrogate_min <= c && c <= high_surrogate_max; }
+
   export enum class transcoding_error {
     invalid_start, // e.g. utf8 0xC0
     truncated, // e.g. utf8 0xE1 0x80 utf16 0xD800
@@ -74,7 +86,7 @@ namespace p2728 {
     public:
       using value_type = ToType;
       using reference_type = ToType&;
-      using difference_type = std::ptrdiff_t;
+      using difference_type = ptrdiff_t;
       using iterator_concept = EObidirectional_at_most_tOE<EOiterOE>;
 
 // https://developercommunity.visualstudio.com/t/MSVC-complains-about-uninvoked-implicitl/10585513
@@ -235,10 +247,10 @@ namespace p2728 {
       // A code point that can be encoded in a single code unit of type CharT.
       template<typename CharT>
       constexpr bool is_single_code_unit(char32_t c) {
-        if constexpr (std::numeric_limits<CharT>::max() <= 0xFF)
+        if constexpr (numeric_limits<CharT>::max() <= 0xFF)
           return c < 0x7F; // ASCII character
         else
-          return c < std::numeric_limits<CharT>::max();
+          return c < numeric_limits<CharT>::max();
       }
 
       constexpr decode_code_point_result decode_code_point_utf8() {
@@ -401,10 +413,10 @@ namespace p2728 {
       constexpr void update(char32_t c, uint8_t to_incr) {
         to_increment_ = to_incr;
         buf_index_ = 0;
-        if constexpr (std::is_same_v<ToType, char32_t>) {
+        if constexpr (is_same_v<ToType, char32_t>) {
           buf_[0] = c;
           buf_last_ = 1;
-        } else if constexpr (std::is_same_v<ToType, char16_t>) {
+        } else if constexpr (is_same_v<ToType, char16_t>) {
           if (is_single_code_unit<ToType>(c)) {
             buf_[0] = c;
             buf_[1] = 0;
@@ -418,8 +430,8 @@ namespace p2728 {
             buf_[1] = trail;
             buf_last_ = 2;
           }
-        } else if constexpr (std::is_same_v<ToType, char8_t>) {
-          int bits = std::bit_width((uint32_t)c);
+        } else if constexpr (is_same_v<ToType, char8_t>) {
+          int bits = bit_width((uint32_t)c);
           if (bits <= 7) [[likely]] {
             buf_[0] = c;
             buf_[1] = buf_[2] = buf_[3] = 0;
@@ -443,7 +455,45 @@ namespace p2728 {
             buf_last_ = 4;
           }
         } else {
-          std::unreachable(); // todo: static_assert(false) once CWG2518 is available
+          unreachable(); // todo: static_assert(false) once CWG2518 is available
+        }
+      }
+
+      constexpr char32_t decode_code_point_reverse() requires bidirectional_iterator<EOiterOE>
+      {
+        auto const error{[&](transcoding_error const error) {
+          error_ = error;
+          return U'\uFFFD';
+        }};
+        if constexpr (is_same_v<iter_value_t<EOiterOE>, char8_t>) {
+          curr() = decrement(first(), curr());
+          auto initial = curr();
+          decode_code_point_result cp = decode_code_point_utf8();
+          curr() = initial;
+          return cp.c;
+        } else if constexpr (is_same_v<iter_value_t<EOiterOE>, char16_t>) {
+          char16_t lo = *--curr();
+          if (!surrogate(lo))
+            return lo;
+
+          if (high_surrogate(lo)) {
+            return error(transcoding_error::truncated);
+          }
+
+          // low surrogate
+          if (curr() == first()) {
+            return error(transcoding_error::unexpected_continuation);
+          }
+
+          char16_t hi = *ranges::prev(curr());
+          if (!high_surrogate(hi)) {
+            return error(transcoding_error::unexpected_continuation);
+          }
+          --curr();
+
+          return char32_t((hi - high_surrogate_base) << 10) + (lo - low_surrogate_base);
+        } else {
+          return *--curr();
         }
       }
 
@@ -462,7 +512,14 @@ namespace p2728 {
         }
         update(decode_result.c, decode_result.to_incr);
       }
-      constexpr void read_reverse(){};                                    // @*exposition only*@
+      constexpr void read_reverse() { // @*exposition only*@
+        auto initial = curr();
+        char32_t cp = decode_code_point_reverse();
+        auto it = encode_code_point(cp, buf_.begin());
+        buf_last_ = it - buf_.begin();
+        buf_index_ = buf_last_ - 1;
+        to_increment_ = distance(curr(), initial);
+      }
 
       constexpr EOiterOE first() const requires bidirectional_iterator<EOiterOE>      // @*exposition only*@
       {
@@ -484,9 +541,6 @@ namespace p2728 {
       optional<transcoding_error> error_;                             // @*exposition only*@
     };
 
-  private:
-    V EObase_OE = V();                                          // @*exposition only*@
-
     static constexpr auto make_begin(EOiterOE first, EOsentOE last) {   // @*exposition only*@
       if constexpr (forward_iterator<EOiterOE>) {
         return utf_iterator{first, first, last};
@@ -501,6 +555,8 @@ namespace p2728 {
         return utf_iterator{move(first), last, last};
       }
     }
+
+    V EObase_OE = V();                                          // @*exposition only*@
 
   public:
     constexpr utf_view() requires default_initializable<V>
