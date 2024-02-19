@@ -35,17 +35,14 @@ endif()
 
 set(P2728_FILE_SET
     ${CMAKE_SOURCE_DIR}/concepts.cpp
-    ${CMAKE_SOURCE_DIR}/unpack.cpp
     ${CMAKE_SOURCE_DIR}/utf_view.cpp)
 
 set(P2728_TEST_FILE_SET
     ${CMAKE_SOURCE_DIR}/concepts_test.cpp
-    ${CMAKE_SOURCE_DIR}/unpack_test.cpp
     ${CMAKE_SOURCE_DIR}/utf_view_test.cpp)
 
 set(P2728_FORMATTED_FILES
      ${CMAKE_CURRENT_BINARY_DIR}/markdown/concepts.cpp.md
-     ${CMAKE_CURRENT_BINARY_DIR}/markdown/unpack.cpp.md
      ${CMAKE_CURRENT_BINARY_DIR}/markdown/utf_view.cpp.md)
 
 set(P2728_LIB_DEPS
