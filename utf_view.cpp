@@ -162,6 +162,10 @@ namespace p2728 {
         return curr();
       }
 
+      constexpr optional<transcoding_error> error() const {
+        return error_;
+      }
+
       constexpr value_type operator*() const { return buf_[buf_index_]; }
 
       constexpr value_type* operator->() const { return &buf_[buf_index_]; }
@@ -282,8 +286,10 @@ namespace p2728 {
 
         if (u <= 0x7F) [[likely]]      // 0x00 to 0x7F
           c = u;
-        else if (u < 0xC2) [[unlikely]] {
-          error(transcoding_error::invalid_start);
+        else if (u < 0xC0) [[unlikely]] {
+          error(transcoding_error::unexpected_continuation);
+        } else if (u < 0xC2) [[unlikely]] {
+          error(transcoding_error::overlong);
         } else if (curr() == last_) [[unlikely]] {
           error(transcoding_error::truncated);
         } else if (u <= 0xDF) // 0xC2 to 0xDF
@@ -304,9 +310,9 @@ namespace p2728 {
           c = u & 0x0F;
           u = *curr();
 
-          if (orig == 0xE0 && 0x80 <= c && c < 0xA0) [[unlikely]]
+          if (orig == 0xE0 && 0x80 <= u && u < 0xA0) [[unlikely]]
             error(transcoding_error::overlong);
-          else if (orig == 0xED && 0xA0 <= c && c < 0xC0) [[unlikely]]
+          else if (orig == 0xED && 0xA0 <= u && u < 0xC0) [[unlikely]]
             error(transcoding_error::surrogate);
           else if (u < lo_bound || u > hi_bound) [[unlikely]]
             error(transcoding_error::truncated);
@@ -332,11 +338,11 @@ namespace p2728 {
           c = u & 0x07;
           u = *curr();
 
-          if (orig == 0xF0 && 0x80 <= c && c < 0x90) [[unlikely]]
+          if (orig == 0xF0 && 0x80 <= u && u < 0x90) [[unlikely]]
             error(transcoding_error::overlong);
-          else if (orig == 0xF4 && 0x90 <= c && c < 0xC0) [[unlikely]]
+          else if (orig == 0xF4 && 0x90 <= u && u < 0xC0) [[unlikely]]
             error(transcoding_error::out_of_range);
-          if (u < lo_bound || u > hi_bound) [[unlikely]]
+          else if (u < lo_bound || u > hi_bound) [[unlikely]]
             error(transcoding_error::truncated);
           else if (++curr() == last_) {
             [[unlikely]]++ to_incr;
