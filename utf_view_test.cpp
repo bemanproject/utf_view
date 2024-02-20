@@ -107,7 +107,7 @@ namespace p2728::utf_view_test {
   };
 
   constexpr test_case<char8_t, 9, char32_t, 9> table3_8{
-    .input{u8'\xc0', u8'\xaf', u8'\xe0', u8'\x80', u8'\xbf', u8'\xf0', u8'\x81', u8'\x82', u8'\x41'},
+    .input{u8'\xc0', u8'\xaf', u8'\xe0', u8'\x80', u8'\xbf', u8'\xf0', u8'\x81', u8'\x82', u8'A'},
     .output{{{U'\uFFFD', {transcoding_error::overlong}},
              {U'\uFFFD', {transcoding_error::unexpected_continuation}},
              {U'\uFFFD', {transcoding_error::overlong}},
@@ -117,6 +117,39 @@ namespace p2728::utf_view_test {
              {U'\uFFFD', {transcoding_error::unexpected_continuation}},
              {U'\uFFFD', {transcoding_error::unexpected_continuation}},
              {U'A', {}}}}};
+
+  constexpr test_case<char8_t, 9, char32_t, 9> table3_9{
+    .input{u8'\xed', u8'\xa0', u8'\x80', u8'\xed', u8'\xbf', u8'\xbf', u8'\xed', u8'\xaf', u8'A'},
+    .output{{{U'\uFFFD', {transcoding_error::surrogate}},
+             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+             {U'\uFFFD', {transcoding_error::surrogate}},
+             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+             {U'\uFFFD', {transcoding_error::surrogate}},
+             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+             {U'A', {}}}}};
+
+  constexpr test_case<char8_t, 9, char32_t, 9> table3_10{
+    .input{u8'\xf4', u8'\x91', u8'\x92', u8'\x93', u8'\xff', u8'\x41', u8'\x80', u8'\xbf', u8'B'},
+    .output{{{U'\uFFFD', {transcoding_error::out_of_range}},
+             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+             {U'\uFFFD', {transcoding_error::out_of_range}},
+             {U'A', {}},
+             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+             {U'B', {}}}}};
+
+  constexpr test_case<char8_t, 9, char32_t, 5> table3_11{
+    .input{u8'\xe1', u8'\x80', u8'\xe2', u8'\xf0', u8'\x91', u8'\x92', u8'\xf1', u8'\xbf', u8'A'},
+    .output{{{U'\uFFFD', {transcoding_error::truncated}},
+             {U'\uFFFD', {transcoding_error::truncated}},
+             {U'\uFFFD', {transcoding_error::truncated}},
+             {U'\uFFFD', {transcoding_error::truncated}},
+             {U'A', {}}}}};
+
 
   template <EOcode_unitOE CharTFrom, std::size_t FromSize, EOcode_unitOE CharTTo, std::size_t ToSize>
   constexpr bool run_test_case(test_case<CharTFrom, FromSize, CharTTo, ToSize> test_case) {
@@ -182,10 +215,19 @@ namespace p2728::utf_view_test {
     if (!run_test_case(table3_8)) {
       return false;
     }
+    if (!run_test_case(table3_9)) {
+      return false;
+    }
+    if (!run_test_case(table3_10)) {
+      return false;
+    }
+    if (!run_test_case(table3_11)) {
+      return false;
+    }
     return true;
   }
 
-  // static_assert(utf_view_test());
+  static_assert(utf_view_test());
 
   // GCC bug workaround
   export bool utf_view_test2() {
@@ -199,6 +241,15 @@ namespace p2728::utf_view_test {
       return false;
     }
     if (!run_test_case(table3_8)) {
+      return false;
+    }
+    if (!run_test_case(table3_9)) {
+      return false;
+    }
+    if (!run_test_case(table3_10)) {
+      return false;
+    }
+    if (!run_test_case(table3_11)) {
       return false;
     }
     return true;

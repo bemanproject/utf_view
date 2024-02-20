@@ -29,7 +29,6 @@ namespace p2728 {
   constexpr bool high_surrogate(char32_t c) { return high_surrogate_min <= c && c <= high_surrogate_max; }
 
   export enum class transcoding_error {
-    invalid_start, // e.g. utf8 0xC0
     truncated, // e.g. utf8 0xE1 0x80 utf16 0xD800
     unexpected_continuation, // e.g. utf8 0x80 utf16 0xDC00
     overlong, // e.g. utf8 0xE0 0x80
@@ -372,7 +371,7 @@ namespace p2728 {
             }
           }
         } else [[unlikely]]
-          error(transcoding_error::invalid_start);
+          error(transcoding_error::out_of_range);
 
         return {.c{c}, .to_incr{to_incr}};
       }
