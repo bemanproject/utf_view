@@ -3,6 +3,7 @@ module;
 #include <array>
 #include <cassert>
 #include <cstddef>
+#include <initializer_list>
 #include <iterator>
 #include <ranges>
 #include <string>
@@ -100,59 +101,59 @@ namespace p2728::utf_view_test {
     std::optional<transcoding_error> error;
   };
 
-  template <EOcode_unitOE CharTFrom, std::size_t FromSize, EOcode_unitOE CharTTo, std::size_t ToSize>
+  template <EOcode_unitOE CharTFrom, EOcode_unitOE CharTTo>
   struct test_case {
-    std::array<CharTFrom, FromSize> input;
-    std::array<test_case_code_unit_result<CharTTo>, ToSize> output;
+    std::initializer_list<CharTFrom> input;
+    std::initializer_list<test_case_code_unit_result<CharTTo>> output;
   };
 
-  constexpr test_case<char8_t, 9, char32_t, 9> table3_8{
+  constexpr test_case<char8_t, char32_t> table3_8{
     .input{u8'\xc0', u8'\xaf', u8'\xe0', u8'\x80', u8'\xbf', u8'\xf0', u8'\x81', u8'\x82', u8'A'},
-    .output{{{U'\uFFFD', {transcoding_error::overlong}},
-             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-             {U'\uFFFD', {transcoding_error::overlong}},
-             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-             {U'\uFFFD', {transcoding_error::overlong}},
-             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-             {U'A', {}}}}};
+    .output{{U'\uFFFD', {transcoding_error::overlong}},
+            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'\uFFFD', {transcoding_error::overlong}},
+            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'\uFFFD', {transcoding_error::overlong}},
+            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'A', {}}}};
 
-  constexpr test_case<char8_t, 9, char32_t, 9> table3_9{
+  constexpr test_case<char8_t, char32_t> table3_9{
     .input{u8'\xed', u8'\xa0', u8'\x80', u8'\xed', u8'\xbf', u8'\xbf', u8'\xed', u8'\xaf', u8'A'},
-    .output{{{U'\uFFFD', {transcoding_error::surrogate}},
-             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-             {U'\uFFFD', {transcoding_error::surrogate}},
-             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-             {U'\uFFFD', {transcoding_error::surrogate}},
-             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-             {U'A', {}}}}};
+    .output{{U'\uFFFD', {transcoding_error::surrogate}},
+            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'\uFFFD', {transcoding_error::surrogate}},
+            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'\uFFFD', {transcoding_error::surrogate}},
+            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'A', {}}}};
 
-  constexpr test_case<char8_t, 9, char32_t, 9> table3_10{
+  constexpr test_case<char8_t, char32_t> table3_10{
     .input{u8'\xf4', u8'\x91', u8'\x92', u8'\x93', u8'\xff', u8'\x41', u8'\x80', u8'\xbf', u8'B'},
-    .output{{{U'\uFFFD', {transcoding_error::out_of_range}},
-             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-             {U'\uFFFD', {transcoding_error::out_of_range}},
-             {U'A', {}},
-             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-             {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-             {U'B', {}}}}};
+    .output{{U'\uFFFD', {transcoding_error::out_of_range}},
+            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'\uFFFD', {transcoding_error::out_of_range}},
+            {U'A', {}},
+            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'B', {}}}};
 
-  constexpr test_case<char8_t, 9, char32_t, 5> table3_11{
+  constexpr test_case<char8_t, char32_t> table3_11{
     .input{u8'\xe1', u8'\x80', u8'\xe2', u8'\xf0', u8'\x91', u8'\x92', u8'\xf1', u8'\xbf', u8'A'},
-    .output{{{U'\uFFFD', {transcoding_error::truncated}},
-             {U'\uFFFD', {transcoding_error::truncated}},
-             {U'\uFFFD', {transcoding_error::truncated}},
-             {U'\uFFFD', {transcoding_error::truncated}},
-             {U'A', {}}}}};
+    .output{{U'\uFFFD', {transcoding_error::truncated}},
+            {U'\uFFFD', {transcoding_error::truncated}},
+            {U'\uFFFD', {transcoding_error::truncated}},
+            {U'\uFFFD', {transcoding_error::truncated}},
+            {U'A', {}}}};
 
 
-  template <EOcode_unitOE CharTFrom, std::size_t FromSize, EOcode_unitOE CharTTo, std::size_t ToSize>
-  constexpr bool run_test_case(test_case<CharTFrom, FromSize, CharTTo, ToSize> test_case) {
+  template <EOcode_unitOE CharTFrom, EOcode_unitOE CharTTo>
+  constexpr bool run_test_case(test_case<CharTFrom, CharTTo> test_case) {
     std::ranges::subrange subrange{test_case.input.begin(), test_case.input.end()};
     utf_view<CharTTo, decltype(subrange)> view{subrange};
     for (auto view_it{view.begin()}, output_it{test_case.output.begin()}, end{view.end()}; view_it != end; ++view_it, ++output_it) {
