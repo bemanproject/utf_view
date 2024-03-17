@@ -1,11 +1,14 @@
 module;
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstddef>
 #include <initializer_list>
+#include <iostream>
 #include <iterator>
 #include <ranges>
+#include <sstream>
 #include <string>
 
 export module p2728:utf_view_test;
@@ -151,12 +154,30 @@ namespace p2728::utf_view_test {
             {U'\uFFFD', {transcoding_error::truncated}},
             {U'A', {}}}};
 
+  template <typename T>
+  std::string print_char(T c) {
+    std::ostringstream os{};
+    os << "0x" << std::hex << std::uppercase << (unsigned)c << " ";
+    return std::move(os).str();
+  }
 
+  template <typename T>
+  std::string print_err(T e) {
+    std::ostringstream os{};
+    os << (e ? (int)*e : -1);
+    return std::move(os).str();
+  } 
+  
   template <EOcode_unitOE CharTFrom, EOcode_unitOE CharTTo>
   constexpr bool run_test_case(test_case<CharTFrom, CharTTo> test_case) {
+    std::ranges::for_each(test_case.input, [](auto c) { std::cout << print_char(c); });
+    std::cout << std::endl;
     std::ranges::subrange subrange{test_case.input.begin(), test_case.input.end()};
     utf_view<CharTTo, decltype(subrange)> view{subrange};
-    for (auto view_it{view.begin()}, output_it{test_case.output.begin()}, end{view.end()}; view_it != end; ++view_it, ++output_it) {
+    for (auto view_it{view.begin()}, output_it{test_case.output.begin()}, input_it{test_case.input.begin()}, end{view.end()}; view_it != end; ++view_it, ++output_it, ++input_it) {
+      std::cout << "for:      " << print_char(*input_it) << std::endl;
+      std::cout << "expected: " << print_char(output_it->code_unit) << ' ' << print_err(output_it->error) << std::endl;
+      std::cout << "saw:      " << print_char(*view_it) << ' ' << print_err(view_it.error()) << std::endl;
       if (*view_it != output_it->code_unit) {
         return false;
       }
@@ -164,10 +185,16 @@ namespace p2728::utf_view_test {
         return false;
       }
     }
+    std::cout << "reversed: " << '\n';
     auto reversed_input{subrange | std::views::reverse};
+    std::ranges::for_each(reversed_input, [](auto c) { std::cout << print_char(c); });
+    std::cout << std::endl;
     utf_view<CharTTo, decltype(reversed_input)> rview{reversed_input};
     auto routput{test_case.output | std::views::reverse};
-    for (auto view_it{rview.begin()}, output_it{routput.begin()}, end{rview.end()}; view_it != end; ++view_it, ++output_it) {
+    for (auto view_it{rview.end()}, output_it{routput.end()}, input_it{reversed_input.end()}, end{rview.begin()}; view_it != end; --view_it, --output_it, --input_it) {
+      std::cout << "for:      " << print_char(*input_it) << std::endl;
+      std::cout << "expected: " << print_char(output_it->code_unit) << ' ' << print_err(output_it->error) << std::endl;
+      std::cout << "saw:      " << print_char(*view_it) << ' ' << print_err(view_it.error()) << std::endl;
       if (*view_it != output_it->code_unit) {
         return false;
       }
