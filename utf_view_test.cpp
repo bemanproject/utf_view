@@ -35,7 +35,9 @@ namespace p2728::utf_view_test {
     }
     constexpr void operator++(int) { ++ptr; }
 
-    friend constexpr bool operator==(std::default_sentinel_t const&, test_input_iterator const& rhs) { return rhs.ptr == rhs.end; }
+    friend constexpr bool operator==(std::default_sentinel_t const&, test_input_iterator const& rhs) {
+      return rhs.ptr == rhs.end;
+    }
 
     CharT const* ptr;
     CharT const* end;
@@ -50,7 +52,8 @@ namespace p2728::utf_view_test {
     using reference_type = CharT const&;
     using difference_type = std::ptrdiff_t;
     using iterator_concept = std::input_iterator_tag;
-    constexpr explicit test_forward_iterator(std::array<CharT, Size> const& arr) : ptr{arr.data()}, end{arr.data() + arr.size()} { }
+    constexpr explicit test_forward_iterator(std::array<CharT, Size> const& arr) :
+        ptr{arr.data()}, end{arr.data() + arr.size()} { }
     test_forward_iterator(test_forward_iterator const&) = default;
     test_forward_iterator& operator=(test_forward_iterator const&) = default;
     test_forward_iterator(test_forward_iterator&&) = default;
@@ -62,7 +65,9 @@ namespace p2728::utf_view_test {
     }
     constexpr void operator++(int) { ++ptr; }
 
-    friend constexpr bool operator==(std::default_sentinel_t const&, test_forward_iterator const& rhs) { return rhs.ptr == rhs.end; }
+    friend constexpr bool operator==(std::default_sentinel_t const&, test_forward_iterator const& rhs) {
+      return rhs.ptr == rhs.end;
+    }
 
     CharT const* ptr;
     CharT const* end;
@@ -98,13 +103,13 @@ namespace p2728::utf_view_test {
   template<class CharT, std::size_t Size>
   test_bidi_iterator(std::array<CharT, Size>) -> test_bidi_iterator<CharT, Size>;
 
-  template <EOcode_unitOE CharT>
+  template<EOcode_unitOE CharT>
   struct test_case_code_unit_result {
     CharT code_unit;
     std::optional<transcoding_error> error;
   };
 
-  template <EOcode_unitOE CharTFrom, EOcode_unitOE CharTTo>
+  template<EOcode_unitOE CharTFrom, EOcode_unitOE CharTTo>
   struct test_case {
     std::initializer_list<CharTFrom> input;
     std::initializer_list<test_case_code_unit_result<CharTTo>> output;
@@ -154,27 +159,28 @@ namespace p2728::utf_view_test {
             {U'\uFFFD', {transcoding_error::truncated}},
             {U'A', {}}}};
 
-  template <typename T>
+  template<typename T>
   std::string print_char(T c) {
     std::ostringstream os{};
     os << "0x" << std::hex << std::uppercase << (unsigned)c << " ";
     return std::move(os).str();
   }
 
-  template <typename T>
+  template<typename T>
   std::string print_err(T e) {
     std::ostringstream os{};
     os << (e ? (int)*e : -1);
     return std::move(os).str();
-  } 
-  
-  template <EOcode_unitOE CharTFrom, EOcode_unitOE CharTTo>
+  }
+
+  template<EOcode_unitOE CharTFrom, EOcode_unitOE CharTTo>
   constexpr bool run_test_case(test_case<CharTFrom, CharTTo> test_case) {
     std::ranges::for_each(test_case.input, [](auto c) { std::cout << print_char(c); });
     std::cout << std::endl;
     std::ranges::subrange subrange{test_case.input.begin(), test_case.input.end()};
     utf_view<CharTTo, decltype(subrange)> view{subrange};
-    for (auto view_it{view.begin()}, output_it{test_case.output.begin()}, input_it{test_case.input.begin()}, end{view.end()}; view_it != end; ++view_it, ++output_it, ++input_it) {
+    for (auto view_it{view.begin()}, output_it{test_case.output.begin()}, input_it{test_case.input.begin()}, end{view.end()};
+         view_it != end; ++view_it, ++output_it, ++input_it) {
       std::cout << "for:      " << print_char(*input_it) << std::endl;
       std::cout << "expected: " << print_char(output_it->code_unit) << ' ' << print_err(output_it->error) << std::endl;
       std::cout << "saw:      " << print_char(*view_it) << ' ' << print_err(view_it.error()) << std::endl;
@@ -191,7 +197,7 @@ namespace p2728::utf_view_test {
     std::cout << std::endl;
     utf_view<CharTTo, decltype(reversed_input)> rview{reversed_input};
     auto routput{test_case.output | std::views::reverse};
-    { 
+    {
       auto view_it{rview.end()};
       auto output_it{routput.end()};
       auto input_it{reversed_input.end()};
