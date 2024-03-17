@@ -24,10 +24,30 @@ namespace p2728 {
   constexpr char32_t low_surrogate_max = 0xdfff;
   constexpr char32_t replacement_character = 0xfffd;
 
+        constexpr bool in(unsigned char lo, unsigned char c, unsigned char hi)
+        {
+            return lo <= c && c <= hi;
+        }
+  
   constexpr bool surrogate(char32_t c) { return high_surrogate_min <= c && c <= low_surrogate_max; }
 
   constexpr bool high_surrogate(char32_t c) { return high_surrogate_min <= c && c <= high_surrogate_max; }
 
+    constexpr bool lead_code_unit(unsigned char c)
+    {
+        return uint8_t(c - 0xc2) <= 0x32;
+    }
+  
+  constexpr bool continuation(unsigned char c) { return (int8_t)c < -0x40; }
+
+    constexpr int utf8_code_units(unsigned char first_unit)
+    {
+        return first_unit <= 0x7f ? 1
+               : lead_code_unit(first_unit)
+                   ? int(0xe0 <= first_unit) + int(0xf0 <= first_unit) + 2
+                   : -1;
+    }
+  
   export enum class transcoding_error {
     truncated, // e.g. utf8 0xE1 0x80 utf16 0xD800
     unexpected_continuation, // e.g. utf8 0x80 utf16 0xDC00
@@ -480,6 +500,129 @@ namespace p2728 {
         }
       }
 
+        template<typename Iter>
+        constexpr optional<Iter> end_of_invalid_utf8(Iter it)
+        {
+            assert(!continuation(*it));
+
+            if (in(0, *it, 0x7f))
+                return optional<Iter>{};
+
+            if (in(0xc2, *it, 0xdf)) {
+                auto next = it;
+                if (!continuation(*++next))
+                    return next;
+                return optional<Iter>{};
+            }
+
+            if (in(0xe0, *it, 0xe0)) {
+                auto next = it;
+                if (!in(0xa0, *++next, 0xbf))
+                    return next;
+                if (!continuation(*++next))
+                    return next;
+                return optional<Iter>{};
+            }
+            if (in(0xe1, *it, 0xec)) {
+                auto next = it;
+                if (!continuation(*++next))
+                    return next;
+                if (!continuation(*++next))
+                    return next;
+                return optional<Iter>{};
+            }
+            if (in(0xed, *it, 0xed)) {
+                auto next = it;
+                if (!in(0x80, *++next, 0x9f))
+                    return next;
+                if (!continuation(*++next))
+                    return next;
+                return optional<Iter>{};
+            }
+            if (in(0xee, *it, 0xef)) {
+                auto next = it;
+                if (!continuation(*++next))
+                    return next;
+                if (!continuation(*++next))
+                    return next;
+                return optional<Iter>{};
+            }
+
+            if (in(0xf0, *it, 0xf0)) {
+                auto next = it;
+                if (!in(0x90, *++next, 0xbf))
+                    return next;
+                if (!continuation(*++next))
+                    return next;
+                if (!continuation(*++next))
+                    return next;
+                return optional<Iter>{};
+            }
+            if (in(0xf1, *it, 0xf3)) {
+                auto next = it;
+                if (!continuation(*++next))
+                    return next;
+                if (!continuation(*++next))
+                    return next;
+                if (!continuation(*++next))
+                    return next;
+                return optional<Iter>{};
+            }
+            if (in(0xf4, *it, 0xf4)) {
+                auto next = it;
+                if (!in(0x80, *++next, 0x8f))
+                    return next;
+                if (!continuation(*++next))
+                    return next;
+                if (!continuation(*++next))
+                    return next;
+                return optional<Iter>{};
+            }
+
+            return it;
+        }
+      
+      template<typename Iter>
+      constexpr Iter decrement(Iter first, Iter it)
+      {
+          Iter retval = it;
+
+          int backup = 0;
+          while (backup < 4 && it != first && continuation(*--retval)) {
+              ++backup;
+          }
+          backup = std::distance(retval, it);
+
+          if (continuation(*retval)) {
+              if (it != first)
+                  --it;
+              return it;
+          }
+
+          optional<Iter> first_invalid = end_of_invalid_utf8(retval);
+          if (first_invalid == retval)
+              ++*first_invalid;
+          while (first_invalid &&
+                 std::distance(retval, *first_invalid) < backup) {
+              backup -= std::distance(retval, *first_invalid);
+              retval = *first_invalid;
+              first_invalid = end_of_invalid_utf8(retval);
+              if (first_invalid == retval)
+                  ++*first_invalid;
+          }
+
+          if (1 < backup) {
+              int const cp_bytes = utf8_code_units(*retval);
+              if (cp_bytes < backup) {
+                  if (it != first)
+                      --it;
+                  retval = it;
+              }
+          }
+
+          return retval;
+      }
+      
       constexpr char32_t decode_code_point_reverse() requires bidirectional_iterator<EOiterOE>
       {
         auto const error{[&](transcoding_error const error) {
