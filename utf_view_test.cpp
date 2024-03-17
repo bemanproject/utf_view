@@ -191,16 +191,25 @@ namespace p2728::utf_view_test {
     std::cout << std::endl;
     utf_view<CharTTo, decltype(reversed_input)> rview{reversed_input};
     auto routput{test_case.output | std::views::reverse};
-    for (auto view_it{rview.end()}, output_it{routput.end()}, input_it{reversed_input.end()}, end{rview.begin()}; view_it != end; --view_it, --output_it, --input_it) {
-      std::cout << "for:      " << print_char(*input_it) << std::endl;
-      std::cout << "expected: " << print_char(output_it->code_unit) << ' ' << print_err(output_it->error) << std::endl;
-      std::cout << "saw:      " << print_char(*view_it) << ' ' << print_err(view_it.error()) << std::endl;
-      if (*view_it != output_it->code_unit) {
-        return false;
-      }
-      if (view_it.error() != output_it->error) {
-        return false;
-      }
+    { 
+      auto view_it{rview.end()};
+      auto output_it{routput.end()};
+      auto input_it{reversed_input.end()};
+      auto end{rview.begin()};
+      do {
+        --view_it;
+        --output_it;
+        --input_it;
+        std::cout << "for:      " << print_char(*input_it) << std::endl;
+        std::cout << "expected: " << print_char(output_it->code_unit) << ' ' << print_err(output_it->error) << std::endl;
+        std::cout << "saw:      " << print_char(*view_it) << ' ' << print_err(view_it.error()) << std::endl;
+        if (*view_it != output_it->code_unit) {
+          return false;
+        }
+        if (view_it.error() != output_it->error) {
+          return false;
+        }
+      } while (view_it != end);
     }
     return true;
   }

@@ -1,6 +1,7 @@
 module;
 
 #include <bit>
+#include <cassert>
 #include <concepts>
 #include <cstdint>
 #include <iterator>
@@ -679,10 +680,8 @@ namespace p2728 {
       constexpr void read_reverse() { // @*exposition only*@
         auto initial = curr();
         char32_t cp = decode_code_point_reverse();
-        auto it = encode_code_point(cp, buf_.begin());
-        buf_last_ = it - buf_.begin();
-        buf_index_ = buf_last_ - 1;
-        to_increment_ = distance(curr(), initial);
+        std::uint8_t to_incr = distance(curr(), initial);
+        update(cp, to_incr);
       }
 
       constexpr EOiterOE first() const requires bidirectional_iterator<EOiterOE>      // @*exposition only*@
