@@ -47,12 +47,18 @@ namespace p2728::utf_view_test {
   template<class CharT>
   test_input_iterator(std::initializer_list<CharT>) -> test_input_iterator<CharT>;
 
+  static_assert(std::input_iterator<test_input_iterator<char8_t>>);
+
   template<class CharT>
   struct test_forward_iterator {
+    static constexpr std::initializer_list<CharT> empty{};
+
     using value_type = CharT;
     using reference_type = CharT const&;
     using difference_type = std::ptrdiff_t;
-    using iterator_concept = std::input_iterator_tag;
+    using iterator_concept = std::forward_iterator_tag;
+    constexpr test_forward_iterator() :
+        begin{empty.begin()}, end{empty.end()} { }
     constexpr explicit test_forward_iterator(std::initializer_list<CharT> const& list) :
         begin{list.begin()}, end{list.end()} { }
     test_forward_iterator(test_forward_iterator const&) = default;
@@ -64,10 +70,18 @@ namespace p2728::utf_view_test {
       ++begin;
       return *this;
     }
-    constexpr void operator++(int) { ++begin; }
+    constexpr test_forward_iterator operator++(int) {
+      auto ret = *this;
+      ++begin;
+      return ret;
+    }
 
     friend constexpr bool operator==(std::default_sentinel_t const&, test_forward_iterator const& rhs) {
       return rhs.begin == rhs.end;
+    }
+
+    friend constexpr bool operator==(test_forward_iterator const& lhs, test_forward_iterator const& rhs) {
+      return lhs.begin == rhs.begin && lhs.end == rhs.end;
     }
 
     std::initializer_list<CharT>::iterator begin;
@@ -77,12 +91,18 @@ namespace p2728::utf_view_test {
   template<class CharT>
   test_forward_iterator(std::initializer_list<CharT>) -> test_forward_iterator<CharT>;
 
+  static_assert(std::forward_iterator<test_forward_iterator<char8_t>>);
+
   template<class CharT>
   struct test_bidi_iterator {
+    static constexpr std::initializer_list<CharT> empty{};
+
     using value_type = CharT;
     using reference_type = CharT const&;
     using difference_type = std::ptrdiff_t;
-    using iterator_concept = std::input_iterator_tag;
+    using iterator_concept = std::bidirectional_iterator_tag;
+    constexpr test_bidi_iterator() :
+        begin{empty.begin()}, end{empty.end()} { }
     constexpr explicit test_bidi_iterator(std::initializer_list<CharT> const& list) :
         begin{list.begin()}, end{list.end()} { }
     test_bidi_iterator(test_bidi_iterator const&) = default;
@@ -94,15 +114,26 @@ namespace p2728::utf_view_test {
       ++begin;
       return *this;
     }
-    constexpr void operator++(int) { ++begin; }
+    constexpr test_bidi_iterator operator++(int) {
+      auto ret = *this;
+      ++begin;
+      return ret;
+    }
     constexpr test_bidi_iterator& operator--() {
       --begin;
       return *this;
     }
-    constexpr void operator--(int) { --begin; }
+    constexpr test_bidi_iterator operator--(int) {
+      auto ret = *this;
+      --begin;
+      return ret;
+    }
 
     friend constexpr bool operator==(std::default_sentinel_t const&, test_bidi_iterator const& rhs) {
       return rhs.begin == rhs.end;
+    }
+    friend constexpr bool operator==(test_bidi_iterator const& lhs, test_bidi_iterator const& rhs) {
+      return lhs.begin == rhs.begin && lhs.end == rhs.end;
     }
 
     std::initializer_list<CharT>::iterator begin;
@@ -111,6 +142,8 @@ namespace p2728::utf_view_test {
 
   template<class CharT>
   test_bidi_iterator(std::initializer_list<CharT>) -> test_bidi_iterator<CharT>;
+
+  static_assert(std::bidirectional_iterator<test_bidi_iterator<char8_t>>);
 
   template<EOcode_unitOE CharT>
   struct test_case_code_unit_result {
@@ -186,7 +219,8 @@ namespace p2728::utf_view_test {
   constexpr bool run_test_case_impl(test_case<CharTFrom, CharTTo> test_case) {
     std::ranges::for_each(test_case.input, [](auto c) { std::cout << print_char(c); });
     std::cout << std::endl;
-    std::ranges::subrange subrange{WrappingIterator(test_case.input), std::default_sentinel};
+    auto it{WrappingIterator(test_case.input)};
+    std::ranges::subrange subrange{std::move(it), std::default_sentinel};
     utf_view<CharTTo, decltype(subrange)> view{std::move(subrange)};
     for (auto view_it{view.begin()}, output_it{test_case.output.begin()}, input_it{test_case.input.begin()}, end{view.end()};
          view_it != end; ++view_it, ++output_it, ++input_it) {
@@ -200,9 +234,12 @@ namespace p2728::utf_view_test {
         return false;
       }
     }
-    if constexpr(false) {
+    if constexpr(std::bidirectional_iterator<decltype(it)>) {
       std::cout << "reversed: " << '\n';
-      auto reversed_input{subrange | std::views::reverse};
+      auto it2{WrappingIterator(test_case.input)};
+      auto end2{it2};
+      while (end2 != std::default_sentinel) { ++end2; }
+      auto reversed_input{std::ranges::subrange{it2, end2} | std::views::reverse};
       std::ranges::for_each(reversed_input, [](auto c) { std::cout << print_char(c); });
       std::cout << std::endl;
       utf_view<CharTTo, decltype(reversed_input)> rview{reversed_input};
@@ -233,7 +270,9 @@ namespace p2728::utf_view_test {
 
   template<EOcode_unitOE CharTFrom, EOcode_unitOE CharTTo>
   constexpr bool run_test_case(test_case<CharTFrom, CharTTo> test_case) {
-    return run_test_case_impl<test_input_iterator<CharTFrom>>(test_case);
+    return run_test_case_impl<test_input_iterator<CharTFrom>>(test_case) &&
+           run_test_case_impl<test_forward_iterator<CharTFrom>>(test_case) &&
+           run_test_case_impl<test_bidi_iterator<CharTFrom>>(test_case);
   }
 
   constexpr bool input_iterator_test() {
