@@ -17,91 +17,100 @@ import :utf_view;
 
 namespace p2728::utf_view_test {
 
-  template<class CharT, std::size_t Size>
+  template<class CharT>
   struct test_input_iterator {
     using value_type = CharT;
     using reference_type = CharT const&;
     using difference_type = std::ptrdiff_t;
     using iterator_concept = std::input_iterator_tag;
-    constexpr explicit test_input_iterator(std::array<CharT, Size> const& arr) : ptr{arr.data()}, end{arr.data() + arr.size()} { }
+    constexpr explicit test_input_iterator(std::initializer_list<CharT> const& list) :
+        begin{list.begin()}, end{list.end()} { }
     test_input_iterator(test_input_iterator const&) = delete;
     test_input_iterator& operator=(test_input_iterator const&) = delete;
     test_input_iterator(test_input_iterator&&) = default;
     test_input_iterator& operator=(test_input_iterator&&) = default;
-    constexpr reference_type operator*() const { return *ptr; }
+    constexpr reference_type operator*() const { return *begin; }
     constexpr test_input_iterator& operator++() {
-      ++ptr;
+      ++begin;
       return *this;
     }
-    constexpr void operator++(int) { ++ptr; }
+    constexpr void operator++(int) { ++begin; }
 
     friend constexpr bool operator==(std::default_sentinel_t const&, test_input_iterator const& rhs) {
-      return rhs.ptr == rhs.end;
+      return rhs.begin == rhs.end;
     }
 
-    CharT const* ptr;
-    CharT const* end;
+    std::initializer_list<CharT>::iterator begin;
+    std::initializer_list<CharT>::iterator end;
   };
 
-  template<class CharT, std::size_t Size>
-  test_input_iterator(std::array<CharT, Size>) -> test_input_iterator<CharT, Size>;
+  template<class CharT>
+  test_input_iterator(std::initializer_list<CharT>) -> test_input_iterator<CharT>;
 
-  template<class CharT, std::size_t Size>
+  template<class CharT>
   struct test_forward_iterator {
     using value_type = CharT;
     using reference_type = CharT const&;
     using difference_type = std::ptrdiff_t;
     using iterator_concept = std::input_iterator_tag;
-    constexpr explicit test_forward_iterator(std::array<CharT, Size> const& arr) :
-        ptr{arr.data()}, end{arr.data() + arr.size()} { }
+    constexpr explicit test_forward_iterator(std::initializer_list<CharT> const& list) :
+        begin{list.begin()}, end{list.end()} { }
     test_forward_iterator(test_forward_iterator const&) = default;
     test_forward_iterator& operator=(test_forward_iterator const&) = default;
     test_forward_iterator(test_forward_iterator&&) = default;
     test_forward_iterator& operator=(test_forward_iterator&&) = default;
-    constexpr reference_type operator*() const { return *ptr; }
+    constexpr reference_type operator*() const { return *begin; }
     constexpr test_forward_iterator& operator++() {
-      ++ptr;
+      ++begin;
       return *this;
     }
-    constexpr void operator++(int) { ++ptr; }
+    constexpr void operator++(int) { ++begin; }
 
     friend constexpr bool operator==(std::default_sentinel_t const&, test_forward_iterator const& rhs) {
-      return rhs.ptr == rhs.end;
+      return rhs.begin == rhs.end;
     }
 
-    CharT const* ptr;
-    CharT const* end;
+    std::initializer_list<CharT>::iterator begin;
+    std::initializer_list<CharT>::iterator end;
   };
 
-  template<class CharT, std::size_t Size>
-  test_forward_iterator(std::array<CharT, Size>) -> test_forward_iterator<CharT, Size>;
+  template<class CharT>
+  test_forward_iterator(std::initializer_list<CharT>) -> test_forward_iterator<CharT>;
 
-  template<class CharT, std::size_t Size>
+  template<class CharT>
   struct test_bidi_iterator {
     using value_type = CharT;
     using reference_type = CharT const&;
     using difference_type = std::ptrdiff_t;
     using iterator_concept = std::input_iterator_tag;
-    constexpr explicit test_bidi_iterator(std::array<CharT, Size> const& arr) : ptr{arr.data()}, end{arr.data() + arr.size()} { }
+    constexpr explicit test_bidi_iterator(std::initializer_list<CharT> const& list) :
+        begin{list.begin()}, end{list.end()} { }
     test_bidi_iterator(test_bidi_iterator const&) = default;
     test_bidi_iterator& operator=(test_bidi_iterator const&) = default;
     test_bidi_iterator(test_bidi_iterator&&) = default;
     test_bidi_iterator& operator=(test_bidi_iterator&&) = default;
-    constexpr reference_type operator*() const { return *ptr; }
+    constexpr reference_type operator*() const { return *begin; }
     constexpr test_bidi_iterator& operator++() {
-      ++ptr;
+      ++begin;
       return *this;
     }
-    constexpr void operator++(int) { ++ptr; }
+    constexpr void operator++(int) { ++begin; }
+    constexpr test_bidi_iterator& operator--() {
+      --begin;
+      return *this;
+    }
+    constexpr void operator--(int) { --begin; }
 
-    friend constexpr bool operator==(std::default_sentinel_t const&, test_bidi_iterator const& rhs) { return rhs.ptr == rhs.end; }
+    friend constexpr bool operator==(std::default_sentinel_t const&, test_bidi_iterator const& rhs) {
+      return rhs.begin == rhs.end;
+    }
 
-    CharT const* ptr;
-    CharT const* end;
+    std::initializer_list<CharT>::iterator begin;
+    std::initializer_list<CharT>::iterator end;
   };
 
-  template<class CharT, std::size_t Size>
-  test_bidi_iterator(std::array<CharT, Size>) -> test_bidi_iterator<CharT, Size>;
+  template<class CharT>
+  test_bidi_iterator(std::initializer_list<CharT>) -> test_bidi_iterator<CharT>;
 
   template<EOcode_unitOE CharT>
   struct test_case_code_unit_result {
@@ -221,8 +230,8 @@ namespace p2728::utf_view_test {
   }
 
   constexpr bool input_iterator_test() {
-    std::array<char8_t, 1> const single_arr{u8'x'};
-    test_input_iterator single_begin{single_arr};
+    std::initializer_list<char8_t> const single_arr{u8'x'};
+    test_input_iterator single_begin(single_arr);
     std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
     utf_view<char32_t, decltype(subrange)> single_view{std::move(subrange)};
     std::u32string single_u32{single_view | std::ranges::to<std::u32string>()};
@@ -233,8 +242,8 @@ namespace p2728::utf_view_test {
   }
 
   constexpr bool forward_iterator_test() {
-    std::array<char8_t, 1> const single_arr{u8'x'};
-    test_forward_iterator single_begin{single_arr};
+    std::initializer_list<char8_t> const single_arr{u8'x'};
+    test_forward_iterator single_begin(single_arr);
     std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
     utf_view<char32_t, decltype(subrange)> single_view{std::move(subrange)};
     std::u32string single_u32{single_view | std::ranges::to<std::u32string>()};
@@ -245,8 +254,8 @@ namespace p2728::utf_view_test {
   }
 
   constexpr bool bidi_iterator_test() {
-    std::array<char8_t, 1> const single_arr{u8'x'};
-    test_forward_iterator single_begin{single_arr};
+    std::initializer_list<char8_t> const single_arr{u8'x'};
+    test_forward_iterator single_begin(single_arr);
     std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
     utf_view<char32_t, decltype(subrange)> single_view{std::move(subrange)};
     std::u32string single_u32{single_view | std::ranges::to<std::u32string>()};
