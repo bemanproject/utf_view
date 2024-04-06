@@ -254,18 +254,19 @@ namespace p2728 {
       struct decode_code_point_result {
         char32_t c;
         uint8_t to_incr;
+        std::optional<transcoding_error> error;
       };
 
       template<typename>
       struct guard {
-        constexpr guard(void*, EOiterOE&) { }
+        constexpr guard(EOiterOE&, EOiterOE&) { }
       };
 
       template<typename It>
       requires forward_iterator<It>
       struct guard<It> {
-        constexpr ~guard() { iter->curr() = std::move(orig); }
-        utf_iterator* iter;
+        constexpr ~guard() { curr = std::move(orig); }
+        It& curr;
         It orig;
       };
 
@@ -278,17 +279,18 @@ namespace p2728 {
           return c < numeric_limits<CharT>::max();
       }
 
-      constexpr decode_code_point_result decode_code_point_utf8() {
-        guard<EOiterOE> g{this, curr()};
+      static constexpr decode_code_point_result decode_code_point_utf8_impl(
+          EOiterOE& it, EOsentOE& last) {
+        guard<EOiterOE> g{it, it};
         char32_t c{};
-        uint8_t u = *curr();
-        ++curr();
+        uint8_t u = *it;
+        ++it;
         const uint8_t lo_bound = 0x80, hi_bound = 0xBF;
         uint8_t to_incr = 1;
-        error_.reset();
+        std::optional<transcoding_error> error_enum;
 
-        auto const error{[&](transcoding_error const error) {
-          error_ = error;
+        auto const error{[&](transcoding_error const error_enum_in) {
+          error_enum = error_enum_in;
           c = U'\uFFFD';
         }};
 
@@ -298,25 +300,25 @@ namespace p2728 {
           error(transcoding_error::unexpected_continuation);
         } else if (u < 0xC2) [[unlikely]] {
           error(transcoding_error::overlong);
-        } else if (curr() == last_) [[unlikely]] {
+        } else if (it == last) [[unlikely]] {
           error(transcoding_error::truncated);
         } else if (u <= 0xDF) // 0xC2 to 0xDF
         {
           c = u & 0x1F;
-          u = *curr();
+          u = *it;
 
           if (u < lo_bound || u > hi_bound) [[unlikely]]
             error(transcoding_error::truncated);
           else {
             c = (c << 6) | (u & 0x3F);
-            ++curr();
+            ++it;
             ++to_incr;
           }
         } else if (u <= 0xEF) // 0xE0 to 0xEF
         {
           uint8_t orig = u;
           c = u & 0x0F;
-          u = *curr();
+          u = *it;
 
           if (orig == 0xE0 && 0x80 <= u && u < 0xA0) [[unlikely]]
             error(transcoding_error::overlong);
@@ -324,19 +326,19 @@ namespace p2728 {
             error(transcoding_error::surrogate);
           else if (u < lo_bound || u > hi_bound) [[unlikely]]
             error(transcoding_error::truncated);
-          else if (++curr() == last_) {
+          else if (++it == last) {
             [[unlikely]]++ to_incr;
             error(transcoding_error::truncated);
           } else {
             ++to_incr;
             c = (c << 6) | (u & 0x3F);
-            u = *curr();
+            u = *it;
 
             if (u < lo_bound || u > hi_bound) [[unlikely]]
               error(transcoding_error::truncated);
             else {
               c = (c << 6) | (u & 0x3F);
-              ++curr();
+              ++it;
               ++to_incr;
             }
           }
@@ -344,7 +346,7 @@ namespace p2728 {
         {
           uint8_t orig = u;
           c = u & 0x07;
-          u = *curr();
+          u = *it;
 
           if (orig == 0xF0 && 0x80 <= u && u < 0x90) [[unlikely]]
             error(transcoding_error::overlong);
@@ -352,29 +354,29 @@ namespace p2728 {
             error(transcoding_error::out_of_range);
           else if (u < lo_bound || u > hi_bound) [[unlikely]]
             error(transcoding_error::truncated);
-          else if (++curr() == last_) {
+          else if (++it == last) {
             [[unlikely]]++ to_incr;
             error(transcoding_error::truncated);
           } else {
             ++to_incr;
             c = (c << 6) | (u & 0x3F);
-            u = *curr();
+            u = *it;
 
             if (u < lo_bound || u > hi_bound) [[unlikely]]
               error(transcoding_error::truncated);
-            else if (++curr() == last_) {
+            else if (++it == last) {
               [[unlikely]]++ to_incr;
               error(transcoding_error::truncated);
             } else {
               ++to_incr;
               c = (c << 6) | (u & 0x3F);
-              u = *curr();
+              u = *it;
 
               if (u < lo_bound || u > hi_bound) [[unlikely]]
                 error(transcoding_error::truncated);
               else {
                 c = (c << 6) | (u & 0x3F);
-                ++curr();
+                ++it;
                 ++to_incr;
               }
             }
@@ -382,7 +384,11 @@ namespace p2728 {
         } else [[unlikely]]
           error(transcoding_error::out_of_range);
 
-        return {.c{c}, .to_incr{to_incr}};
+        return {.c{c}, .to_incr{to_incr}, .error{error_enum}};
+      }
+
+      constexpr decode_code_point_result decode_code_point_utf8() {
+        return decode_code_point_utf8_impl(curr(), last_);
       }
 
       constexpr decode_code_point_result decode_code_point_utf16() {
@@ -503,6 +509,7 @@ namespace p2728 {
           decode_result = decode_code_point_utf32();
         }
         update(decode_result.c, decode_result.to_incr);
+        error_ = decode_result.error;
       }
       constexpr void read_reverse() { // @*exposition only*@
         throw std::runtime_error{"unimpl"};
