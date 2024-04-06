@@ -10,6 +10,12 @@ module;
 #include <sstream>
 #include <string>
 
+#ifdef _MSC_VER
+#define P2728_CONSTEXPR
+#else
+#define P2728_CONSTEXPR constexpr
+#endif
+
 export module p2728:utf_view_test;
 
 import :utf_view;
@@ -156,8 +162,8 @@ namespace p2728::utf_view_test {
     std::initializer_list<test_case_code_unit_result<CharTTo>> output;
   };
 
-  constexpr test_case<char8_t, char32_t> table3_8{
-    .input{u8'\xc0', u8'\xaf', u8'\xe0', u8'\x80', u8'\xbf', u8'\xf0', u8'\x81', u8'\x82', u8'A'},
+  P2728_CONSTEXPR test_case<char8_t, char32_t> table3_8{
+    .input{(char8_t)'\xc0', (char8_t)'\xaf', (char8_t)'\xe0', (char8_t)'\x80', (char8_t)'\xbf', (char8_t)'\xf0', (char8_t)'\x81', (char8_t)'\x82', (char8_t)'A'},
     .output{{U'\uFFFD', {transcoding_error::invalid}},
             {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
             {U'\uFFFD', {transcoding_error::overlong}},
@@ -168,8 +174,8 @@ namespace p2728::utf_view_test {
             {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
             {U'A', {}}}};
 
-  constexpr test_case<char8_t, char32_t> table3_9{
-    .input{u8'\xed', u8'\xa0', u8'\x80', u8'\xed', u8'\xbf', u8'\xbf', u8'\xed', u8'\xaf', u8'A'},
+  P2728_CONSTEXPR test_case<char8_t, char32_t> table3_9{
+    .input{(char8_t)'\xed', (char8_t)'\xa0', (char8_t)'\x80', (char8_t)'\xed', (char8_t)'\xbf', (char8_t)'\xbf', (char8_t)'\xed', (char8_t)'\xaf', (char8_t)'A'},
     .output{{U'\uFFFD', {transcoding_error::encoded_surrogate}},
             {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
             {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
@@ -180,8 +186,8 @@ namespace p2728::utf_view_test {
             {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
             {U'A', {}}}};
 
-  constexpr test_case<char8_t, char32_t> table3_10{
-    .input{u8'\xf4', u8'\x91', u8'\x92', u8'\x93', u8'\xff', u8'\x41', u8'\x80', u8'\xbf', u8'B'},
+  P2728_CONSTEXPR test_case<char8_t, char32_t> table3_10{
+    .input{(char8_t)'\xf4', (char8_t)'\x91', (char8_t)'\x92', (char8_t)'\x93', (char8_t)'\xff', (char8_t)'\x41', (char8_t)'\x80', (char8_t)'\xbf', (char8_t)'B'},
     .output{{U'\uFFFD', {transcoding_error::out_of_range}},
             {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
             {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
@@ -192,8 +198,8 @@ namespace p2728::utf_view_test {
             {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
             {U'B', {}}}};
 
-  constexpr test_case<char8_t, char32_t> table3_11{
-    .input{u8'\xe1', u8'\x80', u8'\xe2', u8'\xf0', u8'\x91', u8'\x92', u8'\xf1', u8'\xbf', u8'A'},
+  P2728_CONSTEXPR test_case<char8_t, char32_t> table3_11{
+    .input{(char8_t)'\xe1', (char8_t)'\x80', (char8_t)'\xe2', (char8_t)'\xf0', (char8_t)'\x91', (char8_t)'\x92', (char8_t)'\xf1', (char8_t)'\xbf', (char8_t)'A'},
     .output{{U'\uFFFD', {transcoding_error::truncated}},
             {U'\uFFFD', {transcoding_error::truncated}},
             {U'\uFFFD', {transcoding_error::truncated}},
@@ -205,14 +211,20 @@ namespace p2728::utf_view_test {
     auto it{WrappingIterator(test_case.input)};
     std::ranges::subrange subrange{std::move(it), std::default_sentinel};
     utf_view<CharTTo, decltype(subrange)> view{std::move(subrange)};
-    for (auto view_it{view.begin()}, output_it{test_case.output.begin()}, input_it{test_case.input.begin()}, end{view.end()};
-         view_it != end; ++view_it, ++output_it, ++input_it) {
-      if (*view_it != output_it->code_unit) {
-        return false;
-      }
-      if (view_it.error() != output_it->error) {
-        return false;
-      }
+    {
+      auto output_it{test_case.output.begin()};
+      auto view_it{view.begin()};
+      auto end{view.end()};
+      do {
+        if (*view_it != output_it->code_unit) {
+          return false;
+        }
+        if (view_it.error() != output_it->error) {
+          return false;
+        }
+        ++output_it;
+        ++view_it;
+      } while (view_it != end);
     }
     if constexpr(std::bidirectional_iterator<decltype(it)>) {
       auto it2{WrappingIterator(test_case.input)};
@@ -223,12 +235,10 @@ namespace p2728::utf_view_test {
       {
         auto view_it{view2.end()};
         auto output_it{test_case.output.end()};
-        auto input_it{test_case.input.end()};
         auto end{view2.begin()};
         do {
           --view_it;
           --output_it;
-          --input_it;
           if (*view_it != output_it->code_unit) {
             return false;
           }
@@ -284,7 +294,7 @@ namespace p2728::utf_view_test {
     return true;
   }
 
-  export constexpr bool utf_view_test() {
+  export P2728_CONSTEXPR bool utf_view_test() {
     if (!input_iterator_test()) {
       return false;
     }
@@ -309,7 +319,9 @@ namespace p2728::utf_view_test {
     return true;
   }
 
+#ifndef _MSC_VER
   static_assert(utf_view_test());
+#endif
 
   // GCC bug workaround
   export bool utf_view_test2() {

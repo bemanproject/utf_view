@@ -7,6 +7,7 @@ module;
 #include <iterator>
 #include <limits>
 #include <optional>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
