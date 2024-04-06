@@ -340,12 +340,15 @@ namespace p2728::utf_view_test {
 
   // GCC bug workaround
   export bool utf_view_test2() {
+    std::cout << "input_iterator_test\n";
     if (!input_iterator_test()) {
       return false;
     }
+    std::cout << "forward_iterator_test\n";
     if (!forward_iterator_test()) {
       return false;
     }
+    std::cout << "bidi_iterator_test\n";
     if (!bidi_iterator_test()) {
       return false;
     }

@@ -281,7 +281,6 @@ namespace p2728 {
 
       static constexpr decode_code_point_result decode_code_point_utf8_impl(
           EOiterOE& it, EOsentOE& last) {
-        guard<EOiterOE> g{it, it};
         char32_t c{};
         uint8_t u = *it;
         ++it;
@@ -388,6 +387,7 @@ namespace p2728 {
       }
 
       constexpr decode_code_point_result decode_code_point_utf8() {
+        guard<EOiterOE> g{curr(), curr()};
         return decode_code_point_utf8_impl(curr(), last_);
       }
 
