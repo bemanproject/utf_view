@@ -5,7 +5,6 @@ module;
 #include <cassert>
 #include <cstddef>
 #include <initializer_list>
-#include <iostream>
 #include <iterator>
 #include <ranges>
 #include <sstream>
@@ -201,45 +200,13 @@ namespace p2728::utf_view_test {
             {U'\uFFFD', {transcoding_error::truncated}},
             {U'A', {}}}};
 
-  template<typename T>
-  std::string print_char(T c) {
-    std::ostringstream os{};
-    os << "0x" << std::hex << std::uppercase << (unsigned)c << " ";
-    return std::move(os).str();
-  }
-
-  std::string print_err(std::optional<transcoding_error> e) {
-    std::ostringstream os{};
-    if (!e) { os << "no error"; }
-    else {
-      os <<
-        [&] {
-          switch(*e) {
-          case transcoding_error::truncated: return "truncated";
-          case transcoding_error::bad_continuation_or_surrogate: return "bad_continuation_or_surrogate";
-          case transcoding_error::overlong: return "overlong";
-          case transcoding_error::encoded_surrogate: return "encoded_surrogate";
-          case transcoding_error::out_of_range: return "out_of_range";
-          case transcoding_error::invalid: return "invalid";
-          }
-          return "unknown";
-        }();
-    }
-    return std::move(os).str();
-  }
-
   template<typename WrappingIterator, EOcode_unitOE CharTFrom, EOcode_unitOE CharTTo>
   constexpr bool run_test_case_impl(test_case<CharTFrom, CharTTo> test_case) {
-    std::ranges::for_each(test_case.input, [](auto c) { std::cout << print_char(c); });
-    std::cout << std::endl;
     auto it{WrappingIterator(test_case.input)};
     std::ranges::subrange subrange{std::move(it), std::default_sentinel};
     utf_view<CharTTo, decltype(subrange)> view{std::move(subrange)};
     for (auto view_it{view.begin()}, output_it{test_case.output.begin()}, input_it{test_case.input.begin()}, end{view.end()};
          view_it != end; ++view_it, ++output_it, ++input_it) {
-      std::cout << "for:      " << print_char(*input_it) << std::endl;
-      std::cout << "expected: " << print_char(output_it->code_unit) << ' ' << print_err(output_it->error) << std::endl;
-      std::cout << "saw:      " << print_char(*view_it) << ' ' << print_err(view_it.error()) << std::endl;
       if (*view_it != output_it->code_unit) {
         return false;
       }
@@ -248,9 +215,6 @@ namespace p2728::utf_view_test {
       }
     }
     if constexpr(std::bidirectional_iterator<decltype(it)>) {
-      std::cout << "reversed: " << '\n';
-      std::ranges::for_each(test_case.input, [](auto c) { std::cout << print_char(c); });
-      std::cout << std::endl;
       auto it2{WrappingIterator(test_case.input)};
       auto end2{it2};
       while (end2 != std::default_sentinel) { ++end2; }
@@ -265,9 +229,6 @@ namespace p2728::utf_view_test {
           --view_it;
           --output_it;
           --input_it;
-          std::cout << "for:      " << print_char(*input_it) << std::endl;
-          std::cout << "expected: " << print_char(output_it->code_unit) << ' ' << print_err(output_it->error) << std::endl;
-          std::cout << "saw:      " << print_char(*view_it) << ' ' << print_err(view_it.error()) << std::endl;
           if (*view_it != output_it->code_unit) {
             return false;
           }
@@ -348,19 +309,16 @@ namespace p2728::utf_view_test {
     return true;
   }
 
-  // static_assert(utf_view_test());
+  static_assert(utf_view_test());
 
   // GCC bug workaround
   export bool utf_view_test2() {
-    std::cout << "input_iterator_test\n";
     if (!input_iterator_test()) {
       return false;
     }
-    std::cout << "forward_iterator_test\n";
     if (!forward_iterator_test()) {
       return false;
     }
-    std::cout << "bidi_iterator_test\n";
     if (!bidi_iterator_test()) {
       return false;
     }
