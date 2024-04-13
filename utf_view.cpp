@@ -530,20 +530,24 @@ namespace p2728 {
           ++reversed;
         } while (it != begin() && continuation(*it) && reversed < 4);
         if (continuation(*it)) {
+          auto new_curr{orig};
+          --new_curr;
           return {.decode_result{
                     .c{replacement_character},
                     .to_incr{1},
                     .error{transcoding_error::bad_continuation_or_surrogate}},
-                  .new_curr{--auto(orig)}};
+                  .new_curr{new_curr}};
         } else if (is_ascii(*it) || lead_code_unit(*it)) {
           int const expected_reversed{utf8_code_units(*it)};
           assert(expected_reversed > 0);
           if (reversed > expected_reversed) {
+            auto new_curr{orig};
+            --new_curr;
             return {.decode_result{
                       .c{replacement_character},
                       .to_incr{1},
                       .error{transcoding_error::bad_continuation_or_surrogate}},
-                    .new_curr{--auto(orig)}};
+                    .new_curr{new_curr}};
           } else {
             auto lead{it};
             decode_code_point_result const decode_result{
@@ -554,13 +558,15 @@ namespace p2728 {
               return {.decode_result{decode_result},
                       .new_curr{lead}};
             } else {
+              auto new_curr{orig};
+              --new_curr;
               return {.decode_result{
                         .c{replacement_character},
                         .to_incr{1},
                         .error{reversed == 1 ?
                                decode_result.error :
                                transcoding_error::bad_continuation_or_surrogate}},
-                      .new_curr{--auto(orig)}};
+                      .new_curr{new_curr}};
             }
           }
         } else {
