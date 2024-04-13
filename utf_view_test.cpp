@@ -159,38 +159,38 @@ namespace p2728::utf_view_test {
 
   constexpr test_case<char8_t, char32_t> table3_8{
     .input{u8'\xc0', u8'\xaf', u8'\xe0', u8'\x80', u8'\xbf', u8'\xf0', u8'\x81', u8'\x82', u8'A'},
-    .output{{U'\uFFFD', {transcoding_error::overlong}},
-            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+    .output{{U'\uFFFD', {transcoding_error::invalid}},
+            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
             {U'\uFFFD', {transcoding_error::overlong}},
-            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
             {U'\uFFFD', {transcoding_error::overlong}},
-            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
             {U'A', {}}}};
 
   constexpr test_case<char8_t, char32_t> table3_9{
     .input{u8'\xed', u8'\xa0', u8'\x80', u8'\xed', u8'\xbf', u8'\xbf', u8'\xed', u8'\xaf', u8'A'},
-    .output{{U'\uFFFD', {transcoding_error::surrogate}},
-            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-            {U'\uFFFD', {transcoding_error::surrogate}},
-            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-            {U'\uFFFD', {transcoding_error::surrogate}},
-            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+    .output{{U'\uFFFD', {transcoding_error::encoded_surrogate}},
+            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+            {U'\uFFFD', {transcoding_error::encoded_surrogate}},
+            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+            {U'\uFFFD', {transcoding_error::encoded_surrogate}},
+            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
             {U'A', {}}}};
 
   constexpr test_case<char8_t, char32_t> table3_10{
     .input{u8'\xf4', u8'\x91', u8'\x92', u8'\x93', u8'\xff', u8'\x41', u8'\x80', u8'\xbf', u8'B'},
     .output{{U'\uFFFD', {transcoding_error::out_of_range}},
-            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
             {U'\uFFFD', {transcoding_error::out_of_range}},
             {U'A', {}},
-            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
-            {U'\uFFFD', {transcoding_error::unexpected_continuation}},
+            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
             {U'B', {}}}};
 
   constexpr test_case<char8_t, char32_t> table3_11{

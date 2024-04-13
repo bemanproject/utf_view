@@ -31,20 +31,23 @@ namespace p2728 {
 
   constexpr bool high_surrogate(char32_t c) { return high_surrogate_min <= c && c <= high_surrogate_max; }
 
-  constexpr bool lead_code_unit(unsigned char c) { return uint8_t(c - 0xc2) <= 0x32; }
+  constexpr bool lead_code_unit(char8_t c) { return uint8_t(c - 0xc2) <= 0x32; }
 
-  constexpr bool continuation(unsigned char c) { return (int8_t)c < -0x40; }
+  constexpr bool is_ascii(char8_t c) { return uint8_t(c) < 0x80; }
 
-  constexpr int utf8_code_units(unsigned char first_unit) {
+  constexpr bool continuation(char8_t c) { return (int8_t)c < -0x40; }
+
+  constexpr int utf8_code_units(char8_t first_unit) {
     return first_unit <= 0x7f ? 1 : lead_code_unit(first_unit) ? int(0xe0 <= first_unit) + int(0xf0 <= first_unit) + 2 : -1;
   }
 
   export enum class transcoding_error {
     truncated, // e.g. utf8 0xE1 0x80 utf16 0xD800
-    unexpected_continuation, // e.g. utf8 0x80 utf16 0xDC00
+    bad_continuation_or_surrogate, // e.g. utf8 0x80 utf16 0xDC00
     overlong, // e.g. utf8 0xE0 0x80
-    surrogate, // e.g. utf8 0xED 0xA0, utf32 0x0000D800
+    encoded_surrogate, // e.g. utf8 0xED 0xA0, utf32 0x0000D800
     out_of_range, // e.g. utf8 0xF4 0x90, utf32 0x00110000
+    invalid, // e.g. utf8 0xC0
   };
 
   export template<EOcode_unitOE ToType, EOutf_rangeOE V>
@@ -280,7 +283,7 @@ namespace p2728 {
       }
 
       static constexpr decode_code_point_result decode_code_point_utf8_impl(
-          EOiterOE& it, EOsentOE& last) {
+          EOiterOE& it, EOsentOE const& last) {
         char32_t c{};
         uint8_t u = *it;
         ++it;
@@ -296,9 +299,9 @@ namespace p2728 {
         if (u <= 0x7F) [[likely]]      // 0x00 to 0x7F
           c = u;
         else if (u < 0xC0) [[unlikely]] {
-          error(transcoding_error::unexpected_continuation);
+          error(transcoding_error::bad_continuation_or_surrogate);
         } else if (u < 0xC2) [[unlikely]] {
-          error(transcoding_error::overlong);
+          error(transcoding_error::invalid);
         } else if (it == last) [[unlikely]] {
           error(transcoding_error::truncated);
         } else if (u <= 0xDF) // 0xC2 to 0xDF
@@ -322,7 +325,7 @@ namespace p2728 {
           if (orig == 0xE0 && 0x80 <= u && u < 0xA0) [[unlikely]]
             error(transcoding_error::overlong);
           else if (orig == 0xED && 0xA0 <= u && u < 0xC0) [[unlikely]]
-            error(transcoding_error::surrogate);
+            error(transcoding_error::encoded_surrogate);
           else if (u < lo_bound || u > hi_bound) [[unlikely]]
             error(transcoding_error::truncated);
           else if (++it == last) {
@@ -381,7 +384,7 @@ namespace p2728 {
             }
           }
         } else [[unlikely]]
-          error(transcoding_error::out_of_range);
+          error(transcoding_error::invalid);
 
         return {.c{c}, .to_incr{to_incr}, .error{error_enum}};
       }
@@ -421,7 +424,7 @@ namespace p2728 {
             }
           }
         } else
-          error(transcoding_error::unexpected_continuation);
+          error(transcoding_error::bad_continuation_or_surrogate);
 
         return {.c{c}, .to_incr{to_incr}};
       }
@@ -436,7 +439,7 @@ namespace p2728 {
         }};
         if (c >= 0xD800) {
           if (c < 0xE000) {
-            error(transcoding_error::surrogate);
+            error(transcoding_error::encoded_surrogate);
           }
           if (c > 0x10FFFF) {
             error(transcoding_error::out_of_range);
@@ -511,8 +514,83 @@ namespace p2728 {
         update(decode_result.c, decode_result.to_incr);
         error_ = decode_result.error;
       }
+
+      struct read_reverse_impl_result {
+        decode_code_point_result decode_result;
+        EOiterOE new_curr;
+      };
+
+      constexpr read_reverse_impl_result read_reverse_utf8() const {
+        assert(curr() != begin());
+        auto it{curr()};
+        auto const orig{it};
+        unsigned reversed{};
+        do {
+          --it;
+          ++reversed;
+        } while (it != begin() && continuation(*it) && reversed < 4);
+        if (continuation(*it)) {
+          return {.decode_result{
+                    .c{replacement_character},
+                    .to_incr{1},
+                    .error{transcoding_error::bad_continuation_or_surrogate}},
+                  .new_curr{--auto(orig)}};
+        } else if (is_ascii(*it) || lead_code_unit(*it)) {
+          int const expected_reversed{utf8_code_units(*it)};
+          assert(expected_reversed > 0);
+          if (reversed > expected_reversed) {
+            return {.decode_result{
+                      .c{replacement_character},
+                      .to_incr{1},
+                      .error{transcoding_error::bad_continuation_or_surrogate}},
+                    .new_curr{--auto(orig)}};
+          } else {
+            auto lead{it};
+            decode_code_point_result const decode_result{
+              decode_code_point_utf8_impl(it, end())};
+            if (!decode_result.error ||
+                decode_result.error == transcoding_error::truncated) {
+              assert(decode_result.to_incr == reversed);
+              return {.decode_result{decode_result},
+                      .new_curr{lead}};
+            } else {
+              return {.decode_result{
+                        .c{replacement_character},
+                        .to_incr{1},
+                        .error{transcoding_error::bad_continuation_or_surrogate}},
+                      .new_curr{--auto(orig)}};
+            }
+          }
+        } else {
+          assert(in(0xC0, *it, 0xC2) || in(0xF5, *it, 0xFF));
+          it = orig;
+          --it;
+          return {.decode_result{
+                    .c{replacement_character},
+                    .to_incr{1},
+                    .error{reversed == 1 ?
+                           transcoding_error::invalid :
+                           transcoding_error::bad_continuation_or_surrogate}},
+                  .new_curr{it}};
+
+        }
+      }
+
       constexpr void read_reverse() { // @*exposition only*@
-        throw std::runtime_error{"unimpl"};
+        if (curr() == begin()) {
+          // std::erroneous(); return;
+          std::unreachable();
+        }
+        error_.reset();
+        if constexpr (is_same_v<iter_value_t<EOiterOE>, char8_t>) {
+          auto const read_reverse_impl_result{read_reverse_utf8()};
+          update(read_reverse_impl_result.decode_result.c,
+                 read_reverse_impl_result.decode_result.to_incr);
+          error_ = read_reverse_impl_result.decode_result.error;
+          curr() = read_reverse_impl_result.new_curr;
+        } else {
+          throw std::runtime_error{"unimpl"};
+        }
       }
 
       constexpr EOiterOE first() const requires bidirectional_iterator<EOiterOE>      // @*exposition only*@
