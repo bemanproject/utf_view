@@ -187,7 +187,7 @@ namespace p2728::utf_view_test {
             {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
             {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
             {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
-            {U'\uFFFD', {transcoding_error::out_of_range}},
+            {U'\uFFFD', {transcoding_error::invalid}},
             {U'A', {}},
             {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
             {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
@@ -208,10 +208,23 @@ namespace p2728::utf_view_test {
     return std::move(os).str();
   }
 
-  template<typename T>
-  std::string print_err(T e) {
+  std::string print_err(std::optional<transcoding_error> e) {
     std::ostringstream os{};
-    os << (e ? (int)*e : -1);
+    if (!e) { os << "no error"; }
+    else {
+      os <<
+        [&] {
+          switch(*e) {
+          case transcoding_error::truncated: return "truncated";
+          case transcoding_error::bad_continuation_or_surrogate: return "bad_continuation_or_surrogate";
+          case transcoding_error::overlong: return "overlong";
+          case transcoding_error::encoded_surrogate: return "encoded_surrogate";
+          case transcoding_error::out_of_range: return "out_of_range";
+          case transcoding_error::invalid: return "invalid";
+          }
+          return "unknown";
+        }();
+    }
     return std::move(os).str();
   }
 
@@ -236,19 +249,18 @@ namespace p2728::utf_view_test {
     }
     if constexpr(std::bidirectional_iterator<decltype(it)>) {
       std::cout << "reversed: " << '\n';
+      std::ranges::for_each(test_case.input, [](auto c) { std::cout << print_char(c); });
+      std::cout << std::endl;
       auto it2{WrappingIterator(test_case.input)};
       auto end2{it2};
       while (end2 != std::default_sentinel) { ++end2; }
-      auto reversed_input{std::ranges::subrange{it2, end2} | std::views::reverse};
-      std::ranges::for_each(reversed_input, [](auto c) { std::cout << print_char(c); });
-      std::cout << std::endl;
-      utf_view<CharTTo, decltype(reversed_input)> rview{reversed_input};
-      auto routput{test_case.output | std::views::reverse};
+      std::ranges::subrange subrange2{it2, end2};
+      utf_view<CharTTo, decltype(subrange2)> view2{std::move(subrange2)};
       {
-        auto view_it{rview.end()};
-        auto output_it{routput.end()};
-        auto input_it{reversed_input.end()};
-        auto end{rview.begin()};
+        auto view_it{view2.end()};
+        auto output_it{test_case.output.end()};
+        auto input_it{test_case.input.end()};
+        auto end{view2.begin()};
         do {
           --view_it;
           --output_it;

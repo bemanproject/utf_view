@@ -557,7 +557,9 @@ namespace p2728 {
               return {.decode_result{
                         .c{replacement_character},
                         .to_incr{1},
-                        .error{transcoding_error::bad_continuation_or_surrogate}},
+                        .error{reversed == 1 ?
+                               decode_result.error :
+                               transcoding_error::bad_continuation_or_surrogate}},
                       .new_curr{--auto(orig)}};
             }
           }
