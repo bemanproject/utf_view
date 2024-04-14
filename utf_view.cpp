@@ -105,7 +105,7 @@ namespace p2728 {
 
       template<utf_view_iterator Iter>
       struct inner_iter_trait<Iter> {
-        using type = Iter::inner_iter;
+        using type = Iter::EOinner_iterOE;
       };
 
       template<typename Sent>
@@ -115,7 +115,7 @@ namespace p2728 {
 
       template<utf_view_iterator Sent>
       struct inner_sent_trait<Sent> {
-        using type = Sent::inner_sent;
+        using type = Sent::EOinner_sentOE;
       };
 
       using EOinner_iterOE = inner_iter_trait<EOiterOE>::type;
@@ -630,13 +630,21 @@ namespace p2728 {
     static constexpr auto make_begin(EOiterOE first, EOsentOE last) {   // @*exposition only*@
       if constexpr (bidirectional_iterator<EOiterOE>) {
         if constexpr (utf_view_iterator<EOiterOE>) {
-          return utf_iterator{first.first(), first.curr(), last.last_};
+          if constexpr (utf_view_iterator<EOsentOE>) {
+            return utf_iterator{first.first(), first.curr(), last.last_};
+          } else {
+            return utf_iterator{first.first(), first.curr(), last};
+          }
         } else {
           return utf_iterator{first, first, last};
         }
       } else {
         if constexpr (utf_view_iterator<EOiterOE>) {
-          return utf_iterator{first.curr(), last.last_};
+          if constexpr (utf_view_iterator<EOsentOE>) {
+            return utf_iterator{first.curr(), last.last_};
+          } else {
+            return utf_iterator{first.curr(), last};
+          }
         } else {
           return utf_iterator{move(first), last};
         }

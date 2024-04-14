@@ -282,11 +282,24 @@ namespace p2728::utf_view_test {
 
   constexpr bool bidi_iterator_test() {
     std::initializer_list<char8_t> const single_arr{u8'x'};
-    test_forward_iterator single_begin(single_arr);
+    test_bidi_iterator single_begin(single_arr);
     std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
     utf_view<char32_t, decltype(subrange)> single_view{std::move(subrange)};
     std::u32string single_u32{single_view | std::ranges::to<std::u32string>()};
     if (single_u32.size() != 1 || single_u32.at(0) != U'x') {
+      return false;
+    }
+    return true;
+  }
+
+  constexpr bool double_encode_test() {
+    std::initializer_list<char8_t> const single_arr{u8'x'};
+    test_forward_iterator single_begin(single_arr);
+    std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
+    utf_view<char32_t, decltype(subrange)> single_view{std::move(subrange)};
+    utf_view<char8_t, decltype(single_view)> double_encoded_view{std::move(single_view)};
+    std::u8string single_u8{double_encoded_view | std::ranges::to<std::u8string>()};
+    if (single_u8.size() != 1 || single_u8.at(0) != U'x') {
       return false;
     }
     return true;
@@ -300,6 +313,9 @@ namespace p2728::utf_view_test {
       return false;
     }
     if (!bidi_iterator_test()) {
+      return false;
+    }
+    if (!double_encode_test()) {
       return false;
     }
     if (!run_test_case(table3_8)) {
@@ -330,6 +346,9 @@ namespace p2728::utf_view_test {
       return false;
     }
     if (!bidi_iterator_test()) {
+      return false;
+    }
+    if (!double_encode_test()) {
       return false;
     }
     if (!run_test_case(table3_8)) {
