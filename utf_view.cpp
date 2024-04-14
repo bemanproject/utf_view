@@ -540,7 +540,7 @@ namespace p2728 {
         } else if (is_ascii(*it) || lead_code_unit(*it)) {
           int const expected_reversed{utf8_code_units(*it)};
           assert(expected_reversed > 0);
-          if (reversed > expected_reversed) {
+          if (reversed > static_cast<unsigned>(expected_reversed)) {
             auto new_curr{orig};
             --new_curr;
             return {.decode_result{.c{U'\uFFFD'}, .to_incr{1}, .error{transcoding_error::bad_continuation_or_surrogate}},
