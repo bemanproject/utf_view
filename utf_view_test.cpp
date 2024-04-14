@@ -1,17 +1,14 @@
 module;
 
 #include <algorithm>
-#include <array>
-#include <cassert>
 #include <cstddef>
 #include <initializer_list>
 #include <iterator>
 #include <ranges>
-#include <sstream>
 #include <string>
 
 #ifdef _MSC_VER
-#define P2728_CONSTEXPR
+#define P2728_CONSTEXPR // https://developercommunity.visualstudio.com/t/std::initializer_list-data-member-of-cla/10622889
 #else
 #define P2728_CONSTEXPR constexpr
 #endif
