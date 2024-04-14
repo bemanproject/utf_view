@@ -114,20 +114,16 @@ namespace p2728 {
           read();
       }
 
-      template<class V2>
-      requires convertible_to<ranges::iterator_t<V2>, EOiterOE> && convertible_to<ranges::sentinel_t<V2>, EOsentOE> &&
-                 copyable<V2>
-      constexpr utf_iterator(const typename utf_view<ToType, V2>::utf_iterator& other) :
+      constexpr utf_iterator(utf_iterator const& other) requires copyable<EOiterOE>
+          :
           buf_(other.buf_),
           first_and_curr_(other.first_and_curr_),
           buf_index_(other.buf_index_),
           buf_last_(other.buf_last_),
           last_(other.last_) { }
 
-      template<class V2>
-      requires convertible_to<ranges::iterator_t<V2>, EOiterOE> && convertible_to<ranges::sentinel_t<V2>, EOsentOE> &&
-        copyable<V2>
-      constexpr utf_iterator& operator=(const typename utf_view<ToType, V2>::utf_iterator& other) {
+      constexpr utf_iterator& operator=(utf_iterator const& other) requires copyable<EOiterOE>
+      {
         buf_ = other.buf_;
         first_and_curr_ = other.first_and_curr_;
         buf_index_ = other.buf_index_;
@@ -135,18 +131,14 @@ namespace p2728 {
         last_ = other.last_;
       }
 
-      template<class V2>
-      requires convertible_to<ranges::iterator_t<V2>, EOiterOE> && convertible_to<ranges::sentinel_t<V2>, EOsentOE> && movable<V2>
-      constexpr utf_iterator(typename utf_view<ToType, V2>::utf_iterator&& other) :
+      constexpr utf_iterator(utf_iterator&& other) :
           buf_(other.buf_),
           first_and_curr_(move(other.first_and_curr_)),
           buf_index_(other.buf_index_),
           buf_last_(other.buf_last_),
-          last_(other.last_) { }
+          last_(std::move(other.last_)) { }
 
-      template<class V2>
-      requires convertible_to<ranges::iterator_t<V2>, EOiterOE> && convertible_to<ranges::sentinel_t<V2>, EOsentOE> && movable<V2>
-      constexpr utf_iterator& operator=(const typename utf_view<ToType, V2>::utf_iterator& other) {
+      constexpr utf_iterator& operator=(utf_iterator&& other) {
         buf_ = other.buf_;
         first_and_curr_ = move(other.first_and_curr_);
         buf_index_ = other.buf_index_;
