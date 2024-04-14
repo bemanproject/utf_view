@@ -131,7 +131,7 @@ namespace p2728 {
           first_and_curr_(move(other.first_and_curr_)),
           buf_index_(other.buf_index_),
           buf_last_(other.buf_last_),
-          last_(std::move(other.last_)) { }
+          last_(move(other.last_)) { }
 
       constexpr utf_iterator& operator=(utf_iterator&& other) {
         buf_ = other.buf_;
@@ -234,7 +234,7 @@ namespace p2728 {
       struct decode_code_point_result {
         char32_t c;
         uint8_t to_incr;
-        std::optional<transcoding_error> error;
+        optional<transcoding_error> error;
       };
 
       template<typename>
@@ -245,7 +245,7 @@ namespace p2728 {
       template<typename It>
       requires forward_iterator<It>
       struct guard<It> {
-        constexpr ~guard() { curr = std::move(orig); }
+        constexpr ~guard() { curr = move(orig); }
         It& curr;
         It orig;
       };
@@ -265,7 +265,7 @@ namespace p2728 {
         ++it;
         const uint8_t lo_bound = 0x80, hi_bound = 0xBF;
         uint8_t to_incr = 1;
-        std::optional<transcoding_error> error_enum;
+        optional<transcoding_error> error_enum;
 
         auto const error{[&](transcoding_error const error_enum_in) {
           error_enum = error_enum_in;
@@ -548,8 +548,8 @@ namespace p2728 {
 
       constexpr void read_reverse() { // @*exposition only*@
         if (curr() == begin()) {
-          // std::erroneous(); return;
-          std::unreachable();
+          // erroneous(); return;
+          unreachable();
         }
         error_.reset();
         if constexpr (is_same_v<iter_value_t<EOiterOE>, char8_t>) {
@@ -558,7 +558,7 @@ namespace p2728 {
           error_ = read_reverse_impl_result.decode_result.error;
           curr() = read_reverse_impl_result.new_curr;
         } else {
-          throw std::runtime_error{"unimpl"};
+          throw runtime_error{"unimpl"};
         }
       }
 
@@ -630,8 +630,8 @@ namespace p2728 {
 
     constexpr bool empty() const { return ranges::empty(EObase_OE); }
 
-    friend ostream& operator<<(ostream& os, utf_view v) { throw std::runtime_error{"unimpl"}; }
-    friend wostream& operator<<(wostream& os, utf_view v) { throw std::runtime_error{"unimpl"}; }
+    friend ostream& operator<<(ostream& os, utf_view v) { throw runtime_error{"unimpl"}; }
+    friend wostream& operator<<(wostream& os, utf_view v) { throw runtime_error{"unimpl"}; }
   };
 
 } // namespace p2728
