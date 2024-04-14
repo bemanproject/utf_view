@@ -19,19 +19,7 @@ namespace p2728 {
 
   using namespace std;
 
-  constexpr char16_t high_surrogate_base = 0xd7c0;
-  constexpr char16_t low_surrogate_base = 0xdc00;
-  constexpr char32_t high_surrogate_min = 0xd800;
-  constexpr char32_t high_surrogate_max = 0xdbff;
-  constexpr char32_t low_surrogate_min = 0xdc00;
-  constexpr char32_t low_surrogate_max = 0xdfff;
-  constexpr char32_t replacement_character = 0xfffd;
-
   constexpr bool in(unsigned char lo, unsigned char c, unsigned char hi) { return lo <= c && c <= hi; }
-
-  constexpr bool surrogate(char32_t c) { return high_surrogate_min <= c && c <= low_surrogate_max; }
-
-  constexpr bool high_surrogate(char32_t c) { return high_surrogate_min <= c && c <= high_surrogate_max; }
 
   constexpr bool lead_code_unit(char8_t c) { return uint8_t(c - 0xc2) <= 0x32; }
 
@@ -547,18 +535,16 @@ namespace p2728 {
         if (continuation(*it)) {
           auto new_curr{orig};
           --new_curr;
-          return {
-            .decode_result{.c{replacement_character}, .to_incr{1}, .error{transcoding_error::bad_continuation_or_surrogate}},
-            .new_curr{new_curr}};
+          return {.decode_result{.c{U'\uFFFD'}, .to_incr{1}, .error{transcoding_error::bad_continuation_or_surrogate}},
+                  .new_curr{new_curr}};
         } else if (is_ascii(*it) || lead_code_unit(*it)) {
           int const expected_reversed{utf8_code_units(*it)};
           assert(expected_reversed > 0);
           if (reversed > expected_reversed) {
             auto new_curr{orig};
             --new_curr;
-            return {
-              .decode_result{.c{replacement_character}, .to_incr{1}, .error{transcoding_error::bad_continuation_or_surrogate}},
-              .new_curr{new_curr}};
+            return {.decode_result{.c{U'\uFFFD'}, .to_incr{1}, .error{transcoding_error::bad_continuation_or_surrogate}},
+                    .new_curr{new_curr}};
           } else {
             auto lead{it};
             decode_code_point_result const decode_result{decode_code_point_utf8_impl(it, end())};
@@ -569,7 +555,7 @@ namespace p2728 {
               auto new_curr{orig};
               --new_curr;
               return {
-                .decode_result{.c{replacement_character},
+                .decode_result{.c{U'\uFFFD'},
                                .to_incr{1},
                                .error{reversed == 1 ? decode_result.error : transcoding_error::bad_continuation_or_surrogate}},
                 .new_curr{new_curr}};
@@ -580,7 +566,7 @@ namespace p2728 {
           it = orig;
           --it;
           return {
-            .decode_result{.c{replacement_character},
+            .decode_result{.c{U'\uFFFD'},
                            .to_incr{1},
                            .error{reversed == 1 ? transcoding_error::invalid : transcoding_error::bad_continuation_or_surrogate}},
             .new_curr{it}};
