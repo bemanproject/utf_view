@@ -1,5 +1,6 @@
 module;
 
+#include <boost/stl_interfaces/iterator_interface.hpp>
 #include <bit>
 #include <cassert>
 #include <concepts>
@@ -42,6 +43,20 @@ namespace p2728 {
     return first_unit <= 0x7f ? 1 : lead_code_unit(first_unit) ? int(0xe0 <= first_unit) + int(0xf0 <= first_unit) + 2 : -1;
   }
 
+  template<class I>
+  constexpr auto EObidirectional_at_mostOE() {    // @*exposition only*@
+    if constexpr (bidirectional_iterator<I>) {
+      return bidirectional_iterator_tag{};
+    } else if constexpr (forward_iterator<I>) {
+      return forward_iterator_tag{};
+    } else if constexpr (input_iterator<I>) {
+      return input_iterator_tag{};
+    }
+  }
+
+  template<class I>
+  using EObidirectional_at_most_tOE = decltype(EObidirectional_at_mostOE<I>()); // @*exposition only*@
+
   export enum class transcoding_error {
     truncated, // e.g. utf8 0xE1 0x80 utf16 0xD800
     bad_continuation_or_surrogate, // e.g. utf8 0x80 utf16 0xDC00
@@ -59,7 +74,7 @@ namespace p2728 {
     using EOsentOE = ranges::sentinel_t<V>;
 
   public:
-    class utf_iterator {
+    class utf_iterator : public boost::stl_interfaces::iterator_interface<EObidirectional_at_most_tOE<EOiterOE>, ToType, ToType> {
     private:
       template<class I>
       struct EOfirst_and_currOE {                         // @*exposition only*@
