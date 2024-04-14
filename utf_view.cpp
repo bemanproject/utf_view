@@ -657,8 +657,8 @@ namespace p2728 {
 
     constexpr bool empty() const { return ranges::empty(EObase_OE); }
 
-    friend ostream& operator<<(ostream& os, utf_view v) { }
-    friend wostream& operator<<(wostream& os, utf_view v) { }
+    friend ostream& operator<<(ostream& os, utf_view v) { throw std::runtime_error{"unimpl"}; }
+    friend wostream& operator<<(wostream& os, utf_view v) { throw std::runtime_error{"unimpl"}; }
 
     // todo friendship with other utf_view/iterator
   };
