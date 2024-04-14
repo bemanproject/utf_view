@@ -4,3 +4,12 @@
 [submodule "thirdparty/std_archetypes"]
 	path = thirdparty/std_archetypes
 	url = git@github.com:ednolan/std_archetypes.git
+[submodule "stl_interfaces"]
+	path = thirdparty/stl_interfaces
+	url = https://github.com/boostorg/stl_interfaces.git
+[submodule "thirdparty/assert"]
+	path = thirdparty/assert
+	url = https://github.com/boostorg/assert.git
+[submodule "thirdparty/config"]
+	path = thirdparty/config
+	url = https://github.com/boostorg/config.git

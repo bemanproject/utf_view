@@ -33,6 +33,18 @@ if (NOT TARGET std_archetypes)
   add_subdirectory(thirdparty/std_archetypes)
 endif()
 
+if (NOT TARGET boost_config)
+  add_subdirectory(thirdparty/config)
+endif()
+
+if (NOT TARGET boost_assert)
+  add_subdirectory(thirdparty/assert)
+endif()
+
+if (NOT TARGET boost_stl_interfaces)
+  add_subdirectory(thirdparty/stl_interfaces)
+endif()
+
 set(P2728_FILE_SET
     ${CMAKE_SOURCE_DIR}/concepts.cpp
     ${CMAKE_SOURCE_DIR}/utf_view.cpp)
@@ -46,7 +58,7 @@ set(P2728_FORMATTED_FILES
      ${CMAKE_CURRENT_BINARY_DIR}/markdown/utf_view.cpp.md)
 
 set(P2728_LIB_DEPS
-    null_term std_archetypes)
+    null_term std_archetypes boost_stl_interfaces)
 
 add_custom_command(
   OUTPUT ${P2728_FORMATTED_FILES}
