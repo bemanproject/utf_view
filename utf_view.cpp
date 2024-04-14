@@ -103,11 +103,6 @@ namespace p2728 {
         if (curr() != last_)
           read();
       }
-      constexpr utf_iterator(EOiterOE /* first */, EOiterOE it, EOsentOE last) requires (!bidirectional_iterator<EOiterOE>)
-          : first_and_curr_{move(it)}, last_(last) {
-        if (curr() != last_)
-          read();
-      }
       constexpr utf_iterator(EOiterOE it, EOsentOE last) requires (!bidirectional_iterator<EOiterOE>)
           : first_and_curr_{move(it)}, last_(last) {
         if (curr() != last_)
@@ -588,7 +583,7 @@ namespace p2728 {
     };
 
     static constexpr auto make_begin(EOiterOE first, EOsentOE last) {   // @*exposition only*@
-      if constexpr (forward_iterator<EOiterOE>) {
+      if constexpr (bidirectional_iterator<EOiterOE>) {
         return utf_iterator{first, first, last};
       } else {
         return utf_iterator{move(first), last};
