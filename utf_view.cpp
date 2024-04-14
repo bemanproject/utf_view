@@ -663,7 +663,7 @@ namespace p2728 {
   public:
     constexpr utf_view() requires default_initializable<V>
     = default;
-    constexpr utf_view(V base) : EObase_OE{move(base)} { }
+    constexpr utf_view(std::type_identity_t<V> base) : EObase_OE{move(base)} { }
 
     constexpr V base() const& requires copy_constructible<V>
     {
