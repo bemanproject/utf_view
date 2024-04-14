@@ -69,6 +69,10 @@ namespace p2728 {
     private:
       using reserved_utf_view_iterator = void;
 
+      template<EOcode_unitOE ToType2, EOutf_rangeOE V2>
+      requires ranges::view<V2>
+      friend class utf_view;
+
       template<typename ToType2, typename V2>
       friend class utf_view<ToType2, V2>::utf_iterator;
 
@@ -176,7 +180,15 @@ namespace p2728 {
 
       constexpr EOiterOE base() const requires forward_iterator<EOinner_iterOE>
       {
-        return curr();
+        if constexpr (utf_view_iterator<EOiterOE>) {
+          if constexpr (bidirectional_iterator<EOinner_iterOE>) {
+            return EOiterOE{first(), curr(), last_};
+          } else {
+            return EOiterOE{curr(), last_};
+          }
+        } else {
+          return curr();
+        }
       }
 
       constexpr optional<transcoding_error> error() const { return error_; }
@@ -617,9 +629,17 @@ namespace p2728 {
 
     static constexpr auto make_begin(EOiterOE first, EOsentOE last) {   // @*exposition only*@
       if constexpr (bidirectional_iterator<EOiterOE>) {
-        return utf_iterator{first, first, last};
+        if constexpr (utf_view_iterator<EOiterOE>) {
+          return utf_iterator{first.first(), first.curr(), last.last_};
+        } else {
+          return utf_iterator{first, first, last};
+        }
       } else {
-        return utf_iterator{move(first), last};
+        if constexpr (utf_view_iterator<EOiterOE>) {
+          return utf_iterator{first.curr(), last.last_};
+        } else {
+          return utf_iterator{move(first), last};
+        }
       }
     }
     static constexpr auto make_end(EOiterOE first, EOsentOE last) {     // @*exposition only*@
