@@ -86,20 +86,6 @@ namespace p2728 {
         I curr;
       };
 
-      template<class I>
-      static constexpr auto EObidirectional_at_mostOE() {    // @*exposition only*@
-        if constexpr (bidirectional_iterator<I>) {
-          return bidirectional_iterator_tag{};
-        } else if constexpr (forward_iterator<I>) {
-          return forward_iterator_tag{};
-        } else if constexpr (input_iterator<I>) {
-          return input_iterator_tag{};
-        }
-      }
-
-      template<class I>
-      using EObidirectional_at_most_tOE = decltype(EObidirectional_at_mostOE<I>()); // @*exposition only*@
-
     public:
       using value_type = ToType;
       using reference_type = ToType&;
@@ -659,8 +645,6 @@ namespace p2728 {
 
     friend ostream& operator<<(ostream& os, utf_view v) { throw std::runtime_error{"unimpl"}; }
     friend wostream& operator<<(wostream& os, utf_view v) { throw std::runtime_error{"unimpl"}; }
-
-    // todo friendship with other utf_view/iterator
   };
 
 } // namespace p2728
