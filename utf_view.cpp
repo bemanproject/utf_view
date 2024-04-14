@@ -54,6 +54,9 @@ namespace p2728 {
     invalid, // e.g. utf8 0xC0
   };
 
+  template<typename T>
+  concept utf_view_iterator = requires { typename T::reserved_utf_view_iterator; };
+
   export template<EOcode_unitOE ToType, EOutf_rangeOE V>
   requires ranges::view<V>
   class utf_view : public ranges::view_interface<utf_view<ToType, V>> {
@@ -64,6 +67,11 @@ namespace p2728 {
   public:
     class utf_iterator : public boost::stl_interfaces::iterator_interface<EObidirectional_at_most_tOE<EOiterOE>, ToType, ToType> {
     private:
+      using reserved_utf_view_iterator = void;
+
+      template<typename ToType2, typename V2>
+      friend class utf_view<ToType2, V2>::utf_iterator;
+
       template<class I>
       struct EOfirst_and_currOE {                         // @*exposition only*@
         EOfirst_and_currOE() = default;
@@ -86,6 +94,30 @@ namespace p2728 {
         I curr;
       };
 
+      template<typename Iter>
+      struct inner_iter_trait {
+        using type = Iter;
+      };
+
+      template<utf_view_iterator Iter>
+      struct inner_iter_trait<Iter> {
+        using type = Iter::inner_iter;
+      };
+
+      template<typename Sent>
+      struct inner_sent_trait {
+        using type = Sent;
+      };
+
+      template<utf_view_iterator Sent>
+      struct inner_sent_trait<Sent> {
+        using type = Sent::inner_sent;
+      };
+
+      using EOinner_iterOE = inner_iter_trait<EOiterOE>::type;
+
+      using EOinner_sentOE = inner_sent_trait<EOsentOE>::type;
+
     public:
       using value_type = ToType;
       using reference_type = ToType&;
@@ -98,18 +130,19 @@ namespace p2728 {
       = default;
 #endif
 
-      constexpr utf_iterator(EOiterOE first, EOiterOE it, EOsentOE last) requires bidirectional_iterator<EOiterOE>
+      constexpr utf_iterator(EOinner_iterOE first, EOinner_iterOE it, EOinner_sentOE last)
+        requires bidirectional_iterator<EOinner_iterOE>
           : first_and_curr_{first, it}, last_(last) {
         if (curr() != last_)
           read();
       }
-      constexpr utf_iterator(EOiterOE it, EOsentOE last) requires (!bidirectional_iterator<EOiterOE>)
+      constexpr utf_iterator(EOinner_iterOE it, EOinner_sentOE last) requires (!bidirectional_iterator<EOinner_iterOE>)
           : first_and_curr_{move(it)}, last_(last) {
         if (curr() != last_)
           read();
       }
 
-      constexpr utf_iterator(utf_iterator const& other) requires copyable<EOiterOE>
+      constexpr utf_iterator(utf_iterator const& other) requires copyable<EOinner_iterOE>
           :
           buf_(other.buf_),
           first_and_curr_(other.first_and_curr_),
@@ -117,7 +150,7 @@ namespace p2728 {
           buf_last_(other.buf_last_),
           last_(other.last_) { }
 
-      constexpr utf_iterator& operator=(utf_iterator const& other) requires copyable<EOiterOE>
+      constexpr utf_iterator& operator=(utf_iterator const& other) requires copyable<EOinner_iterOE>
       {
         buf_ = other.buf_;
         first_and_curr_ = other.first_and_curr_;
@@ -141,13 +174,7 @@ namespace p2728 {
         last_ = other.last_;
       }
 
-      constexpr EOiterOE begin() const requires bidirectional_iterator<EOiterOE>
-      {
-        return first();
-      }
-      constexpr EOsentOE end() const { return last_; }
-
-      constexpr EOiterOE base() const requires forward_iterator<EOiterOE>
+      constexpr EOiterOE base() const requires forward_iterator<EOinner_iterOE>
       {
         return curr();
       }
@@ -160,7 +187,7 @@ namespace p2728 {
 
       constexpr utf_iterator& operator++() {
         if (buf_index_ + 1 == buf_last_ && curr() != last_) {
-          if constexpr (forward_iterator<EOiterOE>) {
+          if constexpr (forward_iterator<EOinner_iterOE>) {
             advance(curr(), to_increment_);
           }
           if (curr() == last_)
@@ -183,7 +210,7 @@ namespace p2728 {
         }
       }
 
-      constexpr utf_iterator& operator--() requires bidirectional_iterator<EOiterOE>
+      constexpr utf_iterator& operator--() requires bidirectional_iterator<EOinner_iterOE>
       {
         if (!buf_index_ && curr() != first())
           read_reverse();
@@ -192,7 +219,7 @@ namespace p2728 {
         return *this;
       }
 
-      constexpr utf_iterator operator--(int) requires bidirectional_iterator<EOiterOE>
+      constexpr utf_iterator operator--(int) requires bidirectional_iterator<EOinner_iterOE>
       {
         auto retval = *this;
         --*this;
@@ -200,9 +227,9 @@ namespace p2728 {
       }
 
       friend constexpr bool operator==(utf_iterator lhs, utf_iterator rhs)
-        requires forward_iterator<EOiterOE> || requires (EOiterOE i) { i != i; }
+        requires forward_iterator<EOinner_iterOE> || requires (EOinner_iterOE i) { i != i; }
       {
-        if constexpr (forward_iterator<EOiterOE>) {
+        if constexpr (forward_iterator<EOinner_iterOE>) {
           return lhs.curr() == rhs.curr() && lhs.buf_index_ == rhs.buf_index_;
         } else {
           if (lhs.curr() != rhs.curr())
@@ -216,16 +243,16 @@ namespace p2728 {
         }
       }
 
-      friend constexpr bool operator==(utf_iterator lhs, EOsentOE rhs) requires copyable<EOiterOE>
+      friend constexpr bool operator==(utf_iterator lhs, EOinner_sentOE rhs) requires copyable<EOinner_iterOE>
       {
-        if constexpr (forward_iterator<EOiterOE>) {
+        if constexpr (forward_iterator<EOinner_iterOE>) {
           return lhs.curr() == rhs;
         } else {
           return lhs.curr() == rhs && lhs.buf_index_ == lhs.buf_last_;
         }
       }
 
-      friend constexpr bool operator==(utf_iterator const& lhs, EOsentOE rhs) requires (!copyable<EOiterOE>)
+      friend constexpr bool operator==(utf_iterator const& lhs, EOinner_sentOE rhs) requires (!copyable<EOinner_iterOE>)
       {
         return lhs.curr() == rhs && lhs.buf_index_ == lhs.buf_last_;
       }
@@ -239,7 +266,7 @@ namespace p2728 {
 
       template<typename>
       struct guard {
-        constexpr guard(EOiterOE&, EOiterOE&) { }
+        constexpr guard(EOinner_iterOE&, EOinner_iterOE&) { }
       };
 
       template<typename It>
@@ -250,16 +277,22 @@ namespace p2728 {
         It orig;
       };
 
+      constexpr EOinner_iterOE begin() const requires bidirectional_iterator<EOinner_iterOE>
+      {
+        return first();
+      }
+      constexpr EOinner_sentOE end() const { return last_; }
+
       // A code point that can be encoded in a single code unit of type CharT.
       template<class CharT>
-      constexpr bool is_single_code_unit(char32_t c) {
+      static constexpr bool is_single_code_unit(char32_t c) {
         if constexpr (numeric_limits<CharT>::max() <= 0xFF)
           return c < 0x7F; // ASCII character
         else
           return c < numeric_limits<CharT>::max();
       }
 
-      static constexpr decode_code_point_result decode_code_point_utf8_impl(EOiterOE& it, EOsentOE const& last) {
+      static constexpr decode_code_point_result decode_code_point_utf8_impl(EOinner_iterOE& it, EOinner_sentOE const& last) {
         char32_t c{};
         uint8_t u = *it;
         ++it;
@@ -366,12 +399,12 @@ namespace p2728 {
       }
 
       constexpr decode_code_point_result decode_code_point_utf8() {
-        guard<EOiterOE> g{curr(), curr()};
+        guard<EOinner_iterOE> g{curr(), curr()};
         return decode_code_point_utf8_impl(curr(), last_);
       }
 
       constexpr decode_code_point_result decode_code_point_utf16() {
-        guard<EOiterOE> g{this, curr()};
+        guard<EOinner_iterOE> g{this, curr()};
         char32_t c{};
         uint16_t u = *curr();
         ++curr();
@@ -406,7 +439,7 @@ namespace p2728 {
       }
 
       constexpr decode_code_point_result decode_code_point_utf32() {
-        guard<EOiterOE> g{this, curr()};
+        guard<EOinner_iterOE> g{this, curr()};
         char32_t c = *curr();
         ++curr();
         auto const error{[&](transcoding_error const error) {
@@ -478,13 +511,13 @@ namespace p2728 {
         error_.reset();
         decode_code_point_result decode_result{};
         // todo: support char
-        if constexpr (is_same_v<iter_value_t<EOiterOE>, char8_t>)
+        if constexpr (is_same_v<iter_value_t<EOinner_iterOE>, char8_t>)
           decode_result = decode_code_point_utf8();
         // todo: support wchar_t
-        else if constexpr (is_same_v<iter_value_t<EOiterOE>, char16_t>)
+        else if constexpr (is_same_v<iter_value_t<EOinner_iterOE>, char16_t>)
           decode_result = decode_code_point_utf16();
         else {
-          static_assert(is_same_v<iter_value_t<EOiterOE>, char32_t>);
+          static_assert(is_same_v<iter_value_t<EOinner_iterOE>, char32_t>);
           decode_result = decode_code_point_utf32();
         }
         update(decode_result.c, decode_result.to_incr);
@@ -493,7 +526,7 @@ namespace p2728 {
 
       struct read_reverse_impl_result {
         decode_code_point_result decode_result;
-        EOiterOE new_curr;
+        EOinner_iterOE new_curr;
       };
 
       constexpr read_reverse_impl_result read_reverse_utf8() const {
@@ -552,7 +585,7 @@ namespace p2728 {
           unreachable();
         }
         error_.reset();
-        if constexpr (is_same_v<iter_value_t<EOiterOE>, char8_t>) {
+        if constexpr (is_same_v<iter_value_t<EOinner_iterOE>, char8_t>) {
           auto const read_reverse_impl_result{read_reverse_utf8()};
           update(read_reverse_impl_result.decode_result.c, read_reverse_impl_result.decode_result.to_incr);
           error_ = read_reverse_impl_result.decode_result.error;
@@ -562,22 +595,22 @@ namespace p2728 {
         }
       }
 
-      constexpr EOiterOE first() const requires bidirectional_iterator<EOiterOE>      // @*exposition only*@
+      constexpr EOinner_iterOE first() const requires bidirectional_iterator<EOinner_iterOE>      // @*exposition only*@
       {
         return first_and_curr_.first;
       }
-      constexpr EOiterOE& curr() { return first_and_curr_.curr; }              // @*exposition only*@
-      constexpr EOiterOE const& curr() const { return first_and_curr_.curr; }         // @*exposition only*@
+      constexpr EOinner_iterOE& curr() { return first_and_curr_.curr; }              // @*exposition only*@
+      constexpr EOinner_iterOE const& curr() const { return first_and_curr_.curr; }         // @*exposition only*@
 
       array<value_type, 4 / sizeof(ToType)> buf_;           // @*exposition only*@
 
-      EOfirst_and_currOE<EOiterOE> first_and_curr_;                                // @*exposition only*@
+      EOfirst_and_currOE<EOinner_iterOE> first_and_curr_;                                // @*exposition only*@
 
       uint8_t buf_index_ = 0;                                           // @*exposition only*@
       uint8_t buf_last_ = 0;                                            // @*exposition only*@
       uint8_t to_increment_ = 0;                                        // @*exposition only*@
 
-      [[no_unique_address]] EOsentOE last_;                                    // @*exposition only*@
+      [[no_unique_address]] EOinner_sentOE last_;                                    // @*exposition only*@
 
       optional<transcoding_error> error_;                             // @*exposition only*@
     };
