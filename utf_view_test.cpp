@@ -25,8 +25,7 @@ namespace p2728::utf_view_test {
     using reference_type = CharT const&;
     using difference_type = std::ptrdiff_t;
     using iterator_concept = std::input_iterator_tag;
-    constexpr explicit test_input_iterator(std::initializer_list<CharT> const& list) :
-        begin{list.begin()}, end{list.end()} { }
+    constexpr explicit test_input_iterator(std::initializer_list<CharT> const& list) : begin{list.begin()}, end{list.end()} { }
     test_input_iterator(test_input_iterator const&) = delete;
     test_input_iterator& operator=(test_input_iterator const&) = delete;
     test_input_iterator(test_input_iterator&&) = default;
@@ -59,10 +58,8 @@ namespace p2728::utf_view_test {
     using reference_type = CharT const&;
     using difference_type = std::ptrdiff_t;
     using iterator_concept = std::forward_iterator_tag;
-    constexpr test_forward_iterator() :
-        begin{empty.begin()}, end{empty.end()} { }
-    constexpr explicit test_forward_iterator(std::initializer_list<CharT> const& list) :
-        begin{list.begin()}, end{list.end()} { }
+    constexpr test_forward_iterator() : begin{empty.begin()}, end{empty.end()} { }
+    constexpr explicit test_forward_iterator(std::initializer_list<CharT> const& list) : begin{list.begin()}, end{list.end()} { }
     test_forward_iterator(test_forward_iterator const&) = default;
     test_forward_iterator& operator=(test_forward_iterator const&) = default;
     test_forward_iterator(test_forward_iterator&&) = default;
@@ -103,10 +100,8 @@ namespace p2728::utf_view_test {
     using reference_type = CharT const&;
     using difference_type = std::ptrdiff_t;
     using iterator_concept = std::bidirectional_iterator_tag;
-    constexpr test_bidi_iterator() :
-        begin{empty.begin()}, end{empty.end()} { }
-    constexpr explicit test_bidi_iterator(std::initializer_list<CharT> const& list) :
-        begin{list.begin()}, end{list.end()} { }
+    constexpr test_bidi_iterator() : begin{empty.begin()}, end{empty.end()} { }
+    constexpr explicit test_bidi_iterator(std::initializer_list<CharT> const& list) : begin{list.begin()}, end{list.end()} { }
     test_bidi_iterator(test_bidi_iterator const&) = default;
     test_bidi_iterator& operator=(test_bidi_iterator const&) = default;
     test_bidi_iterator(test_bidi_iterator&&) = default;
@@ -159,49 +154,53 @@ namespace p2728::utf_view_test {
     std::initializer_list<test_case_code_unit_result<CharTTo>> output;
   };
 
-  P2728_CONSTEXPR test_case<char8_t, char32_t> table3_8{
-    .input{(char8_t)'\xc0', (char8_t)'\xaf', (char8_t)'\xe0', (char8_t)'\x80', (char8_t)'\xbf', (char8_t)'\xf0', (char8_t)'\x81', (char8_t)'\x82', (char8_t)'A'},
-    .output{{U'\uFFFD', {transcoding_error::invalid}},
-            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
-            {U'\uFFFD', {transcoding_error::overlong}},
-            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
-            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
-            {U'\uFFFD', {transcoding_error::overlong}},
-            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
-            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
-            {U'A', {}}}};
+  P2728_CONSTEXPR test_case<char8_t, char32_t> table3_8{.input{(char8_t)'\xc0', (char8_t)'\xaf', (char8_t)'\xe0', (char8_t)'\x80',
+                                                               (char8_t)'\xbf', (char8_t)'\xf0', (char8_t)'\x81', (char8_t)'\x82',
+                                                               (char8_t)'A'},
+                                                        .output{{U'\uFFFD', {transcoding_error::invalid}},
+                                                                {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+                                                                {U'\uFFFD', {transcoding_error::overlong}},
+                                                                {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+                                                                {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+                                                                {U'\uFFFD', {transcoding_error::overlong}},
+                                                                {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+                                                                {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+                                                                {U'A', {}}}};
 
-  P2728_CONSTEXPR test_case<char8_t, char32_t> table3_9{
-    .input{(char8_t)'\xed', (char8_t)'\xa0', (char8_t)'\x80', (char8_t)'\xed', (char8_t)'\xbf', (char8_t)'\xbf', (char8_t)'\xed', (char8_t)'\xaf', (char8_t)'A'},
-    .output{{U'\uFFFD', {transcoding_error::encoded_surrogate}},
-            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
-            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
-            {U'\uFFFD', {transcoding_error::encoded_surrogate}},
-            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
-            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
-            {U'\uFFFD', {transcoding_error::encoded_surrogate}},
-            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
-            {U'A', {}}}};
+  P2728_CONSTEXPR test_case<char8_t, char32_t> table3_9{.input{(char8_t)'\xed', (char8_t)'\xa0', (char8_t)'\x80', (char8_t)'\xed',
+                                                               (char8_t)'\xbf', (char8_t)'\xbf', (char8_t)'\xed', (char8_t)'\xaf',
+                                                               (char8_t)'A'},
+                                                        .output{{U'\uFFFD', {transcoding_error::encoded_surrogate}},
+                                                                {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+                                                                {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+                                                                {U'\uFFFD', {transcoding_error::encoded_surrogate}},
+                                                                {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+                                                                {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+                                                                {U'\uFFFD', {transcoding_error::encoded_surrogate}},
+                                                                {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+                                                                {U'A', {}}}};
 
-  P2728_CONSTEXPR test_case<char8_t, char32_t> table3_10{
-    .input{(char8_t)'\xf4', (char8_t)'\x91', (char8_t)'\x92', (char8_t)'\x93', (char8_t)'\xff', (char8_t)'\x41', (char8_t)'\x80', (char8_t)'\xbf', (char8_t)'B'},
-    .output{{U'\uFFFD', {transcoding_error::out_of_range}},
-            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
-            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
-            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
-            {U'\uFFFD', {transcoding_error::invalid}},
-            {U'A', {}},
-            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
-            {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
-            {U'B', {}}}};
+  P2728_CONSTEXPR test_case<char8_t, char32_t> table3_10{.input{(char8_t)'\xf4', (char8_t)'\x91', (char8_t)'\x92',
+                                                                (char8_t)'\x93', (char8_t)'\xff', (char8_t)'\x41',
+                                                                (char8_t)'\x80', (char8_t)'\xbf', (char8_t)'B'},
+                                                         .output{{U'\uFFFD', {transcoding_error::out_of_range}},
+                                                                 {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+                                                                 {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+                                                                 {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+                                                                 {U'\uFFFD', {transcoding_error::invalid}},
+                                                                 {U'A', {}},
+                                                                 {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+                                                                 {U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}},
+                                                                 {U'B', {}}}};
 
-  P2728_CONSTEXPR test_case<char8_t, char32_t> table3_11{
-    .input{(char8_t)'\xe1', (char8_t)'\x80', (char8_t)'\xe2', (char8_t)'\xf0', (char8_t)'\x91', (char8_t)'\x92', (char8_t)'\xf1', (char8_t)'\xbf', (char8_t)'A'},
-    .output{{U'\uFFFD', {transcoding_error::truncated}},
-            {U'\uFFFD', {transcoding_error::truncated}},
-            {U'\uFFFD', {transcoding_error::truncated}},
-            {U'\uFFFD', {transcoding_error::truncated}},
-            {U'A', {}}}};
+  P2728_CONSTEXPR test_case<char8_t, char32_t> table3_11{.input{(char8_t)'\xe1', (char8_t)'\x80', (char8_t)'\xe2',
+                                                                (char8_t)'\xf0', (char8_t)'\x91', (char8_t)'\x92',
+                                                                (char8_t)'\xf1', (char8_t)'\xbf', (char8_t)'A'},
+                                                         .output{{U'\uFFFD', {transcoding_error::truncated}},
+                                                                 {U'\uFFFD', {transcoding_error::truncated}},
+                                                                 {U'\uFFFD', {transcoding_error::truncated}},
+                                                                 {U'\uFFFD', {transcoding_error::truncated}},
+                                                                 {U'A', {}}}};
 
   template<typename WrappingIterator, EOcode_unitOE CharTFrom, EOcode_unitOE CharTTo>
   constexpr bool run_test_case_impl(test_case<CharTFrom, CharTTo> test_case) {
@@ -223,10 +222,12 @@ namespace p2728::utf_view_test {
         ++view_it;
       } while (view_it != end);
     }
-    if constexpr(std::bidirectional_iterator<decltype(it)>) {
+    if constexpr (std::bidirectional_iterator<decltype(it)>) {
       auto it2{WrappingIterator(test_case.input)};
       auto end2{it2};
-      while (end2 != std::default_sentinel) { ++end2; }
+      while (end2 != std::default_sentinel) {
+        ++end2;
+      }
       std::ranges::subrange subrange2{it2, end2};
       utf_view<CharTTo, decltype(subrange2)> view2{std::move(subrange2)};
       {
@@ -251,8 +252,8 @@ namespace p2728::utf_view_test {
   template<EOcode_unitOE CharTFrom, EOcode_unitOE CharTTo>
   constexpr bool run_test_case(test_case<CharTFrom, CharTTo> test_case) {
     return run_test_case_impl<test_input_iterator<CharTFrom>>(test_case) &&
-           run_test_case_impl<test_forward_iterator<CharTFrom>>(test_case) &&
-           run_test_case_impl<test_bidi_iterator<CharTFrom>>(test_case);
+      run_test_case_impl<test_forward_iterator<CharTFrom>>(test_case) &&
+      run_test_case_impl<test_bidi_iterator<CharTFrom>>(test_case);
   }
 
   constexpr bool input_iterator_test() {

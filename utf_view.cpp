@@ -1,7 +1,7 @@
 module;
 
-#include <boost/stl_interfaces/iterator_interface.hpp>
 #include <bit>
+#include <boost/stl_interfaces/iterator_interface.hpp>
 #include <cassert>
 #include <concepts>
 #include <cstdint>
@@ -298,8 +298,7 @@ namespace p2728 {
           return c < numeric_limits<CharT>::max();
       }
 
-      static constexpr decode_code_point_result decode_code_point_utf8_impl(
-          EOiterOE& it, EOsentOE const& last) {
+      static constexpr decode_code_point_result decode_code_point_utf8_impl(EOiterOE& it, EOsentOE const& last) {
         char32_t c{};
         uint8_t u = *it;
         ++it;
@@ -548,55 +547,43 @@ namespace p2728 {
         if (continuation(*it)) {
           auto new_curr{orig};
           --new_curr;
-          return {.decode_result{
-                    .c{replacement_character},
-                    .to_incr{1},
-                    .error{transcoding_error::bad_continuation_or_surrogate}},
-                  .new_curr{new_curr}};
+          return {
+            .decode_result{.c{replacement_character}, .to_incr{1}, .error{transcoding_error::bad_continuation_or_surrogate}},
+            .new_curr{new_curr}};
         } else if (is_ascii(*it) || lead_code_unit(*it)) {
           int const expected_reversed{utf8_code_units(*it)};
           assert(expected_reversed > 0);
           if (reversed > expected_reversed) {
             auto new_curr{orig};
             --new_curr;
-            return {.decode_result{
-                      .c{replacement_character},
-                      .to_incr{1},
-                      .error{transcoding_error::bad_continuation_or_surrogate}},
-                    .new_curr{new_curr}};
+            return {
+              .decode_result{.c{replacement_character}, .to_incr{1}, .error{transcoding_error::bad_continuation_or_surrogate}},
+              .new_curr{new_curr}};
           } else {
             auto lead{it};
-            decode_code_point_result const decode_result{
-              decode_code_point_utf8_impl(it, end())};
-            if (!decode_result.error ||
-                decode_result.error == transcoding_error::truncated) {
+            decode_code_point_result const decode_result{decode_code_point_utf8_impl(it, end())};
+            if (!decode_result.error || decode_result.error == transcoding_error::truncated) {
               assert(decode_result.to_incr == reversed);
-              return {.decode_result{decode_result},
-                      .new_curr{lead}};
+              return {.decode_result{decode_result}, .new_curr{lead}};
             } else {
               auto new_curr{orig};
               --new_curr;
-              return {.decode_result{
-                        .c{replacement_character},
-                        .to_incr{1},
-                        .error{reversed == 1 ?
-                               decode_result.error :
-                               transcoding_error::bad_continuation_or_surrogate}},
-                      .new_curr{new_curr}};
+              return {
+                .decode_result{.c{replacement_character},
+                               .to_incr{1},
+                               .error{reversed == 1 ? decode_result.error : transcoding_error::bad_continuation_or_surrogate}},
+                .new_curr{new_curr}};
             }
           }
         } else {
           assert(in(0xC0, *it, 0xC2) || in(0xF5, *it, 0xFF));
           it = orig;
           --it;
-          return {.decode_result{
-                    .c{replacement_character},
-                    .to_incr{1},
-                    .error{reversed == 1 ?
-                           transcoding_error::invalid :
-                           transcoding_error::bad_continuation_or_surrogate}},
-                  .new_curr{it}};
-
+          return {
+            .decode_result{.c{replacement_character},
+                           .to_incr{1},
+                           .error{reversed == 1 ? transcoding_error::invalid : transcoding_error::bad_continuation_or_surrogate}},
+            .new_curr{it}};
         }
       }
 
@@ -608,8 +595,7 @@ namespace p2728 {
         error_.reset();
         if constexpr (is_same_v<iter_value_t<EOiterOE>, char8_t>) {
           auto const read_reverse_impl_result{read_reverse_utf8()};
-          update(read_reverse_impl_result.decode_result.c,
-                 read_reverse_impl_result.decode_result.to_incr);
+          update(read_reverse_impl_result.decode_result.c, read_reverse_impl_result.decode_result.to_incr);
           error_ = read_reverse_impl_result.decode_result.error;
           curr() = read_reverse_impl_result.new_curr;
         } else {
