@@ -413,7 +413,7 @@ namespace p2728 {
       }
 
       constexpr decode_code_point_result decode_code_point_utf16() {
-        guard<EOinner_iterOE> g{this, curr()};
+        guard<EOinner_iterOE> g{curr(), curr()};
         char32_t c{};
         uint16_t u = *curr();
         ++curr();
@@ -448,7 +448,7 @@ namespace p2728 {
       }
 
       constexpr decode_code_point_result decode_code_point_utf32() {
-        guard<EOinner_iterOE> g{this, curr()};
+        guard<EOinner_iterOE> g{curr(), curr()};
         char32_t c = *curr();
         ++curr();
         auto const error{[&](transcoding_error const error) {
