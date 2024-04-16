@@ -73,9 +73,6 @@ namespace p2728 {
       requires ranges::view<V2>
       friend class utf_view;
 
-      template<typename ToType2, typename V2>
-      friend class utf_view<ToType2, V2>::utf_iterator;
-
       template<class I>
       struct EOfirst_and_currOE {                         // @*exposition only*@
         EOfirst_and_currOE() = default;
