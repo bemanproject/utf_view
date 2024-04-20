@@ -256,8 +256,8 @@ namespace p2728::utf_view_test {
       run_test_case_impl<test_bidi_iterator<CharTFrom>>(test_case);
   }
 
-  constexpr bool input_iterator_test() {
-    std::initializer_list<char8_t> const single_arr{u8'x'};
+  template <typename CharT>
+  constexpr bool input_iterator_test(std::initializer_list<CharT> const single_arr) {
     test_input_iterator single_begin(single_arr);
     std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
     utf_view<char32_t, decltype(subrange)> single_view{std::move(subrange)};
@@ -268,8 +268,8 @@ namespace p2728::utf_view_test {
     return true;
   }
 
-  constexpr bool forward_iterator_test() {
-    std::initializer_list<char8_t> const single_arr{u8'x'};
+  template <typename CharT>
+  constexpr bool forward_iterator_test(std::initializer_list<CharT> const single_arr) {
     test_forward_iterator single_begin(single_arr);
     std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
     utf_view<char32_t, decltype(subrange)> single_view{std::move(subrange)};
@@ -280,8 +280,8 @@ namespace p2728::utf_view_test {
     return true;
   }
 
-  constexpr bool bidi_iterator_test() {
-    std::initializer_list<char8_t> const single_arr{u8'x'};
+  template <typename CharT>
+  constexpr bool bidi_iterator_test(std::initializer_list<CharT> const single_arr) {
     test_bidi_iterator single_begin(single_arr);
     std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
     utf_view<char32_t, decltype(subrange)> single_view{std::move(subrange)};
@@ -292,8 +292,8 @@ namespace p2728::utf_view_test {
     return true;
   }
 
-  constexpr bool double_encode_test() {
-    std::initializer_list<char8_t> const single_arr{u8'x'};
+  template <typename CharT>
+  constexpr bool double_encode_test(std::initializer_list<CharT> const single_arr) {
     test_forward_iterator single_begin(single_arr);
     std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
     utf_view<char32_t, decltype(subrange)> single_view{std::move(subrange)};
@@ -306,16 +306,28 @@ namespace p2728::utf_view_test {
   }
 
   export P2728_CONSTEXPR bool utf_view_test() {
-    if (!input_iterator_test()) {
+    if (!input_iterator_test(std::initializer_list<char8_t>{u8'x'})) {
       return false;
     }
-    if (!forward_iterator_test()) {
+    if (!forward_iterator_test(std::initializer_list<char8_t>{u8'x'})) {
       return false;
     }
-    if (!bidi_iterator_test()) {
+    if (!bidi_iterator_test(std::initializer_list<char8_t>{u8'x'})) {
       return false;
     }
-    if (!double_encode_test()) {
+    if (!double_encode_test(std::initializer_list<char8_t>{u8'x'})) {
+      return false;
+    }
+    if (!input_iterator_test(std::initializer_list<char16_t>{u'x'})) {
+      return false;
+    }
+    if (!forward_iterator_test(std::initializer_list<char16_t>{u'x'})) {
+      return false;
+    }
+    if (!bidi_iterator_test(std::initializer_list<char16_t>{u'x'})) {
+      return false;
+    }
+    if (!double_encode_test(std::initializer_list<char16_t>{u'x'})) {
       return false;
     }
     if (!run_test_case(table3_8)) {
@@ -339,16 +351,28 @@ namespace p2728::utf_view_test {
 
   // GCC bug workaround
   export bool utf_view_test2() {
-    if (!input_iterator_test()) {
+    if (!input_iterator_test(std::initializer_list<char8_t>{u8'x'})) {
       return false;
     }
-    if (!forward_iterator_test()) {
+    if (!forward_iterator_test(std::initializer_list<char8_t>{u8'x'})) {
       return false;
     }
-    if (!bidi_iterator_test()) {
+    if (!bidi_iterator_test(std::initializer_list<char8_t>{u8'x'})) {
       return false;
     }
-    if (!double_encode_test()) {
+    if (!double_encode_test(std::initializer_list<char8_t>{u8'x'})) {
+      return false;
+    }
+    if (!input_iterator_test(std::initializer_list<char16_t>{u'x'})) {
+      return false;
+    }
+    if (!forward_iterator_test(std::initializer_list<char16_t>{u'x'})) {
+      return false;
+    }
+    if (!bidi_iterator_test(std::initializer_list<char16_t>{u'x'})) {
+      return false;
+    }
+    if (!double_encode_test(std::initializer_list<char16_t>{u'x'})) {
       return false;
     }
     if (!run_test_case(table3_8)) {

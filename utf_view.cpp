@@ -307,7 +307,7 @@ namespace p2728 {
         ++it;
         const uint8_t lo_bound = 0x80, hi_bound = 0xBF;
         uint8_t to_incr = 1;
-        optional<transcoding_error> error_enum;
+        optional<transcoding_error> error_enum{};
 
         auto const error{[&](transcoding_error const error_enum_in) {
           error_enum = error_enum_in;
@@ -412,31 +412,31 @@ namespace p2728 {
         return decode_code_point_utf8_impl(curr(), last_);
       }
 
-      constexpr decode_code_point_result decode_code_point_utf16() {
-        guard<EOinner_iterOE> g{curr(), curr()};
+      static constexpr decode_code_point_result decode_code_point_utf16_impl(EOinner_iterOE& it, EOinner_sentOE const& last) {
         char32_t c{};
-        uint16_t u = *curr();
-        ++curr();
+        uint16_t u = *it;
+        ++it;
         uint8_t to_incr = 1;
+        optional<transcoding_error> error_enum{};
 
-        auto const error{[&](transcoding_error const error) {
-          error_ = error;
+        auto const error{[&](transcoding_error const error_enum_in) {
+          error_enum = error_enum_in;
           c = U'\uFFFD';
         }};
 
         if (u < 0xD800 || u > 0xDFFF) [[likely]]
           c = u;
         else if (u < 0xDC00) {
-          if (curr() == last_) [[unlikely]] {
+          if (it == last) [[unlikely]] {
             error(transcoding_error::truncated);
           } else {
-            uint16_t u2 = *curr();
+            uint16_t u2 = *it;
             if (u2 < 0xDC00 || u2 > 0xDFFF) [[unlikely]]
               error(transcoding_error::truncated);
             else {
-              ++curr();
+              ++it;
               to_incr = 2;
-              uint32_t x = (u & 0x3F) << 10 | u2 & 0x3FF;
+              uint32_t x = (u & 0x3F) << 10 | (u2 & 0x3FF);
               uint32_t w = (u >> 6) & 0x1F;
               c = (w + 1) << 16 | x;
             }
@@ -444,7 +444,12 @@ namespace p2728 {
         } else
           error(transcoding_error::bad_continuation_or_surrogate);
 
-        return {.c{c}, .to_incr{to_incr}};
+        return {.c{c}, .to_incr{to_incr}, .error{error_enum}};
+      }
+
+      constexpr decode_code_point_result decode_code_point_utf16() {
+        guard<EOinner_iterOE> g{curr(), curr()};
+        return decode_code_point_utf16_impl(curr(), last_);
       }
 
       constexpr decode_code_point_result decode_code_point_utf32() {
