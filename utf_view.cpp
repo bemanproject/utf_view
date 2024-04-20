@@ -598,6 +598,13 @@ namespace p2728 {
         }
       }
 
+      constexpr read_reverse_impl_result read_reverse_utf16() const {
+        assert(curr() != begin());
+        auto it{curr()};
+        auto const orig{it};
+        throw std::runtime_error{"unimpl"};
+      }
+
       constexpr void read_reverse() { // @*exposition only*@
         if (curr() == begin()) {
           // erroneous(); return;
@@ -606,6 +613,11 @@ namespace p2728 {
         error_.reset();
         if constexpr (is_same_v<iter_value_t<EOinner_iterOE>, char8_t>) {
           auto const read_reverse_impl_result{read_reverse_utf8()};
+          update(read_reverse_impl_result.decode_result.c, read_reverse_impl_result.decode_result.to_incr);
+          error_ = read_reverse_impl_result.decode_result.error;
+          curr() = read_reverse_impl_result.new_curr;
+        } else if constexpr (is_same_v<iter_value_t<EOinner_iterOE>, char16_t>) {
+          auto const read_reverse_impl_result{read_reverse_utf16()};
           update(read_reverse_impl_result.decode_result.c, read_reverse_impl_result.decode_result.to_incr);
           error_ = read_reverse_impl_result.decode_result.error;
           curr() = read_reverse_impl_result.new_curr;
