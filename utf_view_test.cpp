@@ -330,6 +330,18 @@ namespace p2728::utf_view_test {
     if (!double_encode_test(std::initializer_list<char16_t>{u'x'})) {
       return false;
     }
+    if (!input_iterator_test(std::initializer_list<char32_t>{U'x'})) {
+      return false;
+    }
+    if (!forward_iterator_test(std::initializer_list<char32_t>{U'x'})) {
+      return false;
+    }
+    if (!bidi_iterator_test(std::initializer_list<char32_t>{U'x'})) {
+      return false;
+    }
+    if (!double_encode_test(std::initializer_list<char32_t>{U'x'})) {
+      return false;
+    }
     if (!run_test_case(table3_8)) {
       return false;
     }
@@ -373,6 +385,18 @@ namespace p2728::utf_view_test {
       return false;
     }
     if (!double_encode_test(std::initializer_list<char16_t>{u'x'})) {
+      return false;
+    }
+    if (!input_iterator_test(std::initializer_list<char32_t>{U'x'})) {
+      return false;
+    }
+    if (!forward_iterator_test(std::initializer_list<char32_t>{U'x'})) {
+      return false;
+    }
+    if (!bidi_iterator_test(std::initializer_list<char32_t>{U'x'})) {
+      return false;
+    }
+    if (!double_encode_test(std::initializer_list<char32_t>{U'x'})) {
       return false;
     }
     if (!run_test_case(table3_8)) {

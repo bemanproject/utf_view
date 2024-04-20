@@ -452,12 +452,12 @@ namespace p2728 {
         return decode_code_point_utf16_impl(curr(), last_);
       }
 
-      constexpr decode_code_point_result decode_code_point_utf32() {
-        guard<EOinner_iterOE> g{curr(), curr()};
-        char32_t c = *curr();
-        ++curr();
-        auto const error{[&](transcoding_error const error) {
-          error_ = error;
+      static constexpr decode_code_point_result decode_code_point_utf32_impl(EOinner_iterOE& it) {
+        char32_t c = *it;
+        optional<transcoding_error> error_enum{};
+        ++it;
+        auto const error{[&](transcoding_error const error_enum_in) {
+          error_enum = error_enum_in;
           c = U'\uFFFD';
         }};
         if (c >= 0xD800) {
@@ -468,7 +468,12 @@ namespace p2728 {
             error(transcoding_error::out_of_range);
           }
         }
-        return {.c{c}, .to_incr{1}};
+        return {.c{c}, .to_incr{1}, .error{error_enum}};
+      }
+
+      constexpr decode_code_point_result decode_code_point_utf32() {
+        guard<EOinner_iterOE> g{curr(), curr()};
+        return decode_code_point_utf32_impl(curr());
       }
 
       // Encode the code point c as one or more code units in buf.
