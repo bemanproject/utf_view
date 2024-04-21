@@ -651,6 +651,16 @@ namespace p2728 {
         }
       }
 
+      constexpr read_reverse_impl_result read_reverse_utf32() const {
+        assert(curr() != begin());
+        auto it{curr()};
+        auto const orig{it};
+        --it;
+        auto new_curr{orig};
+        --new_curr;
+        return {.decode_result{decode_code_point_utf32_impl(it)}, .new_curr{new_curr}};
+      }
+
       constexpr void read_reverse() { // @*exposition only*@
         if (curr() == begin()) {
           erroneous();
@@ -667,8 +677,11 @@ namespace p2728 {
           update(read_reverse_impl_result.decode_result.c, read_reverse_impl_result.decode_result.to_incr);
           error_ = read_reverse_impl_result.decode_result.error;
           curr() = read_reverse_impl_result.new_curr;
-        } else {
-          throw runtime_error{"unimpl"};
+        } else if constexpr (is_same_v<iter_value_t<EOinner_iterOE>, char32_t>) {
+          auto const read_reverse_impl_result{read_reverse_utf32()};
+          update(read_reverse_impl_result.decode_result.c, read_reverse_impl_result.decode_result.to_incr);
+          error_ = read_reverse_impl_result.decode_result.error;
+          curr() = read_reverse_impl_result.new_curr;
         }
       }
 

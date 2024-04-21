@@ -216,6 +216,17 @@ namespace p2728::utf_view_test {
                                                                       {U'Y', {}},
                                                                       {U'Z', {}}}};
 
+  P2728_CONSTEXPR test_case<char32_t, char32_t> encoded_surrogate{.input{U'\x0000DC00'},
+                                                                  .output{{U'\uFFFD', {transcoding_error::encoded_surrogate}}}};
+
+  P2728_CONSTEXPR test_case<char32_t, char32_t> out_of_range{.input{U'\x00110000'},
+                                                             .output{{U'\uFFFD', {transcoding_error::out_of_range}}}};
+
+  P2728_CONSTEXPR test_case<char32_t, char32_t> valid_char32s{.input{U'X', U'Y', U'Z'},
+                                                              .output{{U'X', {}},
+                                                                      {U'Y', {}},
+                                                                      {U'Z', {}}}};
+
   template<typename WrappingIterator, EOcode_unitOE CharTFrom, EOcode_unitOE CharTTo>
   constexpr bool run_test_case_impl(test_case<CharTFrom, CharTTo> test_case) {
     auto it{WrappingIterator(test_case.input)};
@@ -380,6 +391,15 @@ namespace p2728::utf_view_test {
     if (!run_test_case(nonsurrogates)) {
       return false;
     }
+    if (!run_test_case(encoded_surrogate)) {
+      return false;
+    }
+    if (!run_test_case(out_of_range)) {
+      return false;
+    }
+    if (!run_test_case(valid_char32s)) {
+      return false;
+    }
     return true;
   }
 
@@ -447,6 +467,15 @@ namespace p2728::utf_view_test {
       return false;
     }
     if (!run_test_case(nonsurrogates)) {
+      return false;
+    }
+    if (!run_test_case(encoded_surrogate)) {
+      return false;
+    }
+    if (!run_test_case(out_of_range)) {
+      return false;
+    }
+    if (!run_test_case(valid_char32s)) {
       return false;
     }
     return true;
