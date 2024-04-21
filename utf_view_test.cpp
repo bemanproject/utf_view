@@ -202,6 +202,20 @@ namespace p2728::utf_view_test {
                                                                  {U'\uFFFD', {transcoding_error::truncated}},
                                                                  {U'A', {}}}};
 
+  P2728_CONSTEXPR test_case<char16_t, char32_t> single_high{.input{u'\xD800'},
+                                                            .output{{U'\uFFFD', {transcoding_error::truncated}}}};
+
+  P2728_CONSTEXPR test_case<char16_t, char32_t> single_low{.input{u'\xDC00'},
+                                                           .output{{U'\uFFFD', {transcoding_error::bad_continuation_or_surrogate}}}};
+
+  P2728_CONSTEXPR test_case<char16_t, char32_t> surrogates{.input{u'\xD800', u'\xDC00'},
+                                                           .output{{U'\U00010000', {}}}};
+
+  P2728_CONSTEXPR test_case<char16_t, char32_t> nonsurrogates{.input{u'X', u'Y', u'Z'},
+                                                              .output{{U'X', {}},
+                                                                      {U'Y', {}},
+                                                                      {U'Z', {}}}};
+
   template<typename WrappingIterator, EOcode_unitOE CharTFrom, EOcode_unitOE CharTTo>
   constexpr bool run_test_case_impl(test_case<CharTFrom, CharTTo> test_case) {
     auto it{WrappingIterator(test_case.input)};
@@ -354,6 +368,18 @@ namespace p2728::utf_view_test {
     if (!run_test_case(table3_11)) {
       return false;
     }
+    if (!run_test_case(single_high)) {
+      return false;
+    }
+    if (!run_test_case(single_low)) {
+      return false;
+    }
+    if (!run_test_case(surrogates)) {
+      return false;
+    }
+    if (!run_test_case(nonsurrogates)) {
+      return false;
+    }
     return true;
   }
 
@@ -409,6 +435,18 @@ namespace p2728::utf_view_test {
       return false;
     }
     if (!run_test_case(table3_11)) {
+      return false;
+    }
+    if (!run_test_case(single_high)) {
+      return false;
+    }
+    if (!run_test_case(single_low)) {
+      return false;
+    }
+    if (!run_test_case(surrogates)) {
+      return false;
+    }
+    if (!run_test_case(nonsurrogates)) {
       return false;
     }
     return true;

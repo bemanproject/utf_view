@@ -32,9 +32,15 @@ namespace p2728 {
     return first_unit <= 0x7f ? 1 : lead_code_unit(first_unit) ? int(0xe0 <= first_unit) + int(0xf0 <= first_unit) + 2 : -1;
   }
 
+  constexpr bool high_surrogate(char16_t c) { return 0xD800 <= c && c <= 0xDBFF; }
+
+  constexpr bool low_surrogate(char16_t c) { return 0xDC00 <= c && c <= 0xDFFF; }
+
   constexpr void erroneous() {
     if !consteval {
+#ifndef NDEBUG
       std::cerr << "erroneous behavior\n";
+#endif
     }
   }
 
@@ -212,6 +218,8 @@ namespace p2728 {
             read();
         } else if (buf_index_ + 1 <= buf_last_) {
           ++buf_index_;
+        } else if (curr() == last_) {
+          erroneous();
         }
         return *this;
       }
@@ -609,7 +617,38 @@ namespace p2728 {
         assert(curr() != begin());
         auto it{curr()};
         auto const orig{it};
-        throw std::runtime_error{"unimpl"};
+        --it;
+        if (high_surrogate(*it)) {
+          return {.decode_result{.c{U'\uFFFD'},
+                                 .to_incr{1},
+                                 .error{transcoding_error::truncated}},
+                  .new_curr{it}};
+        } else if (low_surrogate(*it)) {
+          if (it == begin()) {
+            return {
+              .decode_result{.c{U'\uFFFD'},
+                             .to_incr{1},
+                             .error{transcoding_error::bad_continuation_or_surrogate}},
+              .new_curr{it}};
+          } else {
+            --it;
+            if (high_surrogate(*it)) {
+              auto lead{it};
+              return {.decode_result{decode_code_point_utf16_impl(it, end())},
+                      .new_curr{lead}};
+            } else {
+              auto new_curr{orig};
+              --new_curr;
+              return {
+                .decode_result{.c{U'\uFFFD'},
+                               .to_incr{1},
+                               .error{transcoding_error::bad_continuation_or_surrogate}},
+                .new_curr{new_curr}};
+            }
+          }
+        } else {
+          return {.decode_result{.c{*it}, .to_incr{1}, .error{}}, .new_curr{it}};
+        }
       }
 
       constexpr void read_reverse() { // @*exposition only*@
