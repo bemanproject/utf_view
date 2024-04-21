@@ -5,6 +5,7 @@ module;
 #include <cassert>
 #include <concepts>
 #include <cstdint>
+#include <iostream>
 #include <iterator>
 #include <limits>
 #include <optional>
@@ -29,6 +30,12 @@ namespace p2728 {
 
   constexpr int utf8_code_units(char8_t first_unit) {
     return first_unit <= 0x7f ? 1 : lead_code_unit(first_unit) ? int(0xe0 <= first_unit) + int(0xf0 <= first_unit) + 2 : -1;
+  }
+
+  constexpr void erroneous() {
+    if !consteval {
+      std::cerr << "erroneous behavior\n";
+    }
   }
 
   template<class I>
@@ -607,8 +614,8 @@ namespace p2728 {
 
       constexpr void read_reverse() { // @*exposition only*@
         if (curr() == begin()) {
-          // erroneous(); return;
-          unreachable();
+          erroneous();
+          return;
         }
         error_.reset();
         if constexpr (is_same_v<iter_value_t<EOinner_iterOE>, char8_t>) {
