@@ -773,4 +773,24 @@ namespace p2728 {
     friend wostream& operator<<(wostream& os, utf_view v) { throw runtime_error{"unimpl"}; }
   };
 
+  template <EOcode_unitOE ToType, EOutf_rangeOE V>
+  constexpr auto make_utf_view(V&& v) {
+    return utf_view<ToType, views::all_t<V>>(std::forward<V>(v));
+  }
+
+  template <EOutf_rangeOE V>
+  constexpr auto make_utf8_view(V&& v) {
+    return make_utf_view<char8_t>(std::forward<V>(v));
+  }
+
+  template <EOutf_rangeOE V>
+  constexpr auto make_utf16_view(V&& v) {
+    return make_utf_view<char16_t>(std::forward<V>(v));
+  }
+
+  template <EOutf_rangeOE V>
+  constexpr auto make_utf32_view(V&& v) {
+    return make_utf_view<char32_t>(std::forward<V>(v));
+  }
+
 } // namespace p2728

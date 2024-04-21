@@ -231,7 +231,7 @@ namespace p2728::utf_view_test {
   constexpr bool run_test_case_impl(test_case<CharTFrom, CharTTo> test_case) {
     auto it{WrappingIterator(test_case.input)};
     std::ranges::subrange subrange{std::move(it), std::default_sentinel};
-    utf_view<CharTTo, decltype(subrange)> view{std::move(subrange)};
+    auto view{make_utf_view<CharTTo>(std::move(subrange))};
     {
       auto output_it{test_case.output.begin()};
       auto view_it{view.begin()};
@@ -254,7 +254,7 @@ namespace p2728::utf_view_test {
         ++end2;
       }
       std::ranges::subrange subrange2{it2, end2};
-      utf_view<CharTTo, decltype(subrange2)> view2{std::move(subrange2)};
+      auto view2{make_utf_view<CharTTo>(std::move(subrange2))};
       {
         auto view_it{view2.end()};
         auto output_it{test_case.output.end()};
@@ -285,7 +285,7 @@ namespace p2728::utf_view_test {
   constexpr bool input_iterator_test(std::initializer_list<CharT> const single_arr) {
     test_input_iterator single_begin(single_arr);
     std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
-    utf_view<char32_t, decltype(subrange)> single_view{std::move(subrange)};
+    auto single_view{make_utf32_view(std::move(subrange))};
     std::u32string single_u32{single_view | std::ranges::to<std::u32string>()};
     if (single_u32.size() != 1 || single_u32.at(0) != U'x') {
       return false;
@@ -297,7 +297,7 @@ namespace p2728::utf_view_test {
   constexpr bool forward_iterator_test(std::initializer_list<CharT> const single_arr) {
     test_forward_iterator single_begin(single_arr);
     std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
-    utf_view<char32_t, decltype(subrange)> single_view{std::move(subrange)};
+    auto single_view{make_utf32_view(std::move(subrange))};
     std::u32string single_u32{single_view | std::ranges::to<std::u32string>()};
     if (single_u32.size() != 1 || single_u32.at(0) != U'x') {
       return false;
@@ -309,7 +309,7 @@ namespace p2728::utf_view_test {
   constexpr bool bidi_iterator_test(std::initializer_list<CharT> const single_arr) {
     test_bidi_iterator single_begin(single_arr);
     std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
-    utf_view<char32_t, decltype(subrange)> single_view{std::move(subrange)};
+    auto single_view{make_utf32_view(std::move(subrange))};
     std::u32string single_u32{single_view | std::ranges::to<std::u32string>()};
     if (single_u32.size() != 1 || single_u32.at(0) != U'x') {
       return false;
@@ -321,8 +321,8 @@ namespace p2728::utf_view_test {
   constexpr bool double_encode_test(std::initializer_list<CharT> const single_arr) {
     test_forward_iterator single_begin(single_arr);
     std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
-    utf_view<char32_t, decltype(subrange)> single_view{std::move(subrange)};
-    utf_view<char8_t, decltype(single_view)> double_encoded_view{std::move(single_view)};
+    auto single_view{make_utf32_view(std::move(subrange))};
+    auto double_encoded_view{make_utf8_view(std::move(single_view))};
     std::u8string single_u8{double_encoded_view | std::ranges::to<std::u8string>()};
     if (single_u8.size() != 1 || single_u8.at(0) != U'x') {
       return false;
