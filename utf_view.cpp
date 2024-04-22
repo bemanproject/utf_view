@@ -55,6 +55,11 @@ namespace p2728 {
     }
   }
 
+  template<class T>
+  constexpr bool is_empty_view = false;
+  template<class T>
+  constexpr bool is_empty_view<ranges::empty_view<T>> = true;
+
   template<class I>
   using EObidirectional_at_most_tOE = decltype(EObidirectional_at_mostOE<I>()); // @*exposition only*@
 
@@ -773,24 +778,55 @@ namespace p2728 {
     friend wostream& operator<<(wostream& os, utf_view v) { throw runtime_error{"unimpl"}; }
   };
 
-  template <EOcode_unitOE ToType, EOutf_rangeOE V>
+  export template <EOcode_unitOE ToType, EOutf_rangeOE V>
   constexpr auto make_utf_view(V&& v) {
     return utf_view<ToType, views::all_t<V>>(std::forward<V>(v));
   }
 
-  template <EOutf_rangeOE V>
+  export template <EOutf_rangeOE V>
   constexpr auto make_utf8_view(V&& v) {
     return make_utf_view<char8_t>(std::forward<V>(v));
   }
 
-  template <EOutf_rangeOE V>
+  export template <EOutf_rangeOE V>
   constexpr auto make_utf16_view(V&& v) {
     return make_utf_view<char16_t>(std::forward<V>(v));
   }
 
-  template <EOutf_rangeOE V>
+  export template <EOutf_rangeOE V>
   constexpr auto make_utf32_view(V&& v) {
     return make_utf_view<char32_t>(std::forward<V>(v));
   }
+
+  template <EOcode_unitOE ToType>
+  struct as_utf_impl : ranges::range_adaptor_closure<as_utf_impl<ToType>> {
+    template <EOutf_rangeOE R>
+    constexpr auto operator()(R&& r) const {
+      using T = remove_cvref_t<R>;
+      if constexpr (is_empty_view<T>) {
+        return ranges::empty_view<ToType>{};
+      } else if constexpr (is_bounded_array_v<T>) {
+        constexpr auto n = extent_v<T>;
+        auto first{ranges::begin(r)};
+        auto last{ranges::end(r)};
+        if (n && !r[n-1]) {
+          --last;
+        }
+        return make_utf_view<ToType>(ranges::subrange(first, last));
+      } else {
+        return make_utf_view<ToType>(forward<R>(r));
+      }
+    }
+  };
+
+  export template <EOcode_unitOE ToType>
+  constexpr as_utf_impl<ToType> as_utf;
+
+  export constexpr as_utf_impl<char8_t> as_utf8;
+
+  export constexpr as_utf_impl<char16_t> as_utf16;
+
+  export constexpr as_utf_impl<char32_t> as_utf32;
+
 
 } // namespace p2728

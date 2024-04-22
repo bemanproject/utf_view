@@ -330,6 +330,69 @@ namespace p2728::utf_view_test {
     return true;
   }
 
+  constexpr bool as_utf_test() {
+    std::ranges::empty_view<char8_t> empty_view{};
+    auto empty_utf_view{empty_view | as_utf8};
+    static_assert(
+      std::is_same_v<decltype(empty_utf_view), std::ranges::empty_view<char8_t>>);
+    auto u8_string_literal_utf_view{u8"foo" | as_utf32};
+    auto u8_string_literal_utf_view_it{u8_string_literal_utf_view.begin()};
+    if (*u8_string_literal_utf_view_it != U'f') {
+      return false;
+    }
+    ++u8_string_literal_utf_view_it;
+    if (*u8_string_literal_utf_view_it != U'o') {
+      return false;
+    }
+    ++u8_string_literal_utf_view_it;
+    if (*u8_string_literal_utf_view_it != U'o') {
+      return false;
+    }
+    ++u8_string_literal_utf_view_it;
+    if (u8_string_literal_utf_view_it != u8_string_literal_utf_view.end()) {
+      return false;
+    }
+    char8_t const non_null_terminated_array[3]{u8'a', u8'b', u8'c'};
+    auto non_null_terminated_array_utf_view{non_null_terminated_array | as_utf32};
+    auto non_null_terminated_array_utf_view_it{non_null_terminated_array_utf_view.begin()};
+    if (*non_null_terminated_array_utf_view_it != U'a') {
+      return false;
+    }
+    ++non_null_terminated_array_utf_view_it;
+    if (*non_null_terminated_array_utf_view_it != U'b') {
+      return false;
+    }
+    ++non_null_terminated_array_utf_view_it;
+    if (*non_null_terminated_array_utf_view_it != U'c') {
+      return false;
+    }
+    ++non_null_terminated_array_utf_view_it;
+    if (non_null_terminated_array_utf_view_it != non_null_terminated_array_utf_view.end()) {
+      return false;
+    }
+    std::initializer_list<char8_t> arr{u8'b', u8'a', u8'r'};
+    test_input_iterator input_it(arr);
+    std::ranges::subrange subrange{std::move(input_it), std::default_sentinel};
+    auto input_utf_view{std::move(subrange) | as_utf32};
+    auto input_utf_view_it{std::ranges::begin(input_utf_view)};
+    if (*input_utf_view_it != U'b') {
+      return false;
+    }
+    ++input_utf_view_it;
+    if (*input_utf_view_it != U'a') {
+      return false;
+    }
+    ++input_utf_view_it;
+    if (*input_utf_view_it != U'r') {
+      return false;
+    }
+    ++input_utf_view_it;
+    if (input_utf_view_it != input_utf_view.end()) {
+      return false;
+    }
+    return true;
+  }
+
   export P2728_CONSTEXPR bool utf_view_test() {
     if (!input_iterator_test(std::initializer_list<char8_t>{u8'x'})) {
       return false;
@@ -398,6 +461,9 @@ namespace p2728::utf_view_test {
       return false;
     }
     if (!run_test_case(valid_char32s)) {
+      return false;
+    }
+    if (!as_utf_test()) {
       return false;
     }
     return true;
@@ -476,6 +542,9 @@ namespace p2728::utf_view_test {
       return false;
     }
     if (!run_test_case(valid_char32s)) {
+      return false;
+    }
+    if (!as_utf_test()) {
       return false;
     }
     return true;
