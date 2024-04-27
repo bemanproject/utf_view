@@ -37,11 +37,13 @@ namespace p2728 {
   constexpr bool low_surrogate(char16_t c) { return 0xDC00 <= c && c <= 0xDFFF; }
 
   constexpr void erroneous() {
+#ifndef _MSC_VER
     if !consteval {
 #ifndef NDEBUG
       std::cerr << "erroneous behavior\n";
 #endif
     }
+#endif
   }
 
   template<class I>
