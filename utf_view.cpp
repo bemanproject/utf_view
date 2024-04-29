@@ -800,9 +800,12 @@ namespace p2728 {
     return make_utf_view<char32_t>(std::forward<V>(v));
   }
 
+  template <typename T>
+  concept as_utf_param = EOutf_rangeOE<T> || (is_pointer_v<T> && EOcode_unitOE<remove_pointer_t<T>>);
+  
   template <EOcode_unitOE ToType>
   struct as_utf_impl : ranges::range_adaptor_closure<as_utf_impl<ToType>> {
-    template <EOutf_rangeOE R>
+    template <as_utf_param R>
     constexpr auto operator()(R&& r) const {
       using T = remove_cvref_t<R>;
       if constexpr (is_empty_view<T>) {
@@ -815,6 +818,9 @@ namespace p2728 {
           --last;
         }
         return make_utf_view<ToType>(ranges::subrange(first, last));
+      } else if constexpr(is_pointer_v<R>) {
+        ranges::subrange subrange(r, null_term::null_term);
+        return make_utf_view<decltype(subrange)>(subrange);
       } else {
         return make_utf_view<ToType>(forward<R>(r));
       }
