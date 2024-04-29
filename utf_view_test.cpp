@@ -390,6 +390,24 @@ namespace p2728::utf_view_test {
     if (input_utf_view_it != input_utf_view.end()) {
       return false;
     }
+    char8_t const* u8_ptr{u8"foo"};
+    auto u8_ptr_utf_view{u8_ptr | as_utf32};
+    auto u8_ptr_utf_view_it{u8_ptr_utf_view.begin()};
+    if (*u8_ptr_utf_view_it != U'f') {
+      return false;
+    }
+    ++u8_ptr_utf_view_it;
+    if (*u8_ptr_utf_view_it != U'o') {
+      return false;
+    }
+    ++u8_ptr_utf_view_it;
+    if (*u8_ptr_utf_view_it != U'o') {
+      return false;
+    }
+    ++u8_ptr_utf_view_it;
+    if (u8_ptr_utf_view_it != u8_ptr_utf_view.end()) {
+      return false;
+    }
     return true;
   }
 
