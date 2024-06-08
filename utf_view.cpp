@@ -40,7 +40,7 @@ namespace p2728 {
 #ifndef _MSC_VER
     if !consteval {
 #ifndef NDEBUG
-      std::cerr << "erroneous behavior\n";
+      cerr << "erroneous behavior\n";
 #endif
     }
 #endif
@@ -77,9 +77,9 @@ namespace p2728 {
   template<typename T>
   concept utf_view_iterator = requires { typename T::reserved_utf_view_iterator; };
 
-  export template<EOcode_unitOE ToType, EOutf_rangeOE V>
+  template<EOcode_unitOE ToType, EOutf_rangeOE V>
   requires ranges::view<V>
-  class utf_view : public ranges::view_interface<utf_view<ToType, V>> {
+  class EOutf_view_implOE : public ranges::view_interface<EOutf_view_implOE<ToType, V>> {
   private:
     using EOiterOE = ranges::iterator_t<V>;
     using EOsentOE = ranges::sentinel_t<V>;
@@ -91,7 +91,7 @@ namespace p2728 {
 
       template<EOcode_unitOE ToType2, EOutf_rangeOE V2>
       requires ranges::view<V2>
-      friend class utf_view;
+      friend class EOutf_view_implOE;
 
       template<class I>
       struct EOfirst_and_currOE {                         // @*exposition only*@
@@ -712,6 +712,7 @@ namespace p2728 {
       optional<transcoding_error> error_;                             // @*exposition only*@
     };
 
+  private:
     static constexpr auto make_begin(EOiterOE first, EOsentOE last) {   // @*exposition only*@
       if constexpr (bidirectional_iterator<EOiterOE>) {
         if constexpr (utf_view_iterator<EOiterOE>) {
@@ -746,9 +747,9 @@ namespace p2728 {
     V EObase_OE = V();                                          // @*exposition only*@
 
   public:
-    constexpr utf_view() requires default_initializable<V>
+    constexpr EOutf_view_implOE() requires default_initializable<V>
     = default;
-    constexpr utf_view(std::type_identity_t<V> base) : EObase_OE{move(base)} { }
+    constexpr EOutf_view_implOE(V base) : EObase_OE{move(base)} { }
 
     constexpr V base() const& requires copy_constructible<V>
     {
@@ -775,30 +776,142 @@ namespace p2728 {
     }
 
     constexpr bool empty() const { return ranges::empty(EObase_OE); }
-
-    friend ostream& operator<<(ostream& os, utf_view v) { throw runtime_error{"unimpl"}; }
-    friend wostream& operator<<(wostream& os, utf_view v) { throw runtime_error{"unimpl"}; }
   };
 
-  export template <EOcode_unitOE ToType, EOutf_rangeOE V>
-  constexpr auto make_utf_view(V&& v) {
-    return utf_view<ToType, views::all_t<V>>(std::forward<V>(v));
-  }
+  export template <EOutf_rangeOE V>
+  class utf8_view {
+  private:
+    using EOimplOE = EOutf_view_implOE<char8_t, V>;
+
+  public:
+    using utf_iterator = typename EOimplOE::iterator;
+
+    constexpr utf8_view() requires default_initializable<V> = default;
+
+    constexpr V base() const& requires copy_constructible<V>
+    {
+      return impl_.base();
+    }
+    constexpr V base() && { return move(impl_).base(); }
+
+    constexpr auto begin() requires (!copyable<EOiterOE>)
+    {
+      return impl_.begin();
+    }
+    constexpr auto begin() const requires copyable<EOiterOE>
+    {
+      return impl_.begin();
+    }
+
+    constexpr auto end() requires (!copyable<EOiterOE>)
+    {
+      return impl_.end();
+    }
+    constexpr auto end() const requires copyable<EOiterOE>
+    {
+      return impl_.end()
+    }
+
+    constexpr bool empty() const { return impl_.empty(); }
+
+  private:
+    EOimplOE impl_;
+  };
+
+  export template<class R>
+  utf8_view(R &&) -> utf8_view<views::all_t<R>>;
 
   export template <EOutf_rangeOE V>
-  constexpr auto make_utf8_view(V&& v) {
-    return make_utf_view<char8_t>(std::forward<V>(v));
-  }
+  class utf16_view {
+  private:
+    using EOimplOE = EOutf_view_implOE<char16_t, V>;
+
+  public:
+    using utf_iterator = typename EOimplOE::iterator;
+
+    constexpr utf8_view() requires default_initializable<V> = default;
+
+    constexpr V base() const& requires copy_constructible<V>
+    {
+      return impl_.base();
+    }
+    constexpr V base() && { return move(impl_).base(); }
+
+    constexpr auto begin() requires (!copyable<EOiterOE>)
+    {
+      return impl_.begin();
+    }
+    constexpr auto begin() const requires copyable<EOiterOE>
+    {
+      return impl_.begin();
+    }
+
+    constexpr auto end() requires (!copyable<EOiterOE>)
+    {
+      return impl_.end();
+    }
+    constexpr auto end() const requires copyable<EOiterOE>
+    {
+      return impl_.end()
+    }
+
+    constexpr bool empty() const { return impl_.empty(); }
+
+  private:
+    EOimplOE impl_;
+  };
+
+  export template<class R>
+  utf16_view(R &&) -> utf16_view<views::all_t<R>>;
 
   export template <EOutf_rangeOE V>
-  constexpr auto make_utf16_view(V&& v) {
-    return make_utf_view<char16_t>(std::forward<V>(v));
-  }
+  class utf32_view {
+  private:
+    using EOimplOE = EOutf_view_implOE<char32_t, V>;
 
-  export template <EOutf_rangeOE V>
-  constexpr auto make_utf32_view(V&& v) {
-    return make_utf_view<char32_t>(std::forward<V>(v));
-  }
+  public:
+    using utf_iterator = typename EOimplOE::iterator;
+
+    constexpr utf8_view() requires default_initializable<V> = default;
+
+    constexpr V base() const& requires copy_constructible<V>
+    {
+      return impl_.base();
+    }
+    constexpr V base() && { return move(impl_).base(); }
+
+    constexpr auto begin() requires (!copyable<EOiterOE>)
+    {
+      return impl_.begin();
+    }
+    constexpr auto begin() const requires copyable<EOiterOE>
+    {
+      return impl_.begin();
+    }
+
+    constexpr auto end() requires (!copyable<EOiterOE>)
+    {
+      return impl_.end();
+    }
+    constexpr auto end() const requires copyable<EOiterOE>
+    {
+      return impl_.end()
+    }
+
+    constexpr bool empty() const { return impl_.empty(); }
+
+  private:
+    EOimplOE impl_;
+  };
+
+  export template<class R>
+  utf32_view(R &&) -> utf32_view<views::all_t<R>>;
+
+  template <EOcode_unitOE ToType, EOutf_rangeOE V>
+  using utf_view =
+    conditional<is_same_v<ToType, char8_t>, utf8_view<V>,
+                conditional<is_same_v<ToType, char16_t>, utf16_view<V>,
+                            conditional<is_same_v<ToType, char32_t>, utf32_view<V>, void>>>;
 
   template <EOcode_unitOE ToType>
   struct as_utf_impl : ranges::range_adaptor_closure<as_utf_impl<ToType>> {
@@ -814,12 +927,12 @@ namespace p2728 {
         if (n && !r[n-1]) {
           --last;
         }
-        return make_utf_view<ToType>(ranges::subrange(first, last));
+        return utf_view<ToType>(ranges::subrange(first, last));
       } else if constexpr(is_pointer_v<T>) {
         ranges::subrange subrange(r, null_term::null_sentinel);
-        return make_utf_view<ToType, decltype(subrange)>(std::move(subrange));
+        return utf_view<ToType, decltype(subrange)>(std::move(subrange));
       } else {
-        return make_utf_view<ToType>(forward<R>(r));
+        return utf_view<ToType>(forward<R>(r));
       }
     }
   };
