@@ -916,7 +916,7 @@ namespace p2728 {
   export template<class R>
   utf32_view(R &&) -> utf32_view<views::all_t<R>>;
 
-  template <EOcode_unitOE ToType, EOutf_rangeOE V>
+  export template <EOcode_unitOE ToType, EOutf_rangeOE V>
   using utf_view =
     conditional_t<is_same_v<ToType, char8_t>, utf8_view<V>,
                   conditional_t<is_same_v<ToType, char16_t>, utf16_view<V>,
@@ -949,13 +949,13 @@ namespace p2728 {
   };
 
   export template <EOcode_unitOE ToType>
-  constexpr as_utf_impl<ToType> as_utf;
+  inline constexpr as_utf_impl<ToType> as_utf;
 
-  export constexpr as_utf_impl<char8_t> as_utf8;
+  export inline constexpr as_utf_impl<char8_t> as_utf8;
 
-  export constexpr as_utf_impl<char16_t> as_utf16;
+  export inline constexpr as_utf_impl<char16_t> as_utf16;
 
-  export constexpr as_utf_impl<char32_t> as_utf32;
+  export inline constexpr as_utf_impl<char32_t> as_utf32;
 
 
 } // namespace p2728
