@@ -782,6 +782,8 @@ namespace p2728 {
   class utf8_view {
   private:
     using EOimplOE = EOutf_view_implOE<char8_t, V>;
+    using EOiterOE = ranges::iterator_t<V>;
+    using EOsentOE = ranges::sentinel_t<V>;
 
   public:
     using utf_iterator = typename EOimplOE::iterator;
@@ -809,7 +811,7 @@ namespace p2728 {
     }
     constexpr auto end() const requires copyable<EOiterOE>
     {
-      return impl_.end()
+      return impl_.end();
     }
 
     constexpr bool empty() const { return impl_.empty(); }
@@ -825,11 +827,13 @@ namespace p2728 {
   class utf16_view {
   private:
     using EOimplOE = EOutf_view_implOE<char16_t, V>;
+    using EOiterOE = ranges::iterator_t<V>;
+    using EOsentOE = ranges::sentinel_t<V>;
 
   public:
     using utf_iterator = typename EOimplOE::iterator;
 
-    constexpr utf8_view() requires default_initializable<V> = default;
+    constexpr utf16_view() requires default_initializable<V> = default;
 
     constexpr V base() const& requires copy_constructible<V>
     {
@@ -852,7 +856,7 @@ namespace p2728 {
     }
     constexpr auto end() const requires copyable<EOiterOE>
     {
-      return impl_.end()
+      return impl_.end();
     }
 
     constexpr bool empty() const { return impl_.empty(); }
@@ -868,11 +872,13 @@ namespace p2728 {
   class utf32_view {
   private:
     using EOimplOE = EOutf_view_implOE<char32_t, V>;
+    using EOiterOE = ranges::iterator_t<V>;
+    using EOsentOE = ranges::sentinel_t<V>;
 
   public:
     using utf_iterator = typename EOimplOE::iterator;
 
-    constexpr utf8_view() requires default_initializable<V> = default;
+    constexpr utf32_view() requires default_initializable<V> = default;
 
     constexpr V base() const& requires copy_constructible<V>
     {
@@ -895,7 +901,7 @@ namespace p2728 {
     }
     constexpr auto end() const requires copyable<EOiterOE>
     {
-      return impl_.end()
+      return impl_.end();
     }
 
     constexpr bool empty() const { return impl_.empty(); }
@@ -927,12 +933,14 @@ namespace p2728 {
         if (n && !r[n-1]) {
           --last;
         }
-        return utf_view<ToType>(ranges::subrange(first, last));
+        ranges::subrange subrange(first, last);
+        return utf_view<ToType, decltype(subrange)>(std::move(subrange));
       } else if constexpr(is_pointer_v<T>) {
         ranges::subrange subrange(r, null_term::null_sentinel);
-        return utf_view<ToType, decltype(subrange)>(std::move(subrange));
+        return utf_view<ToType, decltype(subrange)>(subrange);
       } else {
-        return utf_view<ToType>(forward<R>(r));
+        auto view = views::all(forward<R>(r));
+        return utf_view<ToType, decltype(view)>(view);
       }
     }
   };
