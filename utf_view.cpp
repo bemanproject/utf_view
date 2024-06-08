@@ -786,9 +786,10 @@ namespace p2728 {
     using EOsentOE = ranges::sentinel_t<V>;
 
   public:
-    using utf_iterator = typename EOimplOE::iterator;
+    using utf_iterator = typename EOimplOE::utf_iterator;
 
     constexpr utf8_view() requires default_initializable<V> = default;
+    constexpr utf8_view(V base) : impl_{std::move(base)} {}
 
     constexpr V base() const& requires copy_constructible<V>
     {
@@ -831,9 +832,10 @@ namespace p2728 {
     using EOsentOE = ranges::sentinel_t<V>;
 
   public:
-    using utf_iterator = typename EOimplOE::iterator;
+    using utf_iterator = typename EOimplOE::utf_iterator;
 
     constexpr utf16_view() requires default_initializable<V> = default;
+    constexpr utf16_view(V base) : impl_{std::move(base)} {}
 
     constexpr V base() const& requires copy_constructible<V>
     {
@@ -876,9 +878,10 @@ namespace p2728 {
     using EOsentOE = ranges::sentinel_t<V>;
 
   public:
-    using utf_iterator = typename EOimplOE::iterator;
+    using utf_iterator = typename EOimplOE::utf_iterator;
 
     constexpr utf32_view() requires default_initializable<V> = default;
+    constexpr utf32_view(V base) : impl_{std::move(base)} {}
 
     constexpr V base() const& requires copy_constructible<V>
     {
@@ -915,9 +918,9 @@ namespace p2728 {
 
   template <EOcode_unitOE ToType, EOutf_rangeOE V>
   using utf_view =
-    conditional<is_same_v<ToType, char8_t>, utf8_view<V>,
-                conditional<is_same_v<ToType, char16_t>, utf16_view<V>,
-                            conditional<is_same_v<ToType, char32_t>, utf32_view<V>, void>>>;
+    conditional_t<is_same_v<ToType, char8_t>, utf8_view<V>,
+                  conditional_t<is_same_v<ToType, char16_t>, utf16_view<V>,
+                                conditional_t<is_same_v<ToType, char32_t>, utf32_view<V>, void>>>;
 
   template <EOcode_unitOE ToType>
   struct as_utf_impl : ranges::range_adaptor_closure<as_utf_impl<ToType>> {
@@ -940,7 +943,7 @@ namespace p2728 {
         return utf_view<ToType, decltype(subrange)>(subrange);
       } else {
         auto view = views::all(forward<R>(r));
-        return utf_view<ToType, decltype(view)>(view);
+        return utf_view<ToType, decltype(view)>(std::move(view));
       }
     }
   };
