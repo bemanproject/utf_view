@@ -1,0 +1,28 @@
+BasedOnStyle: WebKit
+ColumnLimit: 200
+AlwaysBreakTemplateDeclarations: Yes
+AlignAfterOpenBracket: Align
+AllowShortFunctionsOnASingleLine: All
+BreakConstructorInitializers: AfterColon
+Cpp11BracedListStyle: True
+SpaceBeforeCpp11BracedList: False
+BreakBeforeBraces: Attach
+AllowShortEnumsOnASingleLine: False
+BreakStringLiterals: False
+AlwaysBreakAfterReturnType: None
+PenaltyReturnTypeOnItsOwnLine: 200
+ContinuationIndentWidth: 2
+IndentWidth: 2
+BreakBeforeBinaryOperators: None
+IndentAccessModifiers: False
+AccessModifierOffset: -2
+NamespaceIndentation: All
+SpaceAfterTemplateKeyword: False
+PackConstructorInitializers: NextLine
+AlignTrailingComments: Leave
+RequiresClausePosition: WithPreceding
+IndentRequiresClause: True
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterRequiresInClause: True
+  AfterRequiresInExpression: True

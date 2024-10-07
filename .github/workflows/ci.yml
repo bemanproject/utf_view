@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  gcc-linux:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/ednolan/ubuntu24.10_gcc14.2.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Run
+        run: |
+          ./ci.sh -DCMAKE_CXX_FLAGS='-fsanitize=address -fsanitize=undefined -fsanitize-undefined-trap-on-error -coverage'
+      - name: Paper
+        run: |
+          cmake --build ./build -t p2728
+      - name: Coverage
+        run: |
+          lcov --directory ./build --capture --output-file ./build/coverage_all.info
+          lcov --remove ./build/coverage_all.info -o ./build/coverage.info '/usr/include/*' "$PWD/src/UtfView/tests/*" "$PWD/deps/*"
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          path-to-lcov: ${{runner.workspace}}/UtfView/build/coverage.info
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+  clang-linux:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/ednolan/ubuntu24.10_clang19.1.0rc3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Run
+        run: |
+          ./ci.sh -DCMAKE_CXX_FLAGS='-fsanitize=address -fsanitize=undefined -fsanitize-undefined-trap-on-error -stdlib=libc++'
+  msvc-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Run
+        shell: bash
+        run: |
+          ./ci.sh
