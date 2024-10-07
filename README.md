@@ -1,8 +1,13 @@
-# UtfView: C++26 UTF Transcoding Views
-
 <!--
-SPDX-License-Identifier: GPL-3.0-only
+SPDX-License-Identifier: BSL-1.0
+
+  Copyright Eddie Nolan and Jonathan Wakely 2023 - 2024.
+Distributed under the Boost Software License, Version 1.0.
+   (See accompanying file LICENSE.txt or copy at
+         https://www.boost.org/LICENSE_1_0.txt)
 -->
+
+# UtfView: C++26 UTF Transcoding Views
 
 [![CI](https://github.com/ednolan/UtfView/actions/workflows/ci.yml/badge.svg)](https://github.com/ednolan/utfview/actions) [![Coverage](https://coveralls.io/repos/github/ednolan/UtfView/badge.svg?branch=main)](https://coveralls.io/github/ednolan/UtfView?branch=main)
 
@@ -106,4 +111,4 @@ This implementation of P2728 is a fork by Eddie Nolan of the implementation of P
 
 ## License
 
-UtfView is licensed under GPLv3.
+UtfView is licensed under BSL 1.0.
