@@ -8,10 +8,10 @@
 #ifndef UTFVIEW_TO_UTF_VIEW_HPP
 #define UTFVIEW_TO_UTF_VIEW_HPP
 
-#include <UtfView/detail/concepts.hpp>
-#include <UtfView/detail/constexpr_unless_msvc.hpp>
-#include <UtfView/detail/erroneous_behavior_global.hpp>
-#include <UtfView/null_term.hpp>
+#include <utf_view/detail/concepts.hpp>
+#include <utf_view/detail/constexpr_unless_msvc.hpp>
+#include <utf_view/detail/erroneous_behavior_global.hpp>
+#include <utf_view/null_term.hpp>
 #include <bit>
 #include <boost/stl_interfaces/iterator_interface.hpp>
 #include <cassert>
@@ -24,7 +24,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace utfview {
+namespace utf_view {
 
 namespace detail {
 
@@ -1174,25 +1174,25 @@ inline constexpr detail::to_utf_impl<char32_t> to_utf32;
 /* PAPER:                                              */
 /* PAPER:   inline constexpr @*unspecified*@ to_utf32; */
 
-} // namespace utfview
+} // namespace utf_view
 
 /* PAPER: } */
 
 template <class ToType, class V>
 inline constexpr bool std::ranges::enable_borrowed_range<
-    utfview::exposition_only_to_utf_view_impl<ToType, V>> =
+    utf_view::exposition_only_to_utf_view_impl<ToType, V>> =
     std::ranges::enable_borrowed_range<V>;
 
 template <class V>
-inline constexpr bool std::ranges::enable_borrowed_range<utfview::to_utf8_view<V>> =
+inline constexpr bool std::ranges::enable_borrowed_range<utf_view::to_utf8_view<V>> =
     std::ranges::enable_borrowed_range<V>;
 
 template <class V>
-inline constexpr bool std::ranges::enable_borrowed_range<utfview::to_utf16_view<V>> =
+inline constexpr bool std::ranges::enable_borrowed_range<utf_view::to_utf16_view<V>> =
     std::ranges::enable_borrowed_range<V>;
 
 template <class V>
-inline constexpr bool std::ranges::enable_borrowed_range<utfview::to_utf32_view<V>> =
+inline constexpr bool std::ranges::enable_borrowed_range<utf_view::to_utf32_view<V>> =
     std::ranges::enable_borrowed_range<V>;
 
 /* PAPER: namespace std::ranges {                                                                              */

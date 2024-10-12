@@ -8,13 +8,13 @@
 #ifndef UTFVIEW_DETAIL_ERRONEOUS_BEHAVIOR_GLOBAL_HPP
 #define UTFVIEW_DETAIL_ERRONEOUS_BEHAVIOR_GLOBAL_HPP
 
-namespace utfview::detail {
+namespace utf_view::detail {
 
 inline bool& erroneous_behavior_global() {
   static bool global{};
   return global;
 }
 
-} // namespace utfview::detail
+} // namespace utf_view::detail
 
 #endif // UTFVIEW_DETAIL_ERRONEOUS_BEHAVIOR_GLOBAL_HPP

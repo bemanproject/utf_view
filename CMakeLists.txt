@@ -6,7 +6,7 @@
 #          https://www.boost.org/LICENSE_1_0.txt)
 
 cmake_minimum_required(VERSION 3.27)
-project(utfview CXX)
+project(utf_view CXX)
 
 if (BUILD_TESTING)
   include(CTest)
@@ -27,6 +27,6 @@ else()
   message(FATAL_ERROR "Conflicting dependency: boost_stl_interfaces already exists, but we need our own fork")
 endif()
 
-add_subdirectory(src/UtfView)
+add_subdirectory(src/utf_view)
 
 add_subdirectory(paper)

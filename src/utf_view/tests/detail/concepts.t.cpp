@@ -5,10 +5,10 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#include <UtfView/detail/concepts.hpp>
+#include <utf_view/detail/concepts.hpp>
 #include <tests/std_archetypes/iterator.hpp>
 
-namespace utfview::tests {
+namespace utf_view::tests {
 
 static_assert(exposition_only_code_unit_to<char8_t>);
 static_assert(exposition_only_code_unit_to<char16_t>);
@@ -26,4 +26,4 @@ static_assert(!exposition_only_code_unit_from<int>);
 
 // todo: utf_range
 
-} // namespace utfview::detail::tests
+} // namespace utf_view::detail::tests

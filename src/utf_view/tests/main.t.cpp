@@ -10,7 +10,7 @@
 #include <tests/framework.hpp>
 
 int main() {
-  for (auto& [test_name, test] : utfview::tests::framework::tests()) {
+  for (auto& [test_name, test] : utf_view::tests::framework::tests()) {
     if (!test()) {
       std::cerr << test_name << " failed";
       return EXIT_FAILURE;

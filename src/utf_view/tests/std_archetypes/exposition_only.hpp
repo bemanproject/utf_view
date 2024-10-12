@@ -8,7 +8,7 @@
 #ifndef UTFVIEW_TESTS_STD_ARCHETYPES_EXPOSITION_ONLY_HPP
 #define UTFVIEW_TESTS_STD_ARCHETYPES_EXPOSITION_ONLY_HPP
 
-namespace utfview::tests::std_archetypes {
+namespace utf_view::tests::std_archetypes {
 
 class boolean_testable_archetype2;
 
@@ -45,6 +45,6 @@ constexpr boolean_testable_archetype2 boolean_testable_archetype1::operator!()
   return boolean_testable_archetype2{inner_};
 }
 
-} // namespace utfview::tests::std_archetypes
+} // namespace utf_view::tests::std_archetypes
 
 #endif // UTFVIEW_TESTS_STD_ARCHETYPES_EXPOSITION_ONLY_HPP

@@ -13,7 +13,7 @@
 #include <ranges>
 #include <type_traits>
 
-namespace utfview {
+namespace utf_view {
 
 /* PAPER: namespace std::uc { */
 
@@ -49,7 +49,7 @@ concept exposition_only_utf_range = std::ranges::input_range<T> &&
 
 /* !PAPER */
 
-} // namespace utfview
+} // namespace utf_view
 
 /* PAPER: } */
 

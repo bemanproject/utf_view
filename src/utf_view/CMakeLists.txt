@@ -5,22 +5,22 @@
 #    (See accompanying file LICENSE.txt or copy at
 #          https://www.boost.org/LICENSE_1_0.txt)
 
-add_library(utfview INTERFACE)
+add_library(utf_view INTERFACE)
 
 include(GNUInstallDirs)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 target_include_directories(
-  utfview
+  utf_view
   INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_LOWER_PROJECT_NAME}> # <prefix>/include/utfview
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_LOWER_PROJECT_NAME}> # <prefix>/include/utf_view
 )
 
-target_link_libraries(utfview INTERFACE boost_stl_interfaces)
+target_link_libraries(utf_view INTERFACE boost_stl_interfaces)
 
 install(
-  TARGETS utfview
+  TARGETS utf_view
   EXPORT ${TARGETS_EXPORT_NAME}
   DESTINATION ${CMAKE_INSTALL_LIBDIR})
 

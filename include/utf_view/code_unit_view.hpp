@@ -8,14 +8,14 @@
 #ifndef UTFVIEW_CODE_UNIT_VIEW_HPP
 #define UTFVIEW_CODE_UNIT_VIEW_HPP
 
-#include <UtfView/detail/concepts.hpp>
+#include <utf_view/detail/concepts.hpp>
 #include <boost/stl_interfaces/iterator_interface.hpp>
 #include <iterator>
 #include <ranges>
 #include <type_traits>
 #include <utility>
 
-namespace utfview {
+namespace utf_view {
 
 /* PAPER: namespace std::uc { */
 
@@ -583,18 +583,18 @@ inline constexpr detail::as_code_unit_impl<char32_t> as_char32_t;
 /* PAPER:                                                 */
 /* PAPER: }                                               */
 
-} // namespace utfview
+} // namespace utf_view
 
 template <class V>
-inline constexpr bool std::ranges::enable_borrowed_range<utfview::as_char8_t_view<V>> =
+inline constexpr bool std::ranges::enable_borrowed_range<utf_view::as_char8_t_view<V>> =
     std::ranges::enable_borrowed_range<V>;
 
 template <class V>
-inline constexpr bool std::ranges::enable_borrowed_range<utfview::as_char16_t_view<V>> =
+inline constexpr bool std::ranges::enable_borrowed_range<utf_view::as_char16_t_view<V>> =
     std::ranges::enable_borrowed_range<V>;
 
 template <class V>
-inline constexpr bool std::ranges::enable_borrowed_range<utfview::as_char32_t_view<V>> =
+inline constexpr bool std::ranges::enable_borrowed_range<utf_view::as_char32_t_view<V>> =
     std::ranges::enable_borrowed_range<V>;
 
 /* PAPER: namespace std::ranges {                                                                                 */

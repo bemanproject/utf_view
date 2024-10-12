@@ -5,13 +5,13 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#include <UtfView/code_unit_view.hpp>
-#include <UtfView/detail/constexpr_unless_msvc.hpp>
+#include <utf_view/code_unit_view.hpp>
+#include <utf_view/detail/constexpr_unless_msvc.hpp>
 #include <ranges>
 #include <string_view>
 #include <tests/framework.hpp>
 
-namespace utfview::tests {
+namespace utf_view::tests {
 
 // TODO: Comprehensive testing for `code_unit_view`
 
@@ -44,4 +44,4 @@ static auto const init{[] {
   return result;
 }()};
 
-} // namespace utfview::tests
+} // namespace utf_view::tests
