@@ -12,7 +12,7 @@
 #include <ranges>
 #include <utility>
 
-namespace utfview {
+namespace utf_view {
 
 /* PAPER: namespace std { */
 
@@ -59,7 +59,7 @@ inline constexpr detail::null_term_impl null_term;
 /* PAPER: inline constexpr @*unspecified*@ null_term; */
 /* PAPER: */
 
-} // namespace utfview
+} // namespace utf_view
 
 /* PAPER: } */
 

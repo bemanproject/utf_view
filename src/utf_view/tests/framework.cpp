@@ -9,7 +9,7 @@
 #include <map>
 #include <string>
 
-namespace utfview::tests {
+namespace utf_view::tests {
 
 namespace framework {
 
@@ -20,4 +20,4 @@ namespace framework {
 
 } // namespace framework
 
-} // namespace utfview::tests
+} // namespace utf_view::tests

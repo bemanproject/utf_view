@@ -5,9 +5,9 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#include <UtfView/detail/constexpr_unless_msvc.hpp>
-#include <UtfView/detail/erroneous_behavior_global.hpp>
-#include <UtfView/to_utf_view.hpp>
+#include <utf_view/detail/constexpr_unless_msvc.hpp>
+#include <utf_view/detail/erroneous_behavior_global.hpp>
+#include <utf_view/to_utf_view.hpp>
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
@@ -22,7 +22,7 @@
 
 #include <iostream>
 
-namespace utfview::tests {
+namespace utf_view::tests {
 
 template <class CharT>
 struct test_input_iterator {
@@ -1903,4 +1903,4 @@ static auto const init{[] {
   return result;
 }()};
 
-} // namespace utfview::tests
+} // namespace utf_view::tests

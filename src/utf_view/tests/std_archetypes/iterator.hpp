@@ -14,7 +14,7 @@
 #include <iterator>
 #include <tests/std_archetypes/exposition_only.hpp>
 
-namespace utfview::tests::std_archetypes {
+namespace utf_view::tests::std_archetypes {
 
 #ifdef _MSC_VER
 // https://developercommunity.visualstudio.com/t/MSVC-fails-to-resolve-operator-overloa/10560905
@@ -203,6 +203,6 @@ struct basic_bidirectional_iterator_archetype {
 using bidirectional_iterator_archetype =
     basic_bidirectional_iterator_archetype<std::uint8_t>;
 
-} // namespace utfview::tests::std_archetypes
+} // namespace utf_view::tests::std_archetypes
 
 #endif // UTFVIEW_TESTS_STD_ARCHETYPES_ITERATOR_HPP
