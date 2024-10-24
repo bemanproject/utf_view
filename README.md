@@ -81,7 +81,7 @@ utf_view has the following minimum compiler requirements:
 
 - GCC 14
 - Clang 19
-- MSVC 17.11.2 (earlier MSVC versions may also work but are not tested in CI)
+- MSVC 19.41
 
 ### Dependencies
 
