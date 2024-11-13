@@ -20,10 +20,7 @@ jobs:
           submodules: recursive
       - name: Run
         run: |
-          ./ci.sh -DCMAKE_CXX_FLAGS='-fsanitize=address -fsanitize=undefined -fsanitize-undefined-trap-on-error -coverage'
-      - name: Paper
-        run: |
-          cmake --build ./build -t p2728
+          ./ci.sh -DCMAKE_CXX_FLAGS='-fsanitize=address -fsanitize=undefined -fsanitize-undefined-trap-on-error -coverage' -DUTF_VIEW_BUILD_PAPER=ON
       - name: Coverage
         run: |
           lcov --directory ./build --capture --output-file ./build/coverage_all.info

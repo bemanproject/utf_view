@@ -8,6 +8,12 @@
 cmake_minimum_required(VERSION 3.27)
 project(utf_view CXX)
 
+option(
+    UTF_VIEW_BUILD_PAPER
+    "Enable building paper. Default: OFF. Values: { ON, OFF }."
+    OFF
+)
+
 if (BUILD_TESTING)
   include(CTest)
 endif()
@@ -29,4 +35,6 @@ endif()
 
 add_subdirectory(src/utf_view)
 
-add_subdirectory(paper)
+if (UTF_VIEW_BUILD_PAPER)
+  add_subdirectory(paper)
+endif()
