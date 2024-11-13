@@ -65,6 +65,19 @@ static_assert(
         std::ranges::subrange<test_bidi_iterator<char>,
                               test_bidi_iterator<char>>>>>);
 
+static_assert(
+  std::random_access_iterator<
+    std::ranges::iterator_t<
+      as_char8_t_view<
+        std::ranges::subrange<test_random_access_iterator<char>,
+                              std::default_sentinel_t>>>>);
+static_assert(
+  std::random_access_iterator<
+    std::ranges::sentinel_t<
+      as_char8_t_view<
+        std::ranges::subrange<test_random_access_iterator<char>,
+                              test_random_access_iterator<char>>>>>);
+
 // TODO: Comprehensive testing for `code_unit_view`
 
 constexpr bool smoke_test() {

@@ -245,6 +245,97 @@ test_bidi_iterator(std::initializer_list<CharT>) -> test_bidi_iterator<CharT>;
 
 static_assert(std::bidirectional_iterator<test_bidi_iterator<char8_t>>);
 
+template <class CharT>
+struct test_random_access_iterator {
+  static constexpr std::initializer_list<CharT> empty{};
+
+  using value_type = CharT;
+  using reference_type = CharT const&;
+  using difference_type = std::ptrdiff_t;
+  using iterator_concept = std::random_access_iterator_tag;
+  constexpr test_random_access_iterator()
+      : begin{empty.begin()},
+        end{empty.end()} { }
+  constexpr explicit test_random_access_iterator(std::initializer_list<CharT> const& list)
+      : begin{list.begin()},
+        end{list.end()} { }
+  test_random_access_iterator(test_random_access_iterator const&) = default;
+  test_random_access_iterator& operator=(test_random_access_iterator const&) = default;
+  test_random_access_iterator(test_random_access_iterator&&) = default;
+  test_random_access_iterator& operator=(test_random_access_iterator&&) = default;
+  constexpr reference_type operator*() const {
+    return *begin;
+  }
+  constexpr test_random_access_iterator& operator++() {
+    ++begin;
+    return *this;
+  }
+  constexpr test_random_access_iterator operator++(int) {
+    auto ret = *this;
+    ++begin;
+    return ret;
+  }
+  constexpr test_random_access_iterator& operator--() {
+    --begin;
+    return *this;
+  }
+  constexpr test_random_access_iterator operator--(int) {
+    auto ret = *this;
+    --begin;
+    return ret;
+  }
+  constexpr reference_type operator[](difference_type n) const {
+    auto retval = *this;
+    retval = retval + n;
+    return *retval;
+  }
+  constexpr test_random_access_iterator operator+(difference_type n) const {
+    auto retval = *this;
+    retval += n;
+    return retval;
+  }
+  friend constexpr test_random_access_iterator operator+(
+      difference_type n, test_random_access_iterator it) {
+    return it + n;
+  }
+  constexpr test_random_access_iterator& operator+=(difference_type n) {
+    begin += n;
+    return *this;
+  }
+  constexpr test_random_access_iterator operator-(difference_type n) const {
+    auto retval = *this;
+    retval -= n;
+    return retval;
+  }
+  constexpr difference_type operator-(test_random_access_iterator it) const {
+    return begin - it.begin;
+  }
+  constexpr test_random_access_iterator& operator-=(difference_type n) {
+    begin -= n;
+    return *this;
+  }
+  friend constexpr auto operator<=>(
+      test_random_access_iterator lhs, test_random_access_iterator rhs) {
+    return lhs.begin <=> rhs.begin;
+  }
+
+  friend constexpr bool operator==(std::default_sentinel_t const&,
+                                   test_random_access_iterator const& rhs) {
+    return rhs.begin == rhs.end;
+  }
+  friend constexpr bool operator==(test_random_access_iterator const&,
+                                   test_random_access_iterator const&) = default;
+
+  std::initializer_list<CharT>::iterator begin;
+  std::initializer_list<CharT>::iterator end;
+};
+
+template <class CharT>
+test_random_access_iterator(std::initializer_list<CharT>) ->
+  test_random_access_iterator<CharT>;
+
+static_assert(std::random_access_iterator<test_random_access_iterator<char8_t>>);
+
 } // namespace utf_view::tests
 
 #endif // UTF_VIEW_TESTS_TEST_ITERATORS_HPP
