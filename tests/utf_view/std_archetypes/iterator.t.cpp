@@ -5,8 +5,8 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+#include <std_archetypes/iterator.hpp>
 #include <iterator>
-#include <tests/std_archetypes/iterator.hpp>
 
 namespace utf_view::tests::std_archetypes {
 

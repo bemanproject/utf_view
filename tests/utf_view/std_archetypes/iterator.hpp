@@ -8,11 +8,11 @@
 #ifndef UTF_VIEW_TESTS_STD_ARCHETYPES_ITERATOR_HPP
 #define UTF_VIEW_TESTS_STD_ARCHETYPES_ITERATOR_HPP
 
+#include <std_archetypes/exposition_only.hpp>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
-#include <tests/std_archetypes/exposition_only.hpp>
 
 namespace utf_view::tests::std_archetypes {
 

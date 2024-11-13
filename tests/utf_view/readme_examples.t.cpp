@@ -5,6 +5,7 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+#include <framework.hpp>
 #include <utf_view/code_unit_view.hpp>
 #include <utf_view/null_term.hpp>
 #include <utf_view/to_utf_view.hpp>
@@ -15,7 +16,6 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <tests/framework.hpp>
 #include <vector>
 
 namespace utf_view::tests {

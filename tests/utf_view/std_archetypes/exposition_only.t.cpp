@@ -5,7 +5,7 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#include <tests/std_archetypes/exposition_only.hpp>
+#include <std_archetypes/exposition_only.hpp>
 
 namespace utf_view::tests::std_archetypes {
 

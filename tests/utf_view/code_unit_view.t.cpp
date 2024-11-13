@@ -7,10 +7,10 @@
 
 #include <utf_view/code_unit_view.hpp>
 #include <utf_view/detail/constexpr_unless_msvc.hpp>
+#include <framework.hpp>
+#include <test_iterators.hpp>
 #include <ranges>
 #include <string_view>
-#include <tests/framework.hpp>
-#include <tests/test_iterators.hpp>
 
 namespace utf_view::tests {
 

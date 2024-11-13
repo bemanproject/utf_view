@@ -6,12 +6,12 @@
 //          https://www.boost.org/LICENSE_1_0.txt)
 
 #include <utf_view/null_term.hpp>
+#include <std_archetypes/iterator.hpp>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <ranges>
-#include <tests/std_archetypes/iterator.hpp>
 #include <utility>
 
 namespace utf_view::tests {
