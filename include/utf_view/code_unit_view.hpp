@@ -114,10 +114,10 @@ public:
 template <exposition_only_convertible_to_charN_t_view<char8_t> V>
 template <bool Const>
 class as_char8_t_view<V>::exposition_only_iterator
-    : public boost::stl_interfaces::proxy_iterator_interface<
+    : public boost::stl_interfaces::iterator_interface<
           exposition_only_iterator_to_tag_t<
               std::ranges::iterator_t<exposition_only_maybe_const<Const, V>>>,
-          char8_t> {
+          char8_t, char8_t, void, std::ptrdiff_t> {
 public:
   using reference_type = char8_t;
 
@@ -277,10 +277,10 @@ public:
 template <exposition_only_convertible_to_charN_t_view<char16_t> V>
 template <bool Const>
 class as_char16_t_view<V>::exposition_only_iterator
-    : public boost::stl_interfaces::proxy_iterator_interface<
+    : public boost::stl_interfaces::iterator_interface<
           exposition_only_iterator_to_tag_t<
               std::ranges::iterator_t<exposition_only_maybe_const<Const, V>>>,
-          char16_t> {
+          char16_t, char16_t, void, std::ptrdiff_t> {
 public:
   using reference_type = char16_t;
 
@@ -440,10 +440,10 @@ public:
 template <exposition_only_convertible_to_charN_t_view<char32_t> V>
 template <bool Const>
 class as_char32_t_view<V>::exposition_only_iterator
-    : public boost::stl_interfaces::proxy_iterator_interface<
+    : public boost::stl_interfaces::iterator_interface<
           exposition_only_iterator_to_tag_t<
               std::ranges::iterator_t<exposition_only_maybe_const<Const, V>>>,
-          char32_t> {
+          char32_t, char32_t, void, std::ptrdiff_t> {
 public:
   using reference_type = char32_t;
 
