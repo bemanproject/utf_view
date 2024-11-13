@@ -5,8 +5,8 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef UTFVIEW_TESTS_STD_ARCHETYPES_ITERATOR_HPP
-#define UTFVIEW_TESTS_STD_ARCHETYPES_ITERATOR_HPP
+#ifndef UTF_VIEW_TESTS_STD_ARCHETYPES_ITERATOR_HPP
+#define UTF_VIEW_TESTS_STD_ARCHETYPES_ITERATOR_HPP
 
 #include <concepts>
 #include <cstddef>
@@ -205,4 +205,4 @@ using bidirectional_iterator_archetype =
 
 } // namespace utf_view::tests::std_archetypes
 
-#endif // UTFVIEW_TESTS_STD_ARCHETYPES_ITERATOR_HPP
+#endif // UTF_VIEW_TESTS_STD_ARCHETYPES_ITERATOR_HPP

@@ -5,8 +5,8 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef UTFVIEW_TESTS_STD_ARCHETYPES_EXPOSITION_ONLY_HPP
-#define UTFVIEW_TESTS_STD_ARCHETYPES_EXPOSITION_ONLY_HPP
+#ifndef UTF_VIEW_TESTS_STD_ARCHETYPES_EXPOSITION_ONLY_HPP
+#define UTF_VIEW_TESTS_STD_ARCHETYPES_EXPOSITION_ONLY_HPP
 
 namespace utf_view::tests::std_archetypes {
 
@@ -47,4 +47,4 @@ constexpr boolean_testable_archetype2 boolean_testable_archetype1::operator!()
 
 } // namespace utf_view::tests::std_archetypes
 
-#endif // UTFVIEW_TESTS_STD_ARCHETYPES_EXPOSITION_ONLY_HPP
+#endif // UTF_VIEW_TESTS_STD_ARCHETYPES_EXPOSITION_ONLY_HPP

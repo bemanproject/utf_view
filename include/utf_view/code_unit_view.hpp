@@ -5,8 +5,8 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef UTFVIEW_CODE_UNIT_VIEW_HPP
-#define UTFVIEW_CODE_UNIT_VIEW_HPP
+#ifndef UTF_VIEW_CODE_UNIT_VIEW_HPP
+#define UTF_VIEW_CODE_UNIT_VIEW_HPP
 
 #include <utf_view/detail/concepts.hpp>
 #include <boost/stl_interfaces/iterator_interface.hpp>
@@ -610,4 +610,4 @@ inline constexpr bool std::ranges::enable_borrowed_range<utf_view::as_char32_t_v
 /* PAPER:                                                                                                         */
 /* PAPER: }                                                                                                       */
 
-#endif // UTFVIEW_CODE_UNIT_VIEW_HPP
+#endif // UTF_VIEW_CODE_UNIT_VIEW_HPP

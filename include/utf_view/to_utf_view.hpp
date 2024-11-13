@@ -5,8 +5,8 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef UTFVIEW_TO_UTF_VIEW_HPP
-#define UTFVIEW_TO_UTF_VIEW_HPP
+#ifndef UTF_VIEW_TO_UTF_VIEW_HPP
+#define UTF_VIEW_TO_UTF_VIEW_HPP
 
 #include <utf_view/detail/concepts.hpp>
 #include <utf_view/detail/constexpr_unless_msvc.hpp>
@@ -1212,4 +1212,4 @@ inline constexpr bool std::ranges::enable_borrowed_range<utf_view::to_utf32_view
 /* PAPER:                                                                                                      */
 /* PAPER: }                                                                                                    */
 
-#endif // UTFVIEW_TO_UTF_VIEW_HPP
+#endif // UTF_VIEW_TO_UTF_VIEW_HPP
