@@ -5,9 +5,9 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#include <utf_view/detail/constexpr_unless_msvc.hpp>
-#include <utf_view/detail/erroneous_behavior_global.hpp>
-#include <utf_view/to_utf_view.hpp>
+#include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
+#include <beman/utf_view/detail/erroneous_behavior_global.hpp>
+#include <beman/utf_view/to_utf_view.hpp>
 #include <framework.hpp>
 #include <test_iterators.hpp>
 #include <algorithm>
@@ -23,7 +23,7 @@
 
 #include <iostream>
 
-namespace utf_view::tests {
+namespace beman::utf_view::tests {
 
 static_assert(
   std::input_iterator<

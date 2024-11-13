@@ -5,10 +5,10 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef UTF_VIEW_TESTS_TEST_ITERATORS_HPP
-#define UTF_VIEW_TESTS_TEST_ITERATORS_HPP
+#ifndef BEMAN_UTF_VIEW_TESTS_TEST_ITERATORS_HPP
+#define BEMAN_UTF_VIEW_TESTS_TEST_ITERATORS_HPP
 
-namespace utf_view::tests {
+namespace beman::utf_view::tests {
 
 template <class CharT>
 struct test_input_iterator {
@@ -336,6 +336,6 @@ test_random_access_iterator(std::initializer_list<CharT>) ->
 
 static_assert(std::random_access_iterator<test_random_access_iterator<char8_t>>);
 
-} // namespace utf_view::tests
+} // namespace beman::utf_view::tests
 
-#endif // UTF_VIEW_TESTS_TEST_ITERATORS_HPP
+#endif // BEMAN_UTF_VIEW_TESTS_TEST_ITERATORS_HPP

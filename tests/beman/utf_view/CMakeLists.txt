@@ -8,7 +8,7 @@
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 add_library(
-  utf_view_test_lib
+  beman_utf_view_test_lib
   STATIC
   code_unit_view.t.cpp
   detail/concepts.t.cpp
@@ -19,12 +19,12 @@ add_library(
   std_archetypes/iterator.t.cpp
   to_utf_view.t.cpp)
 
-target_link_libraries(utf_view_test_lib utf_view)
+target_link_libraries(beman_utf_view_test_lib beman_utf_view)
 
 add_executable(
-  utf_view_test
+  beman_utf_view_test
   main.t.cpp)
 
-target_link_libraries(utf_view_test "$<LINK_LIBRARY:WHOLE_ARCHIVE,utf_view_test_lib>")
+target_link_libraries(beman_utf_view_test "$<LINK_LIBRARY:WHOLE_ARCHIVE,beman_utf_view_test_lib>")
 
-add_test(NAME utf_view_test COMMAND utf_view_test)
+add_test(NAME beman_utf_view_test COMMAND beman_utf_view_test)

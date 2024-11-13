@@ -5,14 +5,14 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#include <utf_view/code_unit_view.hpp>
-#include <utf_view/detail/constexpr_unless_msvc.hpp>
+#include <beman/utf_view/code_unit_view.hpp>
+#include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
 #include <framework.hpp>
 #include <test_iterators.hpp>
 #include <ranges>
 #include <string_view>
 
-namespace utf_view::tests {
+namespace beman::utf_view::tests {
 
 static_assert(
   std::input_iterator<
@@ -109,4 +109,4 @@ static auto const init{[] {
   return result;
 }()};
 
-} // namespace utf_view::tests
+} // namespace beman::utf_view::tests

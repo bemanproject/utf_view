@@ -6,7 +6,7 @@
 #          https://www.boost.org/LICENSE_1_0.txt)
 
 cmake_minimum_required(VERSION 3.27)
-project(utf_view CXX)
+project(beman.utf_view CXX)
 
 option(
     UTF_VIEW_BUILD_TESTING
@@ -15,7 +15,7 @@ option(
 )
 
 option(
-    UTF_VIEW_BUILD_PAPER
+    BEMAN_UTF_VIEW_BUILD_PAPER
     "Enable building paper. Default: OFF. Values: { ON, OFF }."
     OFF
 )
@@ -35,13 +35,13 @@ else()
   message(FATAL_ERROR "Conflicting dependency: boost_stl_interfaces already exists, but we need our own fork")
 endif()
 
-add_subdirectory(src/utf_view)
+add_subdirectory(src/beman/utf_view)
 
-if (UTF_VIEW_BUILD_PAPER)
+if (BEMAN_UTF_VIEW_BUILD_PAPER)
   add_subdirectory(paper)
 endif()
 
 if (UTF_VIEW_BUILD_TESTING)
     enable_testing()
-    add_subdirectory(tests/utf_view)
+    add_subdirectory(tests/beman/utf_view)
 endif()

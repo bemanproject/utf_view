@@ -5,7 +5,7 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#include <utf_view/null_term.hpp>
+#include <beman/utf_view/null_term.hpp>
 #include <std_archetypes/iterator.hpp>
 #include <concepts>
 #include <cstddef>
@@ -14,7 +14,7 @@
 #include <ranges>
 #include <utility>
 
-namespace utf_view::tests {
+namespace beman::utf_view::tests {
 
 static_assert(std::default_initializable<
               std::iter_value_t<std_archetypes::input_iterator_archetype>>);
@@ -52,4 +52,4 @@ constexpr bool null_sentinel_forward_iterator_test() {
 static_assert(null_sentinel_input_iterator_test());
 static_assert(null_sentinel_forward_iterator_test());
 
-} // namespace utf_view::tests
+} // namespace beman::utf_view::tests

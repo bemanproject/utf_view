@@ -5,10 +5,10 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef UTF_VIEW_TESTS_STD_ARCHETYPES_EXPOSITION_ONLY_HPP
-#define UTF_VIEW_TESTS_STD_ARCHETYPES_EXPOSITION_ONLY_HPP
+#ifndef BEMAN_UTF_VIEW_TESTS_STD_ARCHETYPES_EXPOSITION_ONLY_HPP
+#define BEMAN_UTF_VIEW_TESTS_STD_ARCHETYPES_EXPOSITION_ONLY_HPP
 
-namespace utf_view::tests::std_archetypes {
+namespace beman::utf_view::tests::std_archetypes {
 
 class boolean_testable_archetype2;
 
@@ -45,6 +45,6 @@ constexpr boolean_testable_archetype2 boolean_testable_archetype1::operator!()
   return boolean_testable_archetype2{inner_};
 }
 
-} // namespace utf_view::tests::std_archetypes
+} // namespace beman::utf_view::tests::std_archetypes
 
-#endif // UTF_VIEW_TESTS_STD_ARCHETYPES_EXPOSITION_ONLY_HPP
+#endif // BEMAN_UTF_VIEW_TESTS_STD_ARCHETYPES_EXPOSITION_ONLY_HPP
