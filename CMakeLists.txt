@@ -14,6 +14,23 @@ option(
     OFF
 )
 
+# Don't build tests if configuring utf_view as a submodule of another
+# CMake project, unless they explicitly set UTF_VIEW_BUILD_TESTS=TRUE,
+# or they enabled CTest's BUILD_TESTING option
+if ((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME) OR BUILD_TESTING)
+    set(UTF_VIEW_BUILD_TESTS_DEFAULT ON)
+else()
+    set(UTF_VIEW_BUILD_TESTS_DEFAULT OFF)
+endif()
+option(
+  UTF_VIEW_BUILD_TESTS
+  "Enable building tests and test infrastructure. Default: ON. Values: { ON, OFF }."
+  ${UTF_VIEW_BUILD_TESTS_DEFAULT})
+
+# UTF_VIEW_BUILD_TESTS is used solely to configure CTest's BUILD_TESTING option,
+# which is CMake's preferred option for enabling testing when using CTest.
+set(BUILD_TESTING ${UTF_VIEW_BUILD_TESTS})
+
 if (BUILD_TESTING)
   include(CTest)
 endif()
