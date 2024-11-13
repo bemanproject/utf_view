@@ -61,6 +61,11 @@ template <class CharT>
 test_input_iterator(std::initializer_list<CharT>) -> test_input_iterator<CharT>;
 
 static_assert(std::input_iterator<test_input_iterator<char8_t>>);
+static_assert(
+  std::input_iterator<
+    std::ranges::iterator_t<
+      to_utf8_view<
+        std::ranges::subrange<test_input_iterator<char8_t>, std::default_sentinel_t>>>>);
 
 template <class CharT>
 struct test_comparable_input_iterator {
@@ -105,6 +110,12 @@ test_comparable_input_iterator(std::initializer_list<CharT>)
     -> test_comparable_input_iterator<CharT>;
 
 static_assert(std::input_iterator<test_comparable_input_iterator<char8_t>>);
+static_assert(
+  std::input_iterator<
+    std::ranges::iterator_t<
+      to_utf8_view<
+        std::ranges::subrange<test_comparable_input_iterator<char8_t>,
+                              std::default_sentinel_t>>>>);
 
 template <class CharT>
 struct test_copyable_input_iterator {
@@ -154,6 +165,18 @@ test_copyable_input_iterator(std::initializer_list<CharT>)
 
 static_assert(std::input_iterator<test_copyable_input_iterator<char8_t>>);
 static_assert(!std::forward_iterator<test_copyable_input_iterator<char8_t>>);
+static_assert(
+  std::input_iterator<
+    std::ranges::iterator_t<
+      to_utf8_view<
+        std::ranges::subrange<test_copyable_input_iterator<char8_t>,
+                              std::default_sentinel_t>>>>);
+static_assert(
+  !std::forward_iterator<
+    std::ranges::iterator_t<
+      to_utf8_view<
+        std::ranges::subrange<test_copyable_input_iterator<char8_t>,
+                              std::default_sentinel_t>>>>);
 
 template <class CharT>
 struct test_forward_iterator {
@@ -202,6 +225,18 @@ template <class CharT>
 test_forward_iterator(std::initializer_list<CharT>) -> test_forward_iterator<CharT>;
 
 static_assert(std::forward_iterator<test_forward_iterator<char8_t>>);
+static_assert(
+  std::forward_iterator<
+    std::ranges::iterator_t<
+      to_utf8_view<
+        std::ranges::subrange<test_forward_iterator<char8_t>,
+                              std::default_sentinel_t>>>>);
+static_assert(
+  std::forward_iterator<
+    std::ranges::sentinel_t<
+      to_utf8_view<
+        std::ranges::subrange<test_forward_iterator<char8_t>,
+                              test_forward_iterator<char8_t>>>>>);
 
 template <class CharT>
 struct test_bidi_iterator {
@@ -258,6 +293,18 @@ template <class CharT>
 test_bidi_iterator(std::initializer_list<CharT>) -> test_bidi_iterator<CharT>;
 
 static_assert(std::bidirectional_iterator<test_bidi_iterator<char8_t>>);
+static_assert(
+  std::bidirectional_iterator<
+    std::ranges::iterator_t<
+      to_utf8_view<
+        std::ranges::subrange<test_bidi_iterator<char8_t>,
+                              std::default_sentinel_t>>>>);
+static_assert(
+  std::bidirectional_iterator<
+    std::ranges::sentinel_t<
+      to_utf8_view<
+        std::ranges::subrange<test_bidi_iterator<char8_t>,
+                              test_bidi_iterator<char8_t>>>>>);
 
 template <exposition_only_code_unit_to CharT>
 struct test_case_code_unit_result {
