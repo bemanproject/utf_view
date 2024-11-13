@@ -38,3 +38,7 @@ add_subdirectory(src/utf_view)
 if (UTF_VIEW_BUILD_PAPER)
   add_subdirectory(paper)
 endif()
+
+if(BUILD_TESTING)
+    add_subdirectory(tests/utf_view)
+endif()

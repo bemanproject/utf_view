@@ -5,6 +5,8 @@
 #    (See accompanying file LICENSE.txt or copy at
 #          https://www.boost.org/LICENSE_1_0.txt)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
 add_library(
   utf_view_test_lib
   STATIC

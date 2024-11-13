@@ -6,7 +6,7 @@
 //          https://www.boost.org/LICENSE_1_0.txt)
 
 #include <utf_view/detail/concepts.hpp>
-#include <tests/std_archetypes/iterator.hpp>
+#include <std_archetypes/iterator.hpp>
 
 namespace utf_view::tests {
 

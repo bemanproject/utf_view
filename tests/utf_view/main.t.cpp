@@ -5,9 +5,9 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+#include <framework.hpp>
 #include <cstdlib>
 #include <iostream>
-#include <tests/framework.hpp>
 
 int main() {
   for (auto& [test_name, test] : utf_view::tests::framework::tests()) {

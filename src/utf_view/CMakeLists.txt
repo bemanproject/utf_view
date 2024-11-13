@@ -8,7 +8,6 @@
 add_library(utf_view INTERFACE)
 
 include(GNUInstallDirs)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 target_include_directories(
   utf_view
@@ -29,8 +28,3 @@ install(
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_PROJECT_NAME}
   FILES_MATCHING
   PATTERN "*.hpp")
-
-# Tests
-if(BUILD_TESTING)
-  add_subdirectory(tests)
-endif()
