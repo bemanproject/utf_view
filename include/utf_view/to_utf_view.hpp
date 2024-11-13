@@ -126,11 +126,7 @@ class exposition_only_to_utf_view_impl
     : public std::ranges::view_interface<exposition_only_to_utf_view_impl<ToType, V>> {
 public:
   template <bool Const>
-  class exposition_only_utf_iterator
-      : public boost::stl_interfaces::iterator_interface<
-            exposition_only_bidirectional_at_most_t<std::ranges::iterator_t<V>>, ToType,
-            ToType> {
-
+  class exposition_only_utf_iterator {
     /* !PAPER */
   public:
     using reserved_to_utf_view_iterator = void;
