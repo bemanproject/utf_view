@@ -5,8 +5,8 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef UTFVIEW_DETAIL_ERRONEOUS_BEHAVIOR_GLOBAL_HPP
-#define UTFVIEW_DETAIL_ERRONEOUS_BEHAVIOR_GLOBAL_HPP
+#ifndef UTF_VIEW_DETAIL_ERRONEOUS_BEHAVIOR_GLOBAL_HPP
+#define UTF_VIEW_DETAIL_ERRONEOUS_BEHAVIOR_GLOBAL_HPP
 
 namespace utf_view::detail {
 
@@ -17,4 +17,4 @@ inline bool& erroneous_behavior_global() {
 
 } // namespace utf_view::detail
 
-#endif // UTFVIEW_DETAIL_ERRONEOUS_BEHAVIOR_GLOBAL_HPP
+#endif // UTF_VIEW_DETAIL_ERRONEOUS_BEHAVIOR_GLOBAL_HPP

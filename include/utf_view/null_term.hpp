@@ -5,8 +5,8 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef UTFVIEW_NULL_TERM_HPP
-#define UTFVIEW_NULL_TERM_HPP
+#ifndef UTF_VIEW_NULL_TERM_HPP
+#define UTF_VIEW_NULL_TERM_HPP
 
 #include <concepts>
 #include <ranges>
@@ -63,4 +63,4 @@ inline constexpr detail::null_term_impl null_term;
 
 /* PAPER: } */
 
-#endif // UTFVIEW_NULL_TERM_HPP
+#endif // UTF_VIEW_NULL_TERM_HPP

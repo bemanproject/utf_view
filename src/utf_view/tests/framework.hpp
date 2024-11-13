@@ -5,8 +5,8 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef UTFVIEW_TESTS_FRAMEWORK_HPP
-#define UTFVIEW_TESTS_FRAMEWORK_HPP
+#ifndef UTF_VIEW_TESTS_FRAMEWORK_HPP
+#define UTF_VIEW_TESTS_FRAMEWORK_HPP
 
 #include <functional>
 #include <map>
@@ -22,4 +22,4 @@ namespace framework {
 
 } // namespace utf_view::tests
 
-#endif // UTFVIEW_TESTS_FRAMEWORK_HPP
+#endif // UTF_VIEW_TESTS_FRAMEWORK_HPP

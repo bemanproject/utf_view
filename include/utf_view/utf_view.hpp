@@ -1,8 +1,8 @@
-#ifndef UTFVIEW_UTFVIEW_HPP
-#define UTFVIEW_UTFVIEW_HPP
+#ifndef UTF_VIEW_UTF_VIEW_HPP
+#define UTF_VIEW_UTF_VIEW_HPP
 
 #include <utf_view/code_unit_view.hpp>
 #include <utf_view/null_term.hpp>
 #include <utf_view/to_utf_view.hpp>
 
-#endif UTFVIEW_UTFVIEW_HPP
+#endif UTF_VIEW_UTF_VIEW_HPP

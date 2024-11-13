@@ -5,8 +5,8 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef UTFVIEW_DETAIL_CONCEPTS_HPP
-#define UTFVIEW_DETAIL_CONCEPTS_HPP
+#ifndef UTF_VIEW_DETAIL_CONCEPTS_HPP
+#define UTF_VIEW_DETAIL_CONCEPTS_HPP
 
 #include <concepts>
 #include <iterator>
@@ -53,4 +53,4 @@ concept exposition_only_utf_range = std::ranges::input_range<T> &&
 
 /* PAPER: } */
 
-#endif // UTFVIEW_DETAIL_CONCEPTS_HPP
+#endif // UTF_VIEW_DETAIL_CONCEPTS_HPP
