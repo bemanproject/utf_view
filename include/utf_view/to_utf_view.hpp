@@ -13,7 +13,6 @@
 #include <utf_view/detail/erroneous_behavior_global.hpp>
 #include <utf_view/null_term.hpp>
 #include <bit>
-#include <boost/stl_interfaces/iterator_interface.hpp>
 #include <cassert>
 #include <concepts>
 #include <cstdint>
