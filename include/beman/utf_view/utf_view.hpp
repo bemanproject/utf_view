@@ -1,8 +1,8 @@
-#ifndef UTF_VIEW_UTF_VIEW_HPP
-#define UTF_VIEW_UTF_VIEW_HPP
+#ifndef BEMAN_UTF_VIEW_UTF_VIEW_HPP
+#define BEMAN_UTF_VIEW_UTF_VIEW_HPP
 
-#include <utf_view/code_unit_view.hpp>
-#include <utf_view/null_term.hpp>
-#include <utf_view/to_utf_view.hpp>
+#include <beman/utf_view/code_unit_view.hpp>
+#include <beman/utf_view/null_term.hpp>
+#include <beman/utf_view/to_utf_view.hpp>
 
-#endif UTF_VIEW_UTF_VIEW_HPP
+#endif BEMAN_UTF_VIEW_UTF_VIEW_HPP

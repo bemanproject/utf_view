@@ -20,11 +20,11 @@ jobs:
           submodules: recursive
       - name: Run
         run: |
-          ./ci.sh -DCMAKE_CXX_FLAGS='-fsanitize=address -fsanitize=undefined -fsanitize-undefined-trap-on-error -coverage' -DUTF_VIEW_BUILD_PAPER=ON
+          ./ci.sh -DCMAKE_CXX_FLAGS='-fsanitize=address -fsanitize=undefined -fsanitize-undefined-trap-on-error -coverage' -DBEMAN_UTF_VIEW_BUILD_PAPER=ON
       - name: Coverage
         run: |
           lcov --directory ./build --capture --output-file ./build/coverage_all.info
-          lcov --remove ./build/coverage_all.info -o ./build/coverage.info '/usr/include/*' "$PWD/tests/utf_view/*" "$PWD/deps/*"
+          lcov --remove ./build/coverage_all.info -o ./build/coverage.info '/usr/include/*' "$PWD/tests/beman/utf_view/*" "$PWD/deps/*"
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:

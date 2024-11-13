@@ -5,17 +5,17 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef UTF_VIEW_CODE_UNIT_VIEW_HPP
-#define UTF_VIEW_CODE_UNIT_VIEW_HPP
+#ifndef BEMAN_UTF_VIEW_CODE_UNIT_VIEW_HPP
+#define BEMAN_UTF_VIEW_CODE_UNIT_VIEW_HPP
 
-#include <utf_view/detail/concepts.hpp>
+#include <beman/utf_view/detail/concepts.hpp>
 #include <boost/stl_interfaces/iterator_interface.hpp>
 #include <iterator>
 #include <ranges>
 #include <type_traits>
 #include <utility>
 
-namespace utf_view {
+namespace beman::utf_view {
 
 /* PAPER: namespace std::uc { */
 
@@ -583,18 +583,18 @@ inline constexpr detail::as_code_unit_impl<char32_t> as_char32_t;
 /* PAPER:                                                 */
 /* PAPER: }                                               */
 
-} // namespace utf_view
+} // namespace beman::utf_view
 
 template <class V>
-inline constexpr bool std::ranges::enable_borrowed_range<utf_view::as_char8_t_view<V>> =
+inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::as_char8_t_view<V>> =
     std::ranges::enable_borrowed_range<V>;
 
 template <class V>
-inline constexpr bool std::ranges::enable_borrowed_range<utf_view::as_char16_t_view<V>> =
+inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::as_char16_t_view<V>> =
     std::ranges::enable_borrowed_range<V>;
 
 template <class V>
-inline constexpr bool std::ranges::enable_borrowed_range<utf_view::as_char32_t_view<V>> =
+inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::as_char32_t_view<V>> =
     std::ranges::enable_borrowed_range<V>;
 
 /* PAPER: namespace std::ranges {                                                                                 */
@@ -610,4 +610,4 @@ inline constexpr bool std::ranges::enable_borrowed_range<utf_view::as_char32_t_v
 /* PAPER:                                                                                                         */
 /* PAPER: }                                                                                                       */
 
-#endif // UTF_VIEW_CODE_UNIT_VIEW_HPP
+#endif // BEMAN_UTF_VIEW_CODE_UNIT_VIEW_HPP

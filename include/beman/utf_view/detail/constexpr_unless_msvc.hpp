@@ -5,8 +5,8 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef UTF_VIEW_DETAIL_CONSTEXPR_UNLESS_MSVC_HPP
-#define UTF_VIEW_DETAIL_CONSTEXPR_UNLESS_MSVC_HPP
+#ifndef BEMAN_UTF_VIEW_DETAIL_CONSTEXPR_UNLESS_MSVC_HPP
+#define BEMAN_UTF_VIEW_DETAIL_CONSTEXPR_UNLESS_MSVC_HPP
 
 // msvc constexpr bugs can be induced by a light breeze
 // https://developercommunity.visualstudio.com/t/std::initializer_list-data-member-of-cla/10622889
@@ -18,4 +18,4 @@
 #define CONSTEXPR_UNLESS_MSVC constexpr
 #endif
 
-#endif // UTF_VIEW_DETAIL_CONSTEXPR_UNLESS_MSVC_HPP
+#endif // BEMAN_UTF_VIEW_DETAIL_CONSTEXPR_UNLESS_MSVC_HPP

@@ -7,7 +7,7 @@ Distributed under the Boost Software License, Version 1.0.
          https://www.boost.org/LICENSE_1_0.txt)
 -->
 
-# utf_view: C++26 UTF Transcoding Views
+# beman.utf_view: C++26 UTF Transcoding Views
 
 [![CI](https://github.com/ednolan/utf_view/actions/workflows/ci.yml/badge.svg)](https://github.com/ednolan/utf_view/actions) [![Coverage](https://coveralls.io/repos/github/ednolan/utf_view/badge.svg?branch=main)](https://coveralls.io/github/ednolan/utf_view?branch=main)
 
@@ -23,7 +23,7 @@ Transcoding a UTF-8 string literal to a `std::u32string`:
 
 ```
 std::u32string hello_world =
-  u8"こんにちは世界" | utf_view::to_utf32 | std::ranges::to<std::u32string>();
+  u8"こんにちは世界" | beman::utf_view::to_utf32 | std::ranges::to<std::u32string>();
 ```
 
 Sanitizing potentially invalid Unicode C strings by replacing invalid code units with replacement characters:
@@ -31,7 +31,7 @@ Sanitizing potentially invalid Unicode C strings by replacing invalid code units
 ```
 template <typename CharT>
 std::basic_string<CharT> sanitize(CharT const* str) {
-  return utf_view::null_term(str) | utf_view::to_utf<CharT> | std::ranges::to<std::basic_string<CharT>>();
+  return beman::utf_view::null_term(str) | beman::utf_view::to_utf<CharT> | std::ranges::to<std::basic_string<CharT>>();
 }
 ```
 
@@ -39,7 +39,7 @@ Returning the final non-ASCII code point in a string, transcoding backwards lazi
 
 ```
 std::optional<char32_t> last_nonascii(std::ranges::view auto str) {
-  for (auto c : str | utf_view::to_utf32 | std::views::reverse 
+  for (auto c : str | beman::utf_view::to_utf32 | std::views::reverse 
                     | std::views::filter([](char32_t c) { return c > 0x7f; })
                     | std::views::take(1)) {
     return c;
@@ -108,9 +108,9 @@ void change_playing_card_suits() {
 
 ### Minimum Requirements
 
-utf_view requires being built in C++23 mode.
+beman.utf_view requires being built in C++23 mode.
 
-utf_view has the following minimum compiler requirements:
+beman.utf_view has the following minimum compiler requirements:
 
 - GCC 14
 - Clang 19
@@ -118,7 +118,7 @@ utf_view has the following minimum compiler requirements:
 
 ### Dependencies
 
-utf_view depends on [Boost.STLInterfaces](https://github.com/boostorg/stl_interfaces). It brings in this library and its dependencies via git submodules. If you add utf_view to your project your project already uses Boost, it will target your project's stl_interfaces instead of using its own submodule.
+beman.utf_view depends on [Boost.STLInterfaces](https://github.com/boostorg/stl_interfaces). It brings in this library and its dependencies via git submodules. If you add beman.utf_view to your project your project already uses Boost, it will target your project's stl_interfaces instead of using its own submodule.
 
 ### Instructions
 
@@ -132,7 +132,7 @@ This excerpt from the project's CI script provides an example of building the pr
 
 ### Paper
 
-utf_view is based on P2728.
+beman.utf_view is based on P2728.
 
 - The latest official revision of P2728 can be found at https://wg21.link/p2728
 - The unofficial latest draft Markdown source for the paper can be found in this repository at [paper/P2828.md](https://github.com/ednolan/utf_view/blob/main/paper/P2728.md)
@@ -144,4 +144,4 @@ This implementation of P2728 is a fork by Eddie Nolan of the implementation of P
 
 ## License
 
-utf_view is licensed under BSL 1.0.
+beman.utf_view is licensed under BSL 1.0.

@@ -18,10 +18,10 @@ function process_file() {
 
 function main() {
     local files=(
-        include/utf_view/code_unit_view.hpp
-        include/utf_view/detail/concepts.hpp
-        include/utf_view/null_term.hpp
-        include/utf_view/to_utf_view.hpp)
+        include/beman/utf_view/code_unit_view.hpp
+        include/beman/utf_view/detail/concepts.hpp
+        include/beman/utf_view/null_term.hpp
+        include/beman/utf_view/to_utf_view.hpp)
     local build_dir=$generator_script_dir/build
     mkdir $build_dir
     cp $generator_script_dir/.clang-format $build_dir

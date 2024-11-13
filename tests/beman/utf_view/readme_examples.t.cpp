@@ -6,9 +6,9 @@
 //          https://www.boost.org/LICENSE_1_0.txt)
 
 #include <framework.hpp>
-#include <utf_view/code_unit_view.hpp>
-#include <utf_view/null_term.hpp>
-#include <utf_view/to_utf_view.hpp>
+#include <beman/utf_view/code_unit_view.hpp>
+#include <beman/utf_view/null_term.hpp>
+#include <beman/utf_view/to_utf_view.hpp>
 #include <filesystem>
 #include <iterator>
 #include <optional>
@@ -18,7 +18,7 @@
 #include <string_view>
 #include <vector>
 
-namespace utf_view::tests {
+namespace beman::utf_view::tests {
 
 template <typename CharT>
 std::basic_string<CharT> sanitize(CharT const* str) {
@@ -205,4 +205,4 @@ static auto const init{[] {
   return result;
 }()};
 
-} // namespace utf_view::tests
+} // namespace beman::utf_view::tests

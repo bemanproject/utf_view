@@ -5,15 +5,15 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef UTF_VIEW_DETAIL_CONCEPTS_HPP
-#define UTF_VIEW_DETAIL_CONCEPTS_HPP
+#ifndef BEMAN_UTF_VIEW_DETAIL_CONCEPTS_HPP
+#define BEMAN_UTF_VIEW_DETAIL_CONCEPTS_HPP
 
 #include <concepts>
 #include <iterator>
 #include <ranges>
 #include <type_traits>
 
-namespace utf_view {
+namespace beman::utf_view {
 
 /* PAPER: namespace std::uc { */
 
@@ -49,8 +49,8 @@ concept exposition_only_utf_range = std::ranges::input_range<T> &&
 
 /* !PAPER */
 
-} // namespace utf_view
+} // namespace beman::utf_view
 
 /* PAPER: } */
 
-#endif // UTF_VIEW_DETAIL_CONCEPTS_HPP
+#endif // BEMAN_UTF_VIEW_DETAIL_CONCEPTS_HPP

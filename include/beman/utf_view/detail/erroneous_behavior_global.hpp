@@ -5,16 +5,16 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef UTF_VIEW_DETAIL_ERRONEOUS_BEHAVIOR_GLOBAL_HPP
-#define UTF_VIEW_DETAIL_ERRONEOUS_BEHAVIOR_GLOBAL_HPP
+#ifndef BEMAN_UTF_VIEW_DETAIL_ERRONEOUS_BEHAVIOR_GLOBAL_HPP
+#define BEMAN_UTF_VIEW_DETAIL_ERRONEOUS_BEHAVIOR_GLOBAL_HPP
 
-namespace utf_view::detail {
+namespace beman::utf_view::detail {
 
 inline bool& erroneous_behavior_global() {
   static bool global{};
   return global;
 }
 
-} // namespace utf_view::detail
+} // namespace beman::utf_view::detail
 
-#endif // UTF_VIEW_DETAIL_ERRONEOUS_BEHAVIOR_GLOBAL_HPP
+#endif // BEMAN_UTF_VIEW_DETAIL_ERRONEOUS_BEHAVIOR_GLOBAL_HPP

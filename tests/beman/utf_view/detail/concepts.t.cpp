@@ -5,10 +5,10 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
-#include <utf_view/detail/concepts.hpp>
+#include <beman/utf_view/detail/concepts.hpp>
 #include <std_archetypes/iterator.hpp>
 
-namespace utf_view::tests {
+namespace beman::utf_view::tests {
 
 static_assert(exposition_only_code_unit_to<char8_t>);
 static_assert(exposition_only_code_unit_to<char16_t>);
@@ -26,4 +26,4 @@ static_assert(!exposition_only_code_unit_from<int>);
 
 // todo: utf_range
 
-} // namespace utf_view::detail::tests
+} // namespace beman::utf_view::detail::tests
