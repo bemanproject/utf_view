@@ -25,7 +25,7 @@ jobs:
       - name: Coverage
         run: |
           lcov --directory ./build --capture --output-file ./build/coverage_all.info
-          lcov --remove ./build/coverage_all.info -o ./build/coverage.info '/usr/include/*' "$PWD/tests/beman/utf_view/*" "$PWD/deps/*"
+          lcov --remove ./build/coverage_all.info -o ./build/coverage.info '/usr/include/*' "$PWD/tests/beman/utf_view/*" "$PWD/build/_deps/*"
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:

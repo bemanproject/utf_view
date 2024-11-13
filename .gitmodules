@@ -1,12 +1,3 @@
-[submodule "deps/stl_interfaces"]
-	path = deps/stl_interfaces
-	url = https://github.com/ednolan/stl_interfaces.git
-[submodule "deps/assert"]
-	path = deps/assert
-	url = https://github.com/boostorg/assert.git
-[submodule "deps/config"]
-	path = deps/config
-	url = https://github.com/boostorg/config.git
 [submodule "deps/wg21"]
 	path = deps/wg21
 	url = https://github.com/mpark/wg21.git
