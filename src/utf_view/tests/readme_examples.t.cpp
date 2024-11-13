@@ -120,6 +120,40 @@ bool transcode_to_utf32_test() {
   return true;
 }
 
+#ifndef _MSC_VER
+enum class suit : std::uint8_t {
+  spades = 0xA,
+  hearts = 0xB,
+  diamonds = 0xC,
+  clubs = 0xD
+};
+
+// Unicode playing card characters are laid out such that changing the second least
+// significant nibble changes the suit, e.g.
+// U+1F0A1 PLAYING CARD ACE OF SPADES
+// U+1F0B1 PLAYING CARD ACE OF HEARTS
+constexpr char32_t change_playing_card_suit(char32_t card, suit s) {
+  if (U'\N{PLAYING CARD ACE OF SPADES}' <= card && card <= U'\N{PLAYING CARD KING OF CLUBS}') {
+    return (card & ~(0xF << 4)) | (static_cast<std::uint8_t>(s) << 4);
+  }
+  return card;
+}
+
+bool change_playing_card_suit_test() {
+  std::u8string_view const spades = u8"🂡🂢🂣🂤🂥🂦🂧🂨🂩🂪🂫🂭🂮";
+  std::u8string const hearts =
+    spades |
+    to_utf32 |
+    std::views::transform(std::bind_back(change_playing_card_suit, suit::hearts)) |
+    to_utf8 |
+    std::ranges::to<std::u8string>();
+  if (hearts != u8"🂱🂲🂳🂴🂵🂶🂷🂸🂹🂺🂻🂽🂾") {
+    return false;
+  }
+  return true;
+}
+#endif
+
 bool readme_examples() {
   using namespace std::string_view_literals;
 #ifndef _MSC_VER
@@ -151,6 +185,9 @@ bool readme_examples() {
     }
   }
   if (!transcode_to_utf32_test()) {
+    return false;
+  }
+  if (!change_playing_card_suit_test()) {
     return false;
   }
 #else
