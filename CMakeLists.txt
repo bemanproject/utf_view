@@ -9,14 +9,16 @@ cmake_minimum_required(VERSION 3.27)
 project(utf_view CXX)
 
 option(
+    UTF_VIEW_BUILD_TESTING
+    "Enable building tests and test infrastructure. Default: ON. Values: { ON, OFF }."
+    ${PROJECT_IS_TOP_LEVEL}
+)
+
+option(
     UTF_VIEW_BUILD_PAPER
     "Enable building paper. Default: OFF. Values: { ON, OFF }."
     OFF
 )
-
-if (BUILD_TESTING)
-  include(CTest)
-endif()
 
 if (NOT TARGET boost_config)
   add_subdirectory(deps/config)
@@ -39,6 +41,7 @@ if (UTF_VIEW_BUILD_PAPER)
   add_subdirectory(paper)
 endif()
 
-if(BUILD_TESTING)
+if (UTF_VIEW_BUILD_TESTING)
+    enable_testing()
     add_subdirectory(tests/utf_view)
 endif()
