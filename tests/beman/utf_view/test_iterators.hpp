@@ -13,7 +13,7 @@ namespace beman::utf_view::tests {
 template <class CharT>
 struct test_input_iterator {
   using value_type = CharT;
-  using reference_type = CharT const&;
+  using reference = CharT const&;
   using difference_type = std::ptrdiff_t;
   using iterator_concept = std::input_iterator_tag;
   constexpr explicit test_input_iterator(std::initializer_list<CharT> const& list)
@@ -23,7 +23,7 @@ struct test_input_iterator {
   test_input_iterator& operator=(test_input_iterator const&) = delete;
   test_input_iterator(test_input_iterator&&) = default;
   test_input_iterator& operator=(test_input_iterator&&) = default;
-  constexpr reference_type operator*() const {
+  constexpr reference operator*() const {
     return *begin;
   }
   constexpr test_input_iterator& operator++() {
@@ -51,7 +51,7 @@ static_assert(std::input_iterator<test_input_iterator<char8_t>>);
 template <class CharT>
 struct test_comparable_input_iterator {
   using value_type = CharT;
-  using reference_type = CharT const&;
+  using reference = CharT const&;
   using difference_type = std::ptrdiff_t;
   using iterator_concept = std::input_iterator_tag;
   constexpr explicit test_comparable_input_iterator(
@@ -63,7 +63,7 @@ struct test_comparable_input_iterator {
       delete;
   test_comparable_input_iterator(test_comparable_input_iterator&&) = default;
   test_comparable_input_iterator& operator=(test_comparable_input_iterator&&) = default;
-  constexpr reference_type operator*() const {
+  constexpr reference operator*() const {
     return *begin;
   }
   constexpr test_comparable_input_iterator& operator++() {
@@ -97,7 +97,7 @@ struct test_copyable_input_iterator {
   static constexpr std::initializer_list<CharT> empty{};
 
   using value_type = CharT;
-  using reference_type = CharT const&;
+  using reference = CharT const&;
   using difference_type = std::ptrdiff_t;
   using iterator_concept = std::input_iterator_tag;
   constexpr test_copyable_input_iterator()
@@ -111,7 +111,7 @@ struct test_copyable_input_iterator {
   test_copyable_input_iterator& operator=(test_copyable_input_iterator const&) = default;
   test_copyable_input_iterator(test_copyable_input_iterator&&) = default;
   test_copyable_input_iterator& operator=(test_copyable_input_iterator&&) = default;
-  constexpr reference_type operator*() const {
+  constexpr reference operator*() const {
     return *begin;
   }
   constexpr test_copyable_input_iterator& operator++() {
@@ -146,7 +146,7 @@ struct test_forward_iterator {
   static constexpr std::initializer_list<CharT> empty{};
 
   using value_type = CharT;
-  using reference_type = CharT const&;
+  using reference = CharT const&;
   using difference_type = std::ptrdiff_t;
   using iterator_concept = std::forward_iterator_tag;
   constexpr test_forward_iterator()
@@ -159,7 +159,7 @@ struct test_forward_iterator {
   test_forward_iterator& operator=(test_forward_iterator const&) = default;
   test_forward_iterator(test_forward_iterator&&) = default;
   test_forward_iterator& operator=(test_forward_iterator&&) = default;
-  constexpr reference_type operator*() const {
+  constexpr reference operator*() const {
     return *begin;
   }
   constexpr test_forward_iterator& operator++() {
@@ -194,7 +194,7 @@ struct test_bidi_iterator {
   static constexpr std::initializer_list<CharT> empty{};
 
   using value_type = CharT;
-  using reference_type = CharT const&;
+  using reference = CharT const&;
   using difference_type = std::ptrdiff_t;
   using iterator_concept = std::bidirectional_iterator_tag;
   constexpr test_bidi_iterator()
@@ -207,7 +207,7 @@ struct test_bidi_iterator {
   test_bidi_iterator& operator=(test_bidi_iterator const&) = default;
   test_bidi_iterator(test_bidi_iterator&&) = default;
   test_bidi_iterator& operator=(test_bidi_iterator&&) = default;
-  constexpr reference_type operator*() const {
+  constexpr reference operator*() const {
     return *begin;
   }
   constexpr test_bidi_iterator& operator++() {
@@ -250,7 +250,7 @@ struct test_random_access_iterator {
   static constexpr std::initializer_list<CharT> empty{};
 
   using value_type = CharT;
-  using reference_type = CharT const&;
+  using reference = CharT const&;
   using difference_type = std::ptrdiff_t;
   using iterator_concept = std::random_access_iterator_tag;
   constexpr test_random_access_iterator()
@@ -263,7 +263,7 @@ struct test_random_access_iterator {
   test_random_access_iterator& operator=(test_random_access_iterator const&) = default;
   test_random_access_iterator(test_random_access_iterator&&) = default;
   test_random_access_iterator& operator=(test_random_access_iterator&&) = default;
-  constexpr reference_type operator*() const {
+  constexpr reference operator*() const {
     return *begin;
   }
   constexpr test_random_access_iterator& operator++() {
@@ -284,7 +284,7 @@ struct test_random_access_iterator {
     --begin;
     return ret;
   }
-  constexpr reference_type operator[](difference_type n) const {
+  constexpr reference operator[](difference_type n) const {
     auto retval = *this;
     retval = retval + n;
     return *retval;
