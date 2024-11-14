@@ -5,4 +5,4 @@
 #include <beman/utf_view/null_term.hpp>
 #include <beman/utf_view/to_utf_view.hpp>
 
-#endif BEMAN_UTF_VIEW_UTF_VIEW_HPP
+#endif // BEMAN_UTF_VIEW_UTF_VIEW_HPP
