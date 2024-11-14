@@ -21,8 +21,6 @@
 #include <string>
 #include <utility>
 
-#include <iostream>
-
 namespace beman::utf_view::tests {
 
 static_assert(
@@ -1501,7 +1499,6 @@ bool decode_test() {
     try {
       func();
     } catch (std::exception const& ex) {
-      std::cout << ex.what();
       return ex.what() == what;
     }
     return false;
