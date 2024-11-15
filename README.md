@@ -118,7 +118,7 @@ beman.utf_view has the following minimum compiler requirements:
 
 ### Dependencies
 
-beman.utf_view depends on [Boost.STLInterfaces](https://github.com/boostorg/stl_interfaces). It brings in this library and its dependencies via git submodules. If you add beman.utf_view to your project your project already uses Boost, it will target your project's stl_interfaces instead of using its own submodule.
+beman.utf_view depends on [beman.iterator_interface](https://github.com/beman-project/iterator_interface). It brings in this library via CMake FetchContent.
 
 ### Instructions
 
