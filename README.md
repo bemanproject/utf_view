@@ -9,7 +9,7 @@ Distributed under the Boost Software License, Version 1.0.
 
 # beman.utf_view: C++26 UTF Transcoding Views
 
-[![CI](https://github.com/beman-project/utf_view/actions/workflows/ci.yml/badge.svg)](https://github.com/beman-project/utf_view/actions) [![Coverage](https://coveralls.io/repos/github/beman-project/utf_view/badge.svg?branch=main)](https://coveralls.io/github/beman-project/utf_view?branch=main)
+[![CI](https://github.com/bemanproject/utf_view/actions/workflows/ci.yml/badge.svg)](https://github.com/bemanproject/utf_view/actions) [![Coverage](https://coveralls.io/repos/github/bemanproject/utf_view/badge.svg?branch=main)](https://coveralls.io/github/bemanproject/utf_view?branch=main)
 
 This repository implements the functionality proposed by P2728 for C++26, including:
 
@@ -118,7 +118,7 @@ beman.utf_view has the following minimum compiler requirements:
 
 ### Dependencies
 
-beman.utf_view depends on [beman.iterator_interface](https://github.com/beman-project/iterator_interface). It brings in this library via CMake FetchContent.
+beman.utf_view depends on [beman.iterator_interface](https://github.com/bemanproject/iterator_interface). It brings in this library via CMake FetchContent.
 
 ### Instructions
 
@@ -135,7 +135,7 @@ This excerpt from the project's CI script provides an example of building the pr
 beman.utf_view is based on P2728.
 
 - The latest official revision of P2728 can be found at https://wg21.link/p2728
-- The unofficial latest draft Markdown source for the paper can be found in this repository at [paper/P2828.md](https://github.com/beman-project/utf_view/blob/main/paper/P2728.md)
+- The unofficial latest draft Markdown source for the paper can be found in this repository at [paper/P2828.md](https://github.com/bemanproject/utf_view/blob/main/paper/P2728.md)
 - The paper's committee status page can be found at https://github.com/cplusplus/papers/issues/1422
 
 ## Authors
