@@ -24,7 +24,7 @@ option(
 
 FetchContent_Declare(
     beman.iterator_interface
-    GIT_REPOSITORY https://github.com/beman-project/iterator_interface.git
+    GIT_REPOSITORY https://github.com/bemanproject/iterator_interface.git
     GIT_TAG 94adc3ea613384dc9da64c9de1a7d9a21395ede7
     EXCLUDE_FROM_ALL
 )
