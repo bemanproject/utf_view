@@ -9,13 +9,15 @@ Distributed under the Boost Software License, Version 1.0.
 
 # beman.utf_view: C++26 UTF Transcoding Views
 
-[![CI](https://github.com/bemanproject/utf_view/actions/workflows/ci.yml/badge.svg)](https://github.com/bemanproject/utf_view/actions) [![Coverage](https://coveralls.io/repos/github/bemanproject/utf_view/badge.svg?branch=main)](https://coveralls.io/github/bemanproject/utf_view?branch=main)
+<img src="https://github.com/bemanproject/beman/blob/main/images/logos/beman_logo-beman_library_under_development.png" style="width:5%; height:auto;">[![CI](https://github.com/bemanproject/utf_view/actions/workflows/ci.yml/badge.svg)](https://github.com/bemanproject/utf_view/actions) [![Coverage](https://coveralls.io/repos/github/bemanproject/utf_view/badge.svg?branch=main)](https://coveralls.io/github/bemanproject/utf_view?branch=main)
 
-This repository implements the functionality proposed by P2728 for C++26, including:
+**Implements**: [P2728](https://wg21.link/p2728) including:
 
 - Transcoding UTF views `to_utf8`, `to_utf16`, and `to_utf32`
 - `null_sentinel` sentinel and `null_term` CPO for creating views of null-terminated strings
 - Casting views for creating views of `charN_t`, which are `as_char8`, `as_char16`, `as_char32`
+
+**Status**: [Under development and not yet ready for production use.](https://github.com/bemanproject/beman/blob/main/docs/BEMAN_LIBRARY_MATURITY_MODEL.md#under-development-and-not-yet-ready-for-production-use)
   
 ## Examples
 
