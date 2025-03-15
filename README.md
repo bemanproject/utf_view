@@ -122,7 +122,7 @@ beman.utf_view has the following minimum compiler requirements:
 
 ### Dependencies
 
-beman.utf_view depends on [beman.iterator_interface](https://github.com/bemanproject/iterator_interface). It brings in this library via CMake FetchContent.
+beman.utf_view depends on [beman.transform_view_26](https://github.com/tzlaine/transform_view_26/). It brings in this library via CMake FetchContent.
 
 ### Instructions
 

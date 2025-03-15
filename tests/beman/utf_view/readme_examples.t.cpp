@@ -10,6 +10,7 @@
 #include <beman/utf_view/null_term.hpp>
 #include <beman/utf_view/to_utf_view.hpp>
 #include <filesystem>
+#include <functional>
 #include <iterator>
 #include <optional>
 #include <ranges>

@@ -9,6 +9,7 @@
 #include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
 #include <framework.hpp>
 #include <test_iterators.hpp>
+#include <cstdint>
 #include <ranges>
 #include <string_view>
 
@@ -17,68 +18,83 @@ namespace beman::utf_view::tests {
 static_assert(
   std::input_iterator<
     std::ranges::iterator_t<
-      as_char8_t_view<
-        std::ranges::subrange<test_input_iterator<char>, std::default_sentinel_t>>>>);
-
+        decltype(
+          std::declval<
+              std::ranges::subrange<test_input_iterator<char>, std::default_sentinel_t>>()
+          | as_char8_t)>>);
 static_assert(
   std::input_iterator<
     std::ranges::iterator_t<
-      as_char8_t_view<
-        std::ranges::subrange<test_comparable_input_iterator<char>,
-                              std::default_sentinel_t>>>>);
-
+        decltype(
+          std::declval<
+              std::ranges::subrange<
+                  test_comparable_input_iterator<char>, std::default_sentinel_t>>()
+          | as_char8_t)>>);
 static_assert(
   std::input_iterator<
     std::ranges::iterator_t<
-      as_char8_t_view<
-        std::ranges::subrange<test_copyable_input_iterator<char>,
-                              std::default_sentinel_t>>>>);
+        decltype(
+          std::declval<
+              std::ranges::subrange<
+                  test_copyable_input_iterator<char>, std::default_sentinel_t>>()
+          | as_char8_t)>>);
 static_assert(
   !std::forward_iterator<
     std::ranges::iterator_t<
-      as_char8_t_view<
-        std::ranges::subrange<test_copyable_input_iterator<char>,
-                              std::default_sentinel_t>>>>);
+        decltype(
+          std::declval<
+              std::ranges::subrange<
+                  test_copyable_input_iterator<char>, std::default_sentinel_t>>()
+          | as_char8_t)>>);
 
 static_assert(
   std::forward_iterator<
     std::ranges::iterator_t<
-      as_char8_t_view<
-        std::ranges::subrange<test_forward_iterator<char>,
-                              std::default_sentinel_t>>>>);
+        decltype(
+          std::declval<
+              std::ranges::subrange<
+                  test_forward_iterator<char>, std::default_sentinel_t>>()
+          | as_char8_t)>>);
 static_assert(
   std::forward_iterator<
-    std::ranges::sentinel_t<
-      as_char8_t_view<
-        std::ranges::subrange<test_forward_iterator<char>,
-                              test_forward_iterator<char>>>>>);
+    std::ranges::iterator_t<
+        decltype(
+          std::declval<
+              std::ranges::subrange<
+                  test_forward_iterator<char>, test_forward_iterator<char>>>()
+          | as_char8_t)>>);
+
 static_assert(
   std::bidirectional_iterator<
     std::ranges::iterator_t<
-      as_char8_t_view<
-        std::ranges::subrange<test_bidi_iterator<char>,
-                              std::default_sentinel_t>>>>);
+        decltype(
+          std::declval<
+              std::ranges::subrange<test_bidi_iterator<char>, std::default_sentinel_t>>()
+          | as_char8_t)>>);
 static_assert(
   std::bidirectional_iterator<
     std::ranges::sentinel_t<
-      as_char8_t_view<
-        std::ranges::subrange<test_bidi_iterator<char>,
-                              test_bidi_iterator<char>>>>>);
+        decltype(
+          std::declval<
+              std::ranges::subrange<test_bidi_iterator<char>, test_bidi_iterator<char>>>()
+          | as_char8_t)>>);
 
 static_assert(
   std::random_access_iterator<
     std::ranges::iterator_t<
-      as_char8_t_view<
-        std::ranges::subrange<test_random_access_iterator<char>,
-                              std::default_sentinel_t>>>>);
+        decltype(
+          std::declval<
+              std::ranges::subrange<
+                  test_random_access_iterator<char>, std::default_sentinel_t>>()
+          | as_char8_t)>>);
 static_assert(
   std::random_access_iterator<
     std::ranges::sentinel_t<
-      as_char8_t_view<
-        std::ranges::subrange<test_random_access_iterator<char>,
-                              test_random_access_iterator<char>>>>>);
-
-// TODO: Comprehensive testing for `code_unit_view`
+        decltype(
+          std::declval<
+              std::ranges::subrange<
+                  test_random_access_iterator<char>, test_random_access_iterator<char>>>()
+          | as_char8_t)>>);
 
 constexpr bool smoke_test() {
   std::string_view foo{"foo"};
@@ -91,8 +107,36 @@ constexpr bool smoke_test() {
   return true;
 }
 
+constexpr bool special_case_test() {
+  std::ranges::empty_view<std::uint8_t> empty_int_view{};
+  auto empty_char8_view{empty_int_view | as_char8_t};
+  static_assert(
+      std::is_same_v<decltype(empty_char8_view), std::ranges::empty_view<char8_t>>);
+  auto char_string_literal_as_char8_view{"foo" | as_char8_t};
+  auto char_string_literal_as_char8_view_it{char_string_literal_as_char8_view.begin()};
+  if (*char_string_literal_as_char8_view_it != u8'f') {
+    return false;
+  }
+  ++char_string_literal_as_char8_view_it;
+  if (*char_string_literal_as_char8_view_it != u8'o') {
+    return false;
+  }
+  ++char_string_literal_as_char8_view_it;
+  if (*char_string_literal_as_char8_view_it != u8'o') {
+    return false;
+  }
+  ++char_string_literal_as_char8_view_it;
+  if (char_string_literal_as_char8_view_it != char_string_literal_as_char8_view.end()) {
+    return false;
+  }
+  return true;
+}
+
 CONSTEXPR_UNLESS_MSVC bool code_unit_view_test() {
   if (!smoke_test()) {
+    return false;
+  }
+  if (!special_case_test()) {
     return false;
   }
   return true;
