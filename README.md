@@ -25,14 +25,14 @@ Distributed under the Boost Software License, Version 1.0.
 
 Transcoding a UTF-8 string literal to a `std::u32string`:
 
-```
+```cpp
 std::u32string hello_world =
   u8"こんにちは世界" | beman::utf_view::to_utf32 | std::ranges::to<std::u32string>();
 ```
 
 Sanitizing potentially invalid Unicode C strings by replacing invalid code units with replacement characters:
 
-```
+```cpp
 template <typename CharT>
 std::basic_string<CharT> sanitize(CharT const* str) {
   return beman::utf_view::null_term(str) | beman::utf_view::to_utf<CharT> | std::ranges::to<std::basic_string<CharT>>();
@@ -41,7 +41,7 @@ std::basic_string<CharT> sanitize(CharT const* str) {
 
 Returning the final non-ASCII code point in a string, transcoding backwards lazily:
 
-```
+```cpp
 std::optional<char32_t> last_nonascii(std::ranges::view auto str) {
   for (auto c : str | beman::utf_view::to_utf32 | std::views::reverse 
                     | std::views::filter([](char32_t c) { return c > 0x7f; })
@@ -57,7 +57,7 @@ Transcoding strings and throwing a descriptive exception on invalid UTF:
 (This example assumes the existence of the `enum_to_string` sample function
 from [P2996](https://isocpp.org/files/papers/P2996R6.html#enum-to-string))
 
-```
+```cpp
 template <typename FromChar, typename ToChar>
 std::basic_string<ToChar> transcode_or_throw(std::basic_string_view<FromChar> input) {
   std::basic_string<ToChar> result;
@@ -77,7 +77,7 @@ std::basic_string<ToChar> transcode_or_throw(std::basic_string_view<FromChar> in
 
 Changing the suits of Unicode playing card characters:
 
-```
+```cpp
 enum class suit : std::uint8_t {
   spades = 0xA,
   hearts = 0xB,
