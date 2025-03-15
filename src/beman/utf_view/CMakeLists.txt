@@ -16,7 +16,8 @@ target_include_directories(
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_LOWER_PROJECT_NAME}> # <prefix>/include/beman/utf_view
 )
 
-target_link_libraries(beman_utf_view INTERFACE beman::iterator_interface)
+target_link_libraries(
+  beman_utf_view INTERFACE beman::transform_view_26)
 
 install(
   TARGETS beman_utf_view

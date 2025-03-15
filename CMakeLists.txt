@@ -23,13 +23,13 @@ option(
 )
 
 FetchContent_Declare(
-    beman.iterator_interface
-    GIT_REPOSITORY https://github.com/bemanproject/iterator_interface.git
-    GIT_TAG 94adc3ea613384dc9da64c9de1a7d9a21395ede7
+    beman.transform_view_26
+    GIT_REPOSITORY https://github.com/tzlaine/transform_view_26.git
+    GIT_TAG a939df439de83be949349c662344563263f81ecd
     EXCLUDE_FROM_ALL
 )
 
-FetchContent_MakeAvailable(beman.iterator_interface)
+FetchContent_MakeAvailable(beman.transform_view_26)
 
 add_subdirectory(src/beman/utf_view)
 
