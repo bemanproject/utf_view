@@ -130,7 +130,7 @@ This excerpt from the project's CI script provides an example of building the pr
 
     mkdir "$checkout/build"
     cd "$checkout/build"
-    cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=23 -DUTF_VIEW_BUILD_TESTING=On "$@"
+    cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=23 -DBEMAN_UTF_VIEW_BUILD_TESTING=On "$@"
     cmake --build . --parallel
     ctest -C Debug
 
