@@ -51,7 +51,7 @@ jobs:
         with:
           path-to-lcov: ${{runner.workspace}}/utf_view/build/coverage.info
           github-token: ${{ secrets.GITHUB_TOKEN }}
-  clang-linux:
+  clang-19-linux-libcpp:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/ednolan/ubuntu24.10_clang19.1.1
@@ -63,6 +63,18 @@ jobs:
       - name: Run
         run: |
           cmake --workflow --preset llvm-19-libc++-debug
+  clang-20-linux-libcpp:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/ednolan/ubuntu24.10_clang20.1.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Run
+        run: |
+          cmake --workflow --preset llvm-libc++-debug
   msvc-windows:
     runs-on: windows-latest
     steps:
