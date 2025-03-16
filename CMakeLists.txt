@@ -12,7 +12,7 @@ include(FetchContent)
 
 option(
     BEMAN_UTF_VIEW_BUILD_TESTING
-    "Enable building tests and test infrastructure. Default: ON. Values: { ON, OFF }."
+    "Enable building tests and test infrastructure. Default: ${PROJECT_IS_TOP_LEVEL}. Values: { ON, OFF }."
     ${PROJECT_IS_TOP_LEVEL}
 )
 
