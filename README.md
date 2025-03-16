@@ -108,31 +108,178 @@ void change_playing_card_suits() {
 }
 ```
 
-## How to Build
 
-### Minimum Requirements
 
-beman.utf_view requires being built in C++23 mode.
 
-beman.utf_view has the following minimum compiler requirements:
+
+## Dependencies
+
+### Software
+
+beman.utf_view depends on [beman.transform_view_26](https://github.com/tzlaine/transform_view_26/). It brings in this library via CMake FetchContent.
+
+### Build Environment
+
+This project requires at least the following to build:
+
+* C++23
+* CMake 3.27
+
+You can disable building tests by setting cmake option
+[`BEMAN_UTF_VIEW_BUILD_TESTS`](#beman_exemplar_build_tests) to `OFF`
+when configuring the project.
+
+### Supported Platforms
+
+This project officially supports:
 
 - GCC 14
 - Clang 19
 - MSVC 19.41
 
-### Dependencies
+## Development
 
-beman.utf_view depends on [beman.transform_view_26](https://github.com/tzlaine/transform_view_26/). It brings in this library via CMake FetchContent.
+### Develop locally on your machines
 
-### Instructions
+<details>
+<summary> For Linux based systems </summary>
 
-This excerpt from the project's CI script provides an example of building the project and running the tests:
+Beman libraries require [recent versions of CMake](#build-environment),
+we advise you to download CMake directly from [CMake's website](https://cmake.org/download/)
+or install it via the [Kitware apt library](https://apt.kitware.com/).
 
-    mkdir "$checkout/build"
-    cd "$checkout/build"
-    cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=23 -DBEMAN_UTF_VIEW_BUILD_TESTING=On "$@"
-    cmake --build . --parallel
-    ctest -C Debug
+A [supported compiler](#supported-platforms) should be available from your package manager.
+Alternatively you could use an install script from official compiler vendors.
+
+Here is an example of how to install the latest stable version of clang
+as per [the official LLVM install guide](https://apt.llvm.org/).
+
+```bash
+bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+```
+
+If the included test suite is being built and run, a GoogleTest library will be
+required. Here is an example of installing GoogleTest on a Debian-based Linux
+environment:
+
+```bash
+apt install libgtest-dev
+```
+
+The precise command and package name will vary depending on the Linux OS you are
+using. Be sure to consult documentation and the package repository for the system
+you are using.
+
+</details>
+
+<details>
+<summary> For MacOS based systems </summary>
+
+Beman libraries require [recent versions of CMake](#build-environment).
+You can use [`Homebrew`](https://brew.sh/) to install the latest major version of CMake.
+
+```bash
+brew install cmake
+```
+
+A [supported compiler](#supported-platforms) is also available from brew.
+
+For example, you can install the latest major release of Clang as:
+
+```bash
+brew install llvm
+```
+
+</details>
+
+### Configure and Build the Project Using CMake Presets
+
+This project recommends using [CMake Presets](https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html)
+to configure, build and test the project.
+Appropriate presets for major compilers have been included by default.
+You can use `cmake --list-presets` to see all available presets.
+
+Here is an example to invoke the `gcc-debug` preset.
+
+```shell
+cmake --workflow --preset gcc-debug
+```
+
+Generally, there are two kinds of presets, `debug` and `release`.
+
+The `debug` presets are designed to aid development, so it has debugging
+instrumentation enabled and as many sanitizers turned on as possible.
+
+> [!NOTE]
+>
+> The set of sanitizer supports are different across compilers.
+> You can checkout the exact set of compiler arguments by looking at the toolchain
+> files under the [`cmake`](cmake/) directory.
+
+The `release` presets are designed for use in production environments,
+thus they have the highest optimization turned on (e.g. `O3`).
+
+### Configure and Build Manually
+
+While [CMake Presets](#configure-and-build-the-project-using-cmake-presets) are
+convenient, you might want to set different configuration or compiler arguments
+than any provided preset supports.
+
+To configure, build and test the project with extra arguments,
+you can run this set of commands.
+
+```bash
+cmake -B build -S . -DCMAKE_CXX_STANDARD=23 # Your extra arguments here.
+cmake --build build
+ctest --test-dir build
+```
+
+> [!IMPORTANT]
+>
+> Beman projects are
+> [passive projects](https://github.com/bemanproject/beman/blob/main/docs/BEMAN_STANDARD.md#cmake),
+> therefore,
+> you will need to specify the C++ version via `CMAKE_CXX_STANDARD`
+> when manually configuring the project.
+
+### Project specific configure arguments
+
+When configuring the project manually,
+you can pass an array of project specific CMake configs to customize your build.
+
+Project specific options are prefixed with `BEMAN_UTF_VIEW`.
+You can see the list of available options with:
+
+```bash
+cmake -LH | grep "BEMAN_UTF_VIEW" -C 2
+```
+
+<details>
+
+<summary> Details of CMake arguments. </summary>
+
+#### `BEMAN_UTF_VIEW_BUILD_TESTS`
+
+Enable building tests and test infrastructure. Default: ON.
+Values: { ON, OFF }.
+
+You can configure the project to have this option turned off via:
+
+```bash
+cmake -B build -S . -DCMAKE_CXX_STANDARD=20 -DBEMAN_UTF_VIEW_BUILD_TESTS=OFF
+```
+
+> [!TIP]
+> Because this project requires Google Tests as part of its development
+> dependency,
+> disable building tests avoids the project from pulling Google Tests from
+> GitHub.
+
+#### `BEMAN_UTF_VIEW_BUILD_PAPER`
+
+Enable building the HTML version of P2728 from its markdown sources. Default: ON. Values: { ON, OFF }.
+
+</details>
 
 ## Paper
 

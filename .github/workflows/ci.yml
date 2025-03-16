@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  gcc-linux:
+  gcc-linux-preset:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/ednolan/ubuntu24.10_gcc14.2.0
@@ -21,7 +21,27 @@ jobs:
           submodules: recursive
       - name: Run
         run: |
-          ./ci.sh -DCMAKE_CXX_FLAGS='-fsanitize=address -fsanitize=undefined -fsanitize-undefined-trap-on-error -coverage' -DBEMAN_UTF_VIEW_BUILD_PAPER=ON
+          cmake --workflow --preset gcc-debug
+      - name: Build paper
+        run: |
+          cmake -B build/gcc-debug -DBEMAN_UTF_VIEW_BUILD_PAPER=ON
+          cmake --build build/gcc-debug
+  gcc-linux-coverage:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/ednolan/ubuntu24.10_gcc14.2.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Run
+        run: |
+          cmake -GNinja -B build -S . -DCMAKE_CXX_STANDARD=23 -DCMAKE_TOOLCHAIN_FILE=cmake/gnu-toolchain.cmake -DCMAKE_CXX_FLAGS="-coverage"
+          cmake --build build --config Debug --parallel
+          ctest --test-dir build --build-config Debug
+        env:
+          CMAKE_GENERATOR: "Ninja Multi-Config"
       - name: Coverage
         run: |
           lcov --directory ./build --capture --output-file ./build/coverage_all.info
@@ -34,7 +54,7 @@ jobs:
   clang-linux:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ednolan/ubuntu24.10_clang19.1.0rc3
+      image: ghcr.io/ednolan/ubuntu24.10_clang19.1.1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,10 +62,18 @@ jobs:
           submodules: recursive
       - name: Run
         run: |
-          ./ci.sh -DCMAKE_CXX_FLAGS='-fsanitize=address -fsanitize=undefined -fsanitize-undefined-trap-on-error -stdlib=libc++'
+          cmake --workflow --preset llvm-19-libc++-debug
   msvc-windows:
     runs-on: windows-latest
     steps:
+      - name: Setup build environment
+        uses: lukka/get-cmake@latest
+        with:
+          ninjaVersion: "latest"
+      - name: Setup MSVC
+        uses: TheMrMilchmann/setup-msvc-dev@v3
+        with:
+          arch: x64
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -53,4 +81,4 @@ jobs:
       - name: Run
         shell: bash
         run: |
-          ./ci.sh
+          cmake --workflow --preset msvc-debug
