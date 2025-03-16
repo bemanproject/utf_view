@@ -11,7 +11,7 @@ project(beman.utf_view CXX)
 include(FetchContent)
 
 option(
-    UTF_VIEW_BUILD_TESTING
+    BEMAN_UTF_VIEW_BUILD_TESTING
     "Enable building tests and test infrastructure. Default: ON. Values: { ON, OFF }."
     ${PROJECT_IS_TOP_LEVEL}
 )
@@ -37,7 +37,7 @@ if (BEMAN_UTF_VIEW_BUILD_PAPER)
   add_subdirectory(paper)
 endif()
 
-if (UTF_VIEW_BUILD_TESTING)
+if (BEMAN_UTF_VIEW_BUILD_TESTING)
     enable_testing()
     add_subdirectory(tests/beman/utf_view)
 endif()
