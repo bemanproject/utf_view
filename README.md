@@ -134,7 +134,7 @@ This excerpt from the project's CI script provides an example of building the pr
     cmake --build . --parallel
     ctest -C Debug
 
-### Paper
+## Paper
 
 beman.utf_view is based on P2728.
 
