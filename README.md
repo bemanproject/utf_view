@@ -158,38 +158,6 @@ as per [the official LLVM install guide](https://apt.llvm.org/).
 bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
 ```
 
-If the included test suite is being built and run, a GoogleTest library will be
-required. Here is an example of installing GoogleTest on a Debian-based Linux
-environment:
-
-```bash
-apt install libgtest-dev
-```
-
-The precise command and package name will vary depending on the Linux OS you are
-using. Be sure to consult documentation and the package repository for the system
-you are using.
-
-</details>
-
-<details>
-<summary> For MacOS based systems </summary>
-
-Beman libraries require [recent versions of CMake](#build-environment).
-You can use [`Homebrew`](https://brew.sh/) to install the latest major version of CMake.
-
-```bash
-brew install cmake
-```
-
-A [supported compiler](#supported-platforms) is also available from brew.
-
-For example, you can install the latest major release of Clang as:
-
-```bash
-brew install llvm
-```
-
 </details>
 
 ### Configure and Build the Project Using CMake Presets
@@ -268,12 +236,6 @@ You can configure the project to have this option turned off via:
 ```bash
 cmake -B build -S . -DCMAKE_CXX_STANDARD=20 -DBEMAN_UTF_VIEW_BUILD_TESTS=OFF
 ```
-
-> [!TIP]
-> Because this project requires Google Tests as part of its development
-> dependency,
-> disable building tests avoids the project from pulling Google Tests from
-> GitHub.
 
 #### `BEMAN_UTF_VIEW_BUILD_PAPER`
 
