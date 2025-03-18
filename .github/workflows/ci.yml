@@ -13,7 +13,7 @@ jobs:
   gcc-linux-preset:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ednolan/ubuntu24.10_gcc14.2.0
+      image: ghcr.io/bemanproject/testing-images:gnu-14
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,11 +22,7 @@ jobs:
       - name: Run
         run: |
           cmake --workflow --preset gcc-debug
-      - name: Build paper
-        run: |
-          cmake -B build/gcc-debug -DBEMAN_UTF_VIEW_BUILD_PAPER=ON
-          cmake --build build/gcc-debug
-  gcc-linux-coverage:
+  gcc-linux-coverage-and-paper:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/ednolan/ubuntu24.10_gcc14.2.0
@@ -37,7 +33,7 @@ jobs:
           submodules: recursive
       - name: Run
         run: |
-          cmake -GNinja -B build -S . -DCMAKE_CXX_STANDARD=23 -DCMAKE_TOOLCHAIN_FILE=cmake/gnu-toolchain.cmake -DCMAKE_CXX_FLAGS="-coverage"
+          cmake -GNinja -B build -S . -DCMAKE_CXX_STANDARD=23 -DCMAKE_TOOLCHAIN_FILE=cmake/gnu-toolchain.cmake -DBEMAN_UTF_VIEW_BUILD_PAPER=ON -DCMAKE_CXX_FLAGS="-coverage"
           cmake --build build --config Debug --parallel
           ctest --test-dir build --build-config Debug
         env:
