@@ -13,7 +13,7 @@ jobs:
   gcc-linux-preset:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/bemanproject/testing-images:gnu-14
+      image: ghcr.io/bemanproject/infra:test-gnu-14
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,7 +25,7 @@ jobs:
   gcc-linux-coverage-and-paper:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ednolan/ubuntu24.10_gcc14.2.0
+      image: ghcr.io/bemanproject/infra:test-gnu-14
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -50,7 +50,7 @@ jobs:
   clang-19-linux-libcpp:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ednolan/ubuntu24.10_clang19.1.1
+      image: ghcr.io/bemanproject/infra:test-llvm-19
     steps:
       - name: Checkout
         uses: actions/checkout@v4
