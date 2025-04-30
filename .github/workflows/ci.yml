@@ -2,8 +2,6 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
@@ -62,7 +60,7 @@ jobs:
   clang-20-linux-libcpp:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ednolan/ubuntu24.10_clang20.1.0
+      image: ghcr.io/bemanproject/infra:test-llvm-20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
