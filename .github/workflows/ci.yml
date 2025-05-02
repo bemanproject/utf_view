@@ -31,6 +31,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+      - name: Install lcov
+        run: sudo apt-get install -y lcov
       - name: Run
         run: |
           cmake -GNinja -B build -S . -DCMAKE_CXX_STANDARD=23 -DCMAKE_TOOLCHAIN_FILE=cmake/gnu-toolchain.cmake -DBEMAN_UTF_VIEW_BUILD_PAPER=ON -DCMAKE_CXX_FLAGS="-coverage"
