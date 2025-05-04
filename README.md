@@ -134,6 +134,7 @@ when configuring the project.
 This project officially supports:
 
 - GCC 14
+- GCC 15
 - Clang 19/libc++
 - Clang 20/libc++
 - MSVC 19.41

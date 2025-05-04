@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  gcc-linux-preset:
+  gcc14-linux-preset:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/bemanproject/testing-images:gnu-14
@@ -22,10 +22,22 @@ jobs:
       - name: Run
         run: |
           cmake --workflow --preset gcc-debug
-  gcc-linux-coverage-and-paper:
+  gcc15-linux-preset:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ednolan/ubuntu24.10_gcc14.2.0
+      image: ghcr.io/ednolan/fedora42_gcc15.1.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Run
+        run: |
+          cmake --workflow --preset gcc-debug
+  gcc15-linux-coverage-and-paper:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/ednolan/fedora42_gcc15.1.0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
