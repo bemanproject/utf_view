@@ -52,4 +52,25 @@ constexpr bool null_sentinel_forward_iterator_test() {
 static_assert(null_sentinel_input_iterator_test());
 static_assert(null_sentinel_forward_iterator_test());
 
+constexpr bool null_sentinel_by_reference_input_iterator_test() {
+  int total = 0;
+  std_archetypes::input_iterator_archetype it{254};
+  for (auto x : ext_null_term_by_reference(std::move(it))) {
+    total += x.x;
+  }
+  return total == 254 + 255;
+}
+
+constexpr bool null_sentinel_by_reference_forward_iterator_test() {
+  int total = 0;
+  std_archetypes::forward_iterator_archetype it{254};
+  for (auto x : ext_null_term_by_reference(it)) {
+    total += x.x;
+  }
+  return total == 254 + 255;
+}
+
+static_assert(null_sentinel_by_reference_input_iterator_test());
+static_assert(null_sentinel_by_reference_forward_iterator_test());
+
 } // namespace beman::utf_view::tests
