@@ -17,7 +17,8 @@ Distributed under the Boost Software License, Version 1.0.
 - Casting views for creating views of `charN_t`, which are `as_char8`, `as_char16`, `as_char32`
 
 **Implements**: [Unicode in the Library, Part 1: UTF Transcoding
-(P2728R7)](https://wg21.link/P2728R7)
+(P2728R7)](https://wg21.link/P2728R7) and [A Sentinel for Null-Terminated Strings
+(P3705R0)](https://wg21.link/P3705R0)
 
 **Status**: [Under development and not yet ready for production use.](https://github.com/bemanproject/beman/blob/main/docs/BEMAN_LIBRARY_MATURITY_MODEL.md#under-development-and-not-yet-ready-for-production-use)
   
@@ -107,10 +108,6 @@ void change_playing_card_suits() {
   assert(hearts == u8"🂱🂲🂳🂴🂵🂶🂷🂸🂹🂺🂻🂽🂾");
 }
 ```
-
-
-
-
 
 ## Dependencies
 
@@ -258,21 +255,24 @@ cmake -B build -S . -DCMAKE_CXX_STANDARD=23 -DBEMAN_UTF_VIEW_BUILD_TESTS=OFF
 
 #### `BEMAN_UTF_VIEW_BUILD_PAPER`
 
-Enable building the HTML version of P2728 from its markdown sources. Default: ON. Values: { ON, OFF }.
+Enable building the HTML version of P2728 and P3705 from their markdown sources. Default: ON. Values: { ON, OFF }.
 
 </details>
 
 ## Paper
 
-beman.utf_view is based on P2728.
+beman.utf_view is based on P2728 and P3705.
 
 - The latest official revision of P2728 can be found at https://wg21.link/p2728
-- The unofficial latest draft Markdown source for the paper can be found in this repository at [paper/P2828.md](https://github.com/bemanproject/utf_view/blob/main/paper/P2728.md)
-- The paper's committee status page can be found at https://github.com/cplusplus/papers/issues/1422
+- The latest official revision of P3705 can be found at https://wg21.link/p3705
+- The unofficial latest draft Markdown source for each paper can be found in this repository:
+  - At [paper/P2828.md](https://github.com/bemanproject/utf_view/blob/main/paper/P2728.md)
+  - At [paper/P3705.md](https://github.com/bemanproject/utf_view/blob/main/paper/P3705.md)
+- P2728's committee status page can be found at https://github.com/cplusplus/papers/issues/1422
 
 ## Authors
 
-This implementation of P2728 is a fork by Eddie Nolan of the implementation of P2728R6 in libstdc++ by Jonathan Wakely at [`gcc/libstdc++-v3/include/bits/unicode.h`](https://gcc.gnu.org/git/?p=gcc.git;a=blob;f=libstdc%2B%2B-v3/include/bits/unicode.h;h=66f8399fdfb05d85fcdb37fa9ec7c4089feb7a7d;hb=37a4c5c23a27).
+The implementation of P2728 is a fork by Eddie Nolan of the implementation of P2728R6 in libstdc++ by Jonathan Wakely at [`gcc/libstdc++-v3/include/bits/unicode.h`](https://gcc.gnu.org/git/?p=gcc.git;a=blob;f=libstdc%2B%2B-v3/include/bits/unicode.h;h=66f8399fdfb05d85fcdb37fa9ec7c4089feb7a7d;hb=37a4c5c23a27).
 
 ## License
 

@@ -9,6 +9,8 @@
 #include <beman/utf_view/code_unit_view.hpp>
 #include <beman/utf_view/null_term.hpp>
 #include <beman/utf_view/to_utf_view.hpp>
+#include <algorithm>
+#include <array>
 #include <filesystem>
 #include <functional>
 #include <iterator>
@@ -153,6 +155,32 @@ bool change_playing_card_suit_test() {
   }
   return true;
 }
+#endif
+
+#ifdef __cpp_lib_containers_ranges
+static_assert(std::string{std::from_range, "Brubeck" | std::views::take(5)} == "Brube");
+// static_assert(std::string{std::from_range, "Dave" | std::views::take(5)} == "Dave"); // fails
+using namespace std::string_view_literals;
+static_assert(std::string{std::from_range, "Dave" | std::views::take(5)} == "Dave\0"sv); // passes
+static_assert(std::is_same_v<std::remove_reference_t<decltype("foo")>, const char[4]>);
+static_assert(std::ranges::equal("foo", std::array{'f', 'o', 'o', '\0'}));
+constexpr std::string take_five_a(char const* long_string) {
+  std::string_view const long_string_view = long_string; // read all of long_string!
+  return std::string{std::from_range, long_string_view | std::views::take(5)};
+}
+constexpr std::string take_five_b(char const* long_string) {
+  std::ranges::subrange const long_string_range(long_string, null_sentinel); // lazy!
+  return std::string{std::from_range, long_string_range | std::views::take(5)};
+}
+constexpr std::string take_five_c(char const* long_string) {
+  return std::string{std::from_range, null_term(long_string) | std::views::take(5)};
+}
+static_assert(take_five_a("Dave") == "Dave"sv); // passes
+static_assert(take_five_a("Brubeck") == "Brube"sv); // passes
+static_assert(take_five_b("Dave") == "Dave"sv); // passes
+static_assert(take_five_b("Brubeck") == "Brube"sv); // passes
+static_assert(take_five_c("Dave") == "Dave"sv); // passes
+static_assert(take_five_c("Brubeck") == "Brube"sv); // passes
 #endif
 
 bool readme_examples() {

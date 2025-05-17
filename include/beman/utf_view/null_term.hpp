@@ -40,21 +40,39 @@ struct null_sentinel_t {
 
 inline constexpr null_sentinel_t null_sentinel;
 
+struct ext_null_sentinel_by_reference_t {
+  template <std::input_iterator I>
+  requires exposition_only_default_initializable_and_equality_comparable_iter_value<I>
+  friend constexpr bool operator==(I const& it, ext_null_sentinel_by_reference_t) {
+    return *it == std::iter_value_t<I>{};
+  }
+};
+
+inline constexpr ext_null_sentinel_by_reference_t ext_null_sentinel_by_reference;
+
 /* !PAPER */
 
 namespace detail {
 
   struct null_term_impl {
-    template <std::input_iterator I>
-      requires exposition_only_default_initializable_and_equality_comparable_iter_value<I>
-    constexpr auto operator()(I it) const {
-      return std::ranges::subrange(std::move(it), null_sentinel);
+    template <typename I>
+    constexpr auto operator()(I&& it) const {
+      return std::ranges::subrange(std::forward<I>(it), null_sentinel);
+    }
+  };
+
+  struct null_term_by_reference_impl {
+    template <typename I>
+    constexpr auto operator()(I&& it) const {
+      return std::ranges::subrange(std::forward<I>(it), ext_null_sentinel_by_reference);
     }
   };
 
 } // namespace detail
 
 inline constexpr detail::null_term_impl null_term;
+
+inline constexpr detail::null_term_by_reference_impl ext_null_term_by_reference;
 
 /* PAPER: inline constexpr @*unspecified*@ null_term; */
 /* PAPER: */
