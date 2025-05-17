@@ -253,7 +253,7 @@ Values: { ON, OFF }.
 You can configure the project to have this option turned off via:
 
 ```bash
-cmake -B build -S . -DCMAKE_CXX_STANDARD=20 -DBEMAN_UTF_VIEW_BUILD_TESTS=OFF
+cmake -B build -S . -DCMAKE_CXX_STANDARD=23 -DBEMAN_UTF_VIEW_BUILD_TESTS=OFF
 ```
 
 #### `BEMAN_UTF_VIEW_BUILD_PAPER`
