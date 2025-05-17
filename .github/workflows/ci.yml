@@ -13,7 +13,7 @@ jobs:
   gcc14-linux-preset:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/bemanproject/testing-images:gnu-14
+      image: ghcr.io/bemanproject/testingcontainers-gcc:14
     steps:
       - name: Checkout
         uses: actions/checkout@v4
