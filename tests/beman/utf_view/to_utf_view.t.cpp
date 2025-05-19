@@ -7,6 +7,7 @@
 
 #include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
 #include <beman/utf_view/detail/erroneous_behavior_global.hpp>
+#include <beman/utf_view/null_term.hpp>
 #include <beman/utf_view/to_utf_view.hpp>
 #include <framework.hpp>
 #include <test_iterators.hpp>
