@@ -25,7 +25,7 @@ jobs:
   gcc15-linux-preset:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ednolan/fedora42_gcc15.1.0
+      image: ghcr.io/ednolan/fedora42_gcc15.1.1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,7 +37,7 @@ jobs:
   gcc15-linux-coverage-and-paper:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ednolan/fedora42_gcc15.1.0
+      image: ghcr.io/ednolan/fedora42_gcc15.1.1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
