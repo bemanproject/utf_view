@@ -17,7 +17,7 @@ Distributed under the Boost Software License, Version 1.0.
 - Casting views for creating views of `charN_t`, which are `as_char8`, `as_char16`, `as_char32`
 
 **Implements**: [Unicode in the Library, Part 1: UTF Transcoding
-(P2728R7)](https://wg21.link/P2728R&)
+(P2728R7)](https://wg21.link/P2728R7)
 
 **Status**: [Under development and not yet ready for production use.](https://github.com/bemanproject/beman/blob/main/docs/BEMAN_LIBRARY_MATURITY_MODEL.md#under-development-and-not-yet-ready-for-production-use)
   
