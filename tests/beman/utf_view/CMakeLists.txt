@@ -28,3 +28,9 @@ add_executable(
 target_link_libraries(beman_utf_view_test "$<LINK_LIBRARY:WHOLE_ARCHIVE,beman_utf_view_test_lib>")
 
 add_test(NAME beman_utf_view_test COMMAND beman_utf_view_test)
+
+add_executable(
+  null_term_argv_environ
+  null_term_argv_environ.t.cpp)
+
+target_link_libraries(null_term_argv_environ beman_utf_view)
