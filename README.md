@@ -18,7 +18,7 @@ Distributed under the Boost Software License, Version 1.0.
 
 **Implements**: [Unicode in the Library, Part 1: UTF Transcoding
 (P2728R7)](https://wg21.link/P2728R7) and [A Sentinel for Null-Terminated Strings
-(P3705R0)](https://wg21.link/P3705R0)
+(P3705R2)](https://isocpp.org/files/papers/P3705R2.html)
 
 **Status**: [Under development and not yet ready for production use.](https://github.com/bemanproject/beman/blob/main/docs/BEMAN_LIBRARY_MATURITY_MODEL.md#under-development-and-not-yet-ready-for-production-use)
   
