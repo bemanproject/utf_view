@@ -7,11 +7,11 @@ Distributed under the Boost Software License, Version 1.0.
          https://www.boost.org/LICENSE_1_0.txt)
 -->
 
-# beman.utf_view: C++26 UTF Transcoding Views
+# beman.utf_view: C++29 UTF Transcoding Views
 
-![Library Status](https://raw.githubusercontent.com/bemanproject/beman/refs/heads/main/images/badges/beman_badge-beman_library_under_development.svg) [![CI](https://github.com/bemanproject/utf_view/actions/workflows/ci.yml/badge.svg)](https://github.com/bemanproject/utf_view/actions) [![Coverage](https://coveralls.io/repos/github/bemanproject/utf_view/badge.svg?branch=main)](https://coveralls.io/github/bemanproject/utf_view?branch=main)
+![Library Status](https://raw.githubusercontent.com/bemanproject/beman/refs/heads/main/images/badges/beman_badge-beman_library_under_development.svg) [![CI](https://github.com/bemanproject/utf_view/actions/workflows/ci.yml/badge.svg)](https://github.com/bemanproject/utf_view/actions) [![Coverage](https://coveralls.io/repos/github/bemanproject/utf_view/badge.svg?branch=main)](https://coveralls.io/github/bemanproject/utf_view?branch=main) ![Standard Target](https://github.com/bemanproject/beman/blob/main/images/badges/cpp29.svg)
 
- C++26 UTF transcoding features:
+ C++29 UTF transcoding features:
 - Transcoding UTF views `to_utf8`, `to_utf16`, and `to_utf32`
 - `null_sentinel` sentinel and `null_term` CPO for creating views of null-terminated strings
 - Casting views for creating views of `charN_t`, which are `as_char8`, `as_char16`, `as_char32`
