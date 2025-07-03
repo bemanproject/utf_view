@@ -13,7 +13,7 @@ jobs:
   gcc14-linux-preset:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ednolan/containers2-gcc:14.3.0
+      image: ghcr.io/bemanproject/infra-containers-gcc:14.3.0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,7 +25,7 @@ jobs:
   gcc15-linux-preset:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ednolan/containers2-gcc:14.3.0
+      image: ghcr.io/bemanproject/infra-containers-gcc:14.3.0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,7 +37,7 @@ jobs:
   gcc15-linux-coverage-and-paper:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ednolan/containers2-gcc:15.1.0
+      image: ghcr.io/bemanproject/infra-containers-gcc:15.1.0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -64,7 +64,7 @@ jobs:
   clang-19-linux-libcpp:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ednolan/containers2-clang:19.1.7
+      image: ghcr.io/bemanproject/infra-containers-clang:19.1.7
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -76,7 +76,7 @@ jobs:
   clang-20-linux-libcpp:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/ednolan/containers2-clang:20.1.7
+      image: ghcr.io/bemanproject/infra-containers-clang:20.1.7
     steps:
       - name: Checkout
         uses: actions/checkout@v4
