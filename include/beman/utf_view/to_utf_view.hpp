@@ -629,7 +629,7 @@ public:
         buf_last_ = 1;
       } else if constexpr (std::is_same_v<ToType, char16_t>) {
         if (c <= std::numeric_limits<char16_t>::max()) {
-          buf_[0] = c;
+          buf_[0] = static_cast<char16_t>(c);
           buf_[1] = 0;
           buf_last_ = 1;
         } else {
@@ -644,7 +644,7 @@ public:
       } else if constexpr (std::is_same_v<ToType, char8_t>) {
         int bits = std::bit_width(static_cast<std::uint32_t>(c));
         if (bits <= 7) [[likely]] {
-          buf_[0] = c;
+          buf_[0] = static_cast<char8_t>(c);
           buf_[1] = buf_[2] = buf_[3] = 0;
           buf_last_ = 1;
         } else if (bits <= 11) {
@@ -800,7 +800,8 @@ public:
           }
         }
       } else {
-        return {.decode_result{.c{*it}, .to_incr{1}, .success{}}, .new_curr{it}};
+        return {.decode_result{.c{static_cast<char32_t>(*it)}, .to_incr{1}, .success{}},
+                .new_curr{it}};
       }
     }
 
