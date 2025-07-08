@@ -186,8 +186,6 @@ you are using.
 
 </details>
 
-<details>
-
 ### Configure and Build the Project Using CMake Presets
 
 This project recommends using [CMake Presets](https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html)
