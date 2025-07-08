@@ -397,7 +397,6 @@ constexpr bool bidi_iterator_test(std::initializer_list<CharT> const single_arr)
   test_bidi_iterator single_begin(single_arr);
   std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
   auto single_view{to_utf32_view(std::move(subrange))};
-  using single_view_iter_type = decltype(single_view.begin());
   std::u32string single_u32{single_view | std::ranges::to<std::u32string>()};
   if (single_u32.size() != 1 || single_u32.at(0) != U'x') {
     return false;
@@ -985,8 +984,8 @@ CONSTEXPR_UNLESS_MSVC bool rvalue_array_test() {
 struct iconv_t { };
 
 // For the sake of simplicity, this iconv only converts between UTF-8 and UTF-32.
-size_t iconv(iconv_t cd, const char** inbuf, size_t* inbytesleft, char** outbuf,
-             size_t* outbytesleft) {
+size_t iconv([[maybe_unused]] iconv_t cd, const char** inbuf, size_t* inbytesleft,
+             char** outbuf, size_t* outbytesleft) {
   if (!inbuf) {
     return 0;
   }
@@ -1048,7 +1047,8 @@ bool iconv_test() {
     std::size_t inbytesleft{sizeof(input)};
     std::size_t outbytesleft{sizeof(output)};
     std::size_t result{iconv(iconv_t{}, &inbuf, &inbytesleft, &outbuf, &outbytesleft)};
-    if (!(output == std::array{'\0', '\0', '\0', '\xe9'} && inbytesleft == 0 &&
+    if (!(result == 0 &&
+          output == std::array{'\0', '\0', '\0', '\xe9'} && inbytesleft == 0 &&
           outbytesleft == 0)) {
       return false;
     }
@@ -1149,7 +1149,7 @@ constexpr char16_t* u_strFromUTF8WithSub(char16_t* dest, int32_t destCapacity,
         }
         write(*it);
       } else {
-        if (subchar == -1) {
+        if (subchar == static_cast<char32_t>(-1)) {
           *pErrorCode = U_INVALID_CHAR_FOUND;
           return dest;
         } else {
@@ -1667,6 +1667,7 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
 }
 
 bool utf_view_eb_tests() {
+#ifndef NDEBUG
   if (!past_the_end_increment_eb_test()) {
     return false;
   }
@@ -1676,6 +1677,7 @@ bool utf_view_eb_tests() {
   if (!before_the_beginning_decrement_eb_test()) {
     return false;
   }
+#endif
   return true;
 }
 

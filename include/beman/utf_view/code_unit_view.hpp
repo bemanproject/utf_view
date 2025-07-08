@@ -9,7 +9,7 @@
 #define BEMAN_UTF_VIEW_CODE_UNIT_VIEW_HPP
 
 #include <beman/utf_view/detail/concepts.hpp>
-#include <beman/transform_view_26/transform_view.hpp>
+#include <beman/transform_view/transform_view.hpp>
 #include <ranges>
 #include <type_traits>
 
@@ -51,10 +51,10 @@ namespace detail {
           --last;
         }
         std::ranges::subrange subrange(first, last);
-        return beman::transform_view_26::transform_view(
+        return beman::transform_view::transform_view(
             std::move(subrange), exposition_only_implicit_cast_to<Char>{});
       } else {
-        return beman::transform_view_26::transform_view(
+        return beman::transform_view::transform_view(
             std::move(r), exposition_only_implicit_cast_to<Char>{});
       }
     }

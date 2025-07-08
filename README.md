@@ -9,7 +9,7 @@ Distributed under the Boost Software License, Version 1.0.
 
 # beman.utf_view: C++29 UTF Transcoding Views
 
-![Library Status](https://raw.githubusercontent.com/bemanproject/beman/refs/heads/main/images/badges/beman_badge-beman_library_under_development.svg) [![CI](https://github.com/bemanproject/utf_view/actions/workflows/ci.yml/badge.svg)](https://github.com/bemanproject/utf_view/actions) [![Coverage](https://coveralls.io/repos/github/bemanproject/utf_view/badge.svg?branch=main)](https://coveralls.io/github/bemanproject/utf_view?branch=main) ![Standard Target](https://github.com/bemanproject/beman/blob/main/images/badges/cpp29.svg)
+![Library Status](https://raw.githubusercontent.com/bemanproject/beman/refs/heads/main/images/badges/beman_badge-beman_library_under_development.svg) ![Continuous Integration Tests](https://github.com/bemanproject/utf_view/actions/workflows/ci_tests.yml/badge.svg) ![Lint Check (pre-commit)](https://github.com/bemanproject/utf_view/actions/workflows/pre-commit.yml/badge.svg) [![Coverage](https://coveralls.io/repos/github/bemanproject/utf_view/badge.svg?branch=main)](https://coveralls.io/github/bemanproject/utf_view?branch=main) ![Standard Target](https://github.com/bemanproject/beman/blob/main/images/badges/cpp29.svg)
 
  C++29 UTF transcoding features:
 - Transcoding UTF views `to_utf8`, `to_utf16`, and `to_utf32`
@@ -140,6 +140,27 @@ Note: Building with Clang and libstdc++ is not currently supported due to variou
 
 ## Development
 
+### Develop using GitHub Codespace
+
+This project supports [GitHub Codespace](https://github.com/features/codespaces)
+via [Development Containers](https://containers.dev/),
+which allows rapid development and instant hacking in your browser.
+We recommend you using GitHub codespace to explore this project as this
+requires minimal setup.
+
+You can create a codespace for this project by clicking this badge:
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/bemanproject/utf_view)
+
+For more detailed documentation regarding creating and developing inside of
+GitHub codespaces, please reference [this doc](https://docs.github.com/en/codespaces/).
+
+> [!NOTE]
+>
+> The codespace container may take up to 5 minutes to build and spin-up,
+> this is normal as we need to build a custom docker container to setup
+> an environment appropriate for beman projects.
+
 ### Develop locally on your machines
 
 <details>
@@ -159,22 +180,13 @@ as per [the official LLVM install guide](https://apt.llvm.org/).
 bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
 ```
 
+The precise command and package name will vary depending on the Linux OS you are
+using. Be sure to consult documentation and the package repository for the system
+you are using.
+
 </details>
 
 <details>
-<summary> For Windows </summary>
-
-To build Beman libraries, you will need the MSVC compiler. MSVC can be obtained
-by installing Visual Studio; the free Visual Studio 2022 Community Edition can
-be downloaded from
-[Microsoft](https://visualstudio.microsoft.com/vs/community/).
-
-After Visual Studio has been installed, you can launch "Developer PowerShell for
-VS 2022" by typing it into Windows search bar. This shell environment will
-provide CMake, Ninja, and MSVC, allowing you to build the library and run the
-tests.
-
-</details>
 
 ### Configure and Build the Project Using CMake Presets
 
@@ -250,14 +262,76 @@ Values: { ON, OFF }.
 You can configure the project to have this option turned off via:
 
 ```bash
-cmake -B build -S . -DCMAKE_CXX_STANDARD=23 -DBEMAN_UTF_VIEW_BUILD_TESTS=OFF
+cmake -B build -S . -DCMAKE_CXX_STANDARD=20 -DBEMAN_UTF_VIEW_BUILD_TESTS=OFF
 ```
+
+#### `BEMAN_UTF_VIEW_BUILD_EXAMPLES`
+
+Enable building examples. Default: ON. Values: { ON, OFF }.
 
 #### `BEMAN_UTF_VIEW_BUILD_PAPER`
 
 Enable building the HTML version of P2728 and P3705 from their markdown sources. Default: ON. Values: { ON, OFF }.
 
 </details>
+
+## Integrate beman.utf_view into your project
+
+To use `beman.utf_view` in your C++ project,
+include an appropriate `beman.utf_view` header from your source code.
+
+```c++
+#include <beman/utf_view/utf_view.hpp>
+```
+
+> [!NOTE]
+>
+> `beman.utf_view` headers are to be included with the `beman/utf_view/` directories prefixed.
+> It is not supported to alter include search paths to spell the include target another way. For instance,
+> `#include <utf_view.hpp>` is not a supported interface.
+
+How you will link your project against `beman.utf_view` will depend on your build system.
+CMake instructions are provided in following sections.
+
+### Linking your project to beman.utf_view with CMake
+
+For CMake based projects,
+you will need to use the `beman.utf_view` CMake module
+to define the `beman::utf_view` CMake target:
+
+```cmake
+find_package(beman.utf_view REQUIRED)
+```
+
+You will also need to add `beman::utf_view` to the link libraries of
+any libraries or executables that include beman.utf_view's header file.
+
+```cmake
+target_link_libraries(yourlib PUBLIC beman::utf_view)
+```
+
+### Produce beman.utf_view static library locally
+
+You can include utf_view's headers locally
+by producing a static `libbeman.utf_view.a` library.
+
+```bash
+cmake --workflow --preset gcc-release
+cmake --install build/gcc-release --prefix /opt/beman.utf_view
+```
+
+This will generate such directory structure at `/opt/beman.utf_view`.
+
+```txt
+/opt/beman.utf_view
+├── include
+│   └── beman
+│       └── utf_view
+│           ├── // ...
+│           └── utf_view.hpp
+└── lib
+    └── libbeman.utf_view.a
+```
 
 ## Paper
 

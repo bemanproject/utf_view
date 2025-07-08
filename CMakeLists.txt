@@ -6,13 +6,24 @@
 #          https://www.boost.org/LICENSE_1_0.txt)
 
 cmake_minimum_required(VERSION 3.27)
-project(beman.utf_view CXX)
+project(
+    beman.utf_view
+    DESCRIPTION "C++29 UTF Transcoding Views"
+    LANGUAGES CXX
+    VERSION 0.0.1
+)
 
-include(FetchContent)
-
+# [CMAKE.SKIP_TESTS]
 option(
-    BEMAN_UTF_VIEW_BUILD_TESTING
+    BEMAN_UTF_VIEW_BUILD_TESTS
     "Enable building tests and test infrastructure. Default: ${PROJECT_IS_TOP_LEVEL}. Values: { ON, OFF }."
+    ${PROJECT_IS_TOP_LEVEL}
+)
+
+# [CMAKE.SKIP_EXAMPLES]
+option(
+    BEMAN_UTF_VIEW_BUILD_EXAMPLES
+    "Enable building examples. Default: ${PROJECT_IS_TOP_LEVEL}. Values: { ON, OFF }."
     ${PROJECT_IS_TOP_LEVEL}
 )
 
@@ -22,22 +33,25 @@ option(
     OFF
 )
 
-FetchContent_Declare(
-    beman.transform_view_26
-    GIT_REPOSITORY https://github.com/tzlaine/transform_view_26.git
-    GIT_TAG a939df439de83be949349c662344563263f81ecd
-    EXCLUDE_FROM_ALL
+option(
+    BEMAN_UTF_VIEW_INSTALL_CONFIG_FILE_PACKAGE
+    "Enable creating and installing a CMake config-file package. Default: ${PROJECT_IS_TOP_LEVEL}. Values: { ON, OFF }."
+    ${PROJECT_IS_TOP_LEVEL}
 )
 
-FetchContent_MakeAvailable(beman.transform_view_26)
+find_package(beman::transform_view REQUIRED)
 
 add_subdirectory(src/beman/utf_view)
 
-if (BEMAN_UTF_VIEW_BUILD_PAPER)
-  add_subdirectory(paper)
-endif()
-
-if (BEMAN_UTF_VIEW_BUILD_TESTING)
+if(BEMAN_UTF_VIEW_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests/beman/utf_view)
+endif()
+
+if(BEMAN_UTF_VIEW_BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
+
+if (BEMAN_UTF_VIEW_BUILD_PAPER)
+  add_subdirectory(paper)
 endif()
