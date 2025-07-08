@@ -37,7 +37,7 @@ jobs:
                     { "stdlibs": ["libstdc++"],
                       "tests": [
                         "Debug.Default", "Release.Default", "Release.MaxSan",
-                        "Debug.Werror", "Debug.Coverage",
+                        "Debug.Werror", "Debug.Dynamic", "Debug.Coverage",
                         "Debug.-DBEMAN_UTF_VIEW_BUILD_PAPER=ON"
                       ]
                     }
@@ -64,7 +64,7 @@ jobs:
                     { "stdlibs": ["libc++"],
                       "tests": [
                         "Debug.Default", "Release.Default", "Release.MaxSan",
-                        "Debug.Werror"
+                        "Debug.Werror", "Debug.Dynamic"
                       ]
                     }
                   ]
