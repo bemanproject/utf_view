@@ -21,7 +21,7 @@ Distributed under the Boost Software License, Version 1.0.
 (P3705R2)](https://isocpp.org/files/papers/P3705R2.html)
 
 **Status**: [Under development and not yet ready for production use.](https://github.com/bemanproject/beman/blob/main/docs/BEMAN_LIBRARY_MATURITY_MODEL.md#under-development-and-not-yet-ready-for-production-use)
-  
+
 ## Examples
 
 Transcoding a UTF-8 string literal to a `std::u32string`:
@@ -44,7 +44,7 @@ Returning the final non-ASCII code point in a string, transcoding backwards lazi
 
 ```cpp
 std::optional<char32_t> last_nonascii(std::ranges::view auto str) {
-  for (auto c : str | beman::utf_view::to_utf32 | std::views::reverse 
+  for (auto c : str | beman::utf_view::to_utf32 | std::views::reverse
                     | std::views::filter([](char32_t c) { return c > 0x7f; })
                     | std::views::take(1)) {
     return c;
