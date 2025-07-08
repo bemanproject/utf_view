@@ -1,0 +1,105 @@
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+name: Continuous Integration Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 15 * * *'
+
+jobs:
+  beman-submodule-check:
+    uses: ./.github/workflows/reusable-beman-submodule-check.yml
+
+  preset-test:
+    uses: ./.github/workflows/reusable-beman-preset-test.yml
+    with:
+      matrix_config: >
+        [
+          {"preset": "gcc-debug", "image": "ghcr.io/bemanproject/infra-containers-gcc:latest"},
+          {"preset": "gcc-release", "image": "ghcr.io/bemanproject/infra-containers-gcc:latest"}
+        ]
+
+  build-and-test:
+    uses: ./.github/workflows/reusable-beman-build-and-test.yml
+    with:
+      matrix_config: >
+        {
+          "gcc": [
+            { "versions": ["trunk"],
+              "tests": [
+                { "cxxversions": ["c++26"],
+                  "tests": [
+                    { "stdlibs": ["libstdc++"],
+                      "tests": [
+                        "Debug.Default", "Release.Default", "Release.MaxSan",
+                        "Debug.Werror", "Debug.Coverage",
+                        "Debug.-DBEMAN_UTF_VIEW_BUILD_PAPER=ON"
+                      ]
+                    }
+                  ]
+                },
+                { "cxxversions": ["c++23"],
+                  "tests": [{ "stdlibs": ["libstdc++"], "tests": ["Release.Default"]}]
+                }
+              ]
+            },
+            { "versions": ["15", "14"],
+              "tests": [
+                { "cxxversions": ["c++26", "c++23"],
+                  "tests": [{ "stdlibs": ["libstdc++"], "tests": ["Release.Default"]}]
+                }
+              ]
+            }
+          ],
+          "clang": [
+            { "versions": ["trunk"],
+              "tests": [
+                { "cxxversions": ["c++26"],
+                  "tests": [
+                    { "stdlibs": ["libc++"],
+                      "tests": [
+                        "Debug.Default", "Release.Default", "Release.MaxSan",
+                        "Debug.Werror"
+                      ]
+                    }
+                  ]
+                },
+                { "cxxversions": ["c++23"],
+                  "tests": [{"stdlibs": ["libc++"], "tests": ["Release.Default"]}]
+                }
+              ]
+            },
+            { "versions": ["20", "19"],
+              "tests": [
+                { "cxxversions": ["c++26", "c++23"],
+                  "tests": [
+                    {"stdlibs": ["libc++"], "tests": ["Release.Default"]}
+                  ]
+                }
+              ]
+            }
+          ],
+          "msvc": [
+            { "versions": ["latest"],
+              "tests": [
+                { "cxxversions": ["c++23"],
+                  "tests": [
+                    { "stdlibs": ["stl"],
+                      "tests": ["Debug.Default", "Release.Default", "Release.MaxSan"]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+
+  create-issue-when-fault:
+    needs: [preset-test, build-and-test]
+    if: failure() && github.event_name == 'schedule'
+    uses: ./.github/workflows/reusable-beman-create-issue-when-fault.yml

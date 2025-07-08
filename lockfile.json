@@ -1,0 +1,10 @@
+{
+  "dependencies": [
+    {
+      "name": "transform_view",
+      "package_name": "beman::transform_view",
+      "git_repository": "https://github.com/ednolan/transform_view.git",
+      "git_tag": "4f20acb821f3d929053ec2c6c1ca3ac950ce3cac"
+    }
+  ]
+}

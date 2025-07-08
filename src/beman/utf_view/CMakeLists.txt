@@ -9,23 +9,66 @@ add_library(beman_utf_view INTERFACE)
 
 include(GNUInstallDirs)
 
-target_include_directories(
-  beman_utf_view
-  INTERFACE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_LOWER_PROJECT_NAME}> # <prefix>/include/beman/utf_view
+add_library(beman.utf_view)
+add_library(beman::utf_view ALIAS beman.utf_view)
+
+target_sources(beman.utf_view PRIVATE utf_view.cpp)
+
+target_sources(
+    beman.utf_view
+    PUBLIC
+        FILE_SET HEADERS
+        BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/../../../include
+        FILES
+            ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/beman/utf_view/utf_view.hpp
+)
+
+set_target_properties(
+    beman.utf_view
+    PROPERTIES VERIFY_INTERFACE_HEADER_SETS ON EXPORT_NAME utf_view
 )
 
 target_link_libraries(
-  beman_utf_view INTERFACE beman::transform_view_26)
+  beman.utf_view PUBLIC beman::transform_view)
 
 install(
-  TARGETS beman_utf_view
-  EXPORT ${TARGETS_EXPORT_NAME}
-  DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    TARGETS beman.utf_view beman.transform_view COMPONENT beman.utf_view
+    EXPORT beman.utf_view
+    DESTINATION
+    ${CMAKE_INSTALL_LIBDIR}$<$<CONFIG:Debug>:/debug>
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}$<$<CONFIG:Debug>:/debug>
+    FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
 
-install(
-  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_PROJECT_NAME}
-  FILES_MATCHING
-  PATTERN "*.hpp")
+if(BEMAN_UTF_VIEW_INSTALL_CONFIG_FILE_PACKAGE)
+    include(CMakePackageConfigHelpers)
+
+    configure_package_config_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/beman.utf_view-config.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/beman.utf_view-config.cmake"
+        INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/beman.utf_view"
+        PATH_VARS PROJECT_NAME PROJECT_VERSION
+    )
+
+    write_basic_package_version_file(
+        "${CMAKE_CURRENT_BINARY_DIR}/beman.utf_view-config-version.cmake"
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY ExactVersion
+    )
+
+    install(
+        FILES
+            "${CMAKE_CURRENT_BINARY_DIR}/beman.utf_view-config.cmake"
+            "${CMAKE_CURRENT_BINARY_DIR}/beman.utf_view-config-version.cmake"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/beman.utf_view"
+        COMPONENT beman.utf_view
+    )
+
+    install(
+        EXPORT beman.utf_view
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/beman.utf_view"
+        NAMESPACE beman::
+        FILE beman.utf_view-targets.cmake
+        COMPONENT beman.utf_view
+    )
+endif()
