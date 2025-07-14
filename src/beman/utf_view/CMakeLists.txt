@@ -28,8 +28,7 @@ set_target_properties(
     PROPERTIES VERIFY_INTERFACE_HEADER_SETS ON EXPORT_NAME utf_view
 )
 
-target_link_libraries(
-  beman.utf_view PUBLIC beman::transform_view)
+target_link_libraries(beman.utf_view PUBLIC beman::transform_view)
 
 install(
     TARGETS beman.utf_view beman.transform_view COMPONENT beman.utf_view
