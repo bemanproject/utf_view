@@ -52,6 +52,6 @@ if(BEMAN_UTF_VIEW_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
 
-if (BEMAN_UTF_VIEW_BUILD_PAPER)
-  add_subdirectory(paper)
+if(BEMAN_UTF_VIEW_BUILD_PAPER)
+    add_subdirectory(paper)
 endif()
