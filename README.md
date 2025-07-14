@@ -1,3 +1,5 @@
+# beman.utf_view: C++29 UTF Transcoding Views
+
 <!--
 SPDX-License-Identifier: BSL-1.0
 
@@ -7,8 +9,6 @@ Distributed under the Boost Software License, Version 1.0.
          https://www.boost.org/LICENSE_1_0.txt)
 -->
 
-# beman.utf_view: C++29 UTF Transcoding Views
-
 ![Library Status](https://raw.githubusercontent.com/bemanproject/beman/refs/heads/main/images/badges/beman_badge-beman_library_under_development.svg) ![Continuous Integration Tests](https://github.com/bemanproject/utf_view/actions/workflows/ci_tests.yml/badge.svg) ![Lint Check (pre-commit)](https://github.com/bemanproject/utf_view/actions/workflows/pre-commit.yml/badge.svg) [![Coverage](https://coveralls.io/repos/github/bemanproject/utf_view/badge.svg?branch=main)](https://coveralls.io/github/bemanproject/utf_view?branch=main) ![Standard Target](https://github.com/bemanproject/beman/blob/main/images/badges/cpp29.svg)
 
  C++29 UTF transcoding features:
@@ -16,9 +16,7 @@ Distributed under the Boost Software License, Version 1.0.
 - `null_sentinel` sentinel and `null_term` CPO for creating views of null-terminated strings
 - Casting views for creating views of `charN_t`, which are `as_char8`, `as_char16`, `as_char32`
 
-**Implements**: [Unicode in the Library, Part 1: UTF Transcoding
-(P2728R7)](https://wg21.link/P2728R7) and [A Sentinel for Null-Terminated Strings
-(P3705R2)](https://isocpp.org/files/papers/P3705R2.html)
+**Implements**: [Unicode in the Library, Part 1: UTF Transcoding (P2728R7)](https://wg21.link/P2728R7) and [A Sentinel for Null-Terminated Strings (P3705R2)](https://isocpp.org/files/papers/P3705R2.html)
 
 **Status**: [Under development and not yet ready for production use.](https://github.com/bemanproject/beman/blob/main/docs/BEMAN_LIBRARY_MATURITY_MODEL.md#under-development-and-not-yet-ready-for-production-use)
 
