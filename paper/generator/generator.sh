@@ -11,7 +11,7 @@ function process_file() {
     local build_dir="$1" ; shift
     cp $generator_script_dir/../../$file $build_dir
     local file_copy=$build_dir/${file##*/}
-    clang-format-19 -i -style=file $file_copy
+    clang-format-20 -i -style=file $file_copy
     $generator_script_dir/post_clang_format.py $file_copy > ${file_copy}.md
     rm $file_copy
 }
