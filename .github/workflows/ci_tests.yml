@@ -9,14 +9,15 @@ on:
   pull_request:
   workflow_dispatch:
   schedule:
-    - cron: '30 15 * * *'
+    - cron: '20 19 * * *'
+    - cron: "0 16 * * 0"
 
 jobs:
   beman-submodule-check:
-    uses: ./.github/workflows/reusable-beman-submodule-check.yml
+    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-submodule-check.yml@1.0.0
 
   preset-test:
-    uses: ./.github/workflows/reusable-beman-preset-test.yml
+    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-preset-test.yml@1.0.0
     with:
       matrix_config: >
         [
@@ -25,7 +26,7 @@ jobs:
         ]
 
   build-and-test:
-    uses: ./.github/workflows/reusable-beman-build-and-test.yml
+    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-build-and-test.yml@1.0.0
     with:
       matrix_config: >
         {
@@ -101,5 +102,9 @@ jobs:
 
   create-issue-when-fault:
     needs: [preset-test, build-and-test]
-    if: failure() && github.event_name == 'schedule'
-    uses: ./.github/workflows/reusable-beman-create-issue-when-fault.yml
+    if: failure() && github.event.schedule == '20 19 * * *'
+    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-create-issue-when-fault.yml@1.0.0
+
+  auto-update-pre-commit:
+    if: github.event.schedule == '00 16 * * 0'
+    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-update-pre-commit.yml@1.0.0

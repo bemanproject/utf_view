@@ -1,1 +1,12 @@
-build/
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+/.cache
+/compile_commands.json
+/build
+
+# ignore emacs temp files
+*~
+\#*\#
+
+# ignore vscode settings
+.vscode
