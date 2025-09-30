@@ -18,9 +18,9 @@ target_sources(
     beman.utf_view
     PUBLIC
         FILE_SET HEADERS
-        BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/../../../include
-        FILES
-            ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/beman/utf_view/utf_view.hpp
+            BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/../../../include
+            FILES
+                ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/beman/utf_view/utf_view.hpp
 )
 
 set_target_properties(
@@ -31,10 +31,10 @@ set_target_properties(
 target_link_libraries(beman.utf_view PUBLIC beman::transform_view)
 
 install(
-    TARGETS beman.utf_view beman.transform_view COMPONENT beman.utf_view
+    TARGETS beman.utf_view beman.transform_view
+    COMPONENT beman.utf_view
     EXPORT beman.utf_view
-    DESTINATION
-    ${CMAKE_INSTALL_LIBDIR}$<$<CONFIG:Debug>:/debug>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}$<$<CONFIG:Debug>:/debug>
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}$<$<CONFIG:Debug>:/debug>
     FILE_SET HEADERS DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
