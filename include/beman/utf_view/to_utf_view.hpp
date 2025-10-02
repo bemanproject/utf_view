@@ -90,7 +90,7 @@ template <class I>
 using exposition_only_bidirectional_at_most_t =
     decltype(exposition_only_bidirectional_at_most<I>()); // @*exposition only*@
 
-enum class transcoding_error {
+enum class utf_transcoding_error {
   truncated_utf8_sequence,
   unpaired_high_surrogate,
   unpaired_low_surrogate,
@@ -277,11 +277,11 @@ public:
           return std::move(*this).curr();
         }
 
-        /* PAPER:       constexpr expected<void, transcoding_error> success() const; */
+        /* PAPER:       constexpr expected<void, utf_transcoding_error> success() const; */
 
         /* !PAPER */
 
-        constexpr std::expected<void, transcoding_error> success() const {
+        constexpr std::expected<void, utf_transcoding_error> success() const {
       return success_;
     }
 
@@ -411,7 +411,7 @@ public:
     struct decode_code_point_result {
       char32_t c;
       std::uint8_t to_incr;
-      std::expected<void, transcoding_error> success;
+      std::expected<void, utf_transcoding_error> success;
     };
 
     template <class>
@@ -450,9 +450,9 @@ public:
       ++it;
       const std::uint8_t lo_bound = 0x80, hi_bound = 0xBF;
       std::uint8_t to_incr = 1;
-      std::expected<void, transcoding_error> success{};
+      std::expected<void, utf_transcoding_error> success{};
 
-      auto const error{[&](transcoding_error const error_enum_in) {
+      auto const error{[&](utf_transcoding_error const error_enum_in) {
         success = std::unexpected{error_enum_in};
         c = U'\uFFFD';
       }};
@@ -460,18 +460,18 @@ public:
       if (u <= 0x7F) [[likely]] // 0x00 to 0x7F
         c = u;
       else if (u < 0xC0) [[unlikely]] {
-        error(transcoding_error::unexpected_utf8_continuation_byte);
+        error(utf_transcoding_error::unexpected_utf8_continuation_byte);
       } else if (u < 0xC2 || u > 0xF4) [[unlikely]] {
-        error(transcoding_error::invalid_utf8_leading_byte);
+        error(utf_transcoding_error::invalid_utf8_leading_byte);
       } else if (it == last) [[unlikely]] {
-        error(transcoding_error::truncated_utf8_sequence);
+        error(utf_transcoding_error::truncated_utf8_sequence);
       } else if (u <= 0xDF) // 0xC2 to 0xDF
       {
         c = u & 0x1F;
         u = *it;
 
         if (u < lo_bound || u > hi_bound) [[unlikely]]
-          error(transcoding_error::truncated_utf8_sequence);
+          error(utf_transcoding_error::truncated_utf8_sequence);
         else {
           c = (c << 6) | (u & 0x3F);
           ++it;
@@ -484,21 +484,21 @@ public:
         u = *it;
 
         if (orig == 0xE0 && 0x80 <= u && u < 0xA0) [[unlikely]]
-          error(transcoding_error::overlong);
+          error(utf_transcoding_error::overlong);
         else if (orig == 0xED && 0xA0 <= u && u < 0xC0) [[unlikely]]
-          error(transcoding_error::encoded_surrogate);
+          error(utf_transcoding_error::encoded_surrogate);
         else if (u < lo_bound || u > hi_bound) [[unlikely]]
-          error(transcoding_error::truncated_utf8_sequence);
+          error(utf_transcoding_error::truncated_utf8_sequence);
         else if (++it == last) {
           [[unlikely]]++ to_incr;
-          error(transcoding_error::truncated_utf8_sequence);
+          error(utf_transcoding_error::truncated_utf8_sequence);
         } else {
           ++to_incr;
           c = (c << 6) | (u & 0x3F);
           u = *it;
 
           if (u < lo_bound || u > hi_bound) [[unlikely]]
-            error(transcoding_error::truncated_utf8_sequence);
+            error(utf_transcoding_error::truncated_utf8_sequence);
           else {
             c = (c << 6) | (u & 0x3F);
             ++it;
@@ -512,31 +512,31 @@ public:
         u = *it;
 
         if (orig == 0xF0 && 0x80 <= u && u < 0x90) [[unlikely]]
-          error(transcoding_error::overlong);
+          error(utf_transcoding_error::overlong);
         else if (orig == 0xF4 && 0x90 <= u && u < 0xC0) [[unlikely]]
-          error(transcoding_error::out_of_range);
+          error(utf_transcoding_error::out_of_range);
         else if (u < lo_bound || u > hi_bound) [[unlikely]]
-          error(transcoding_error::truncated_utf8_sequence);
+          error(utf_transcoding_error::truncated_utf8_sequence);
         else if (++it == last) {
           [[unlikely]]++ to_incr;
-          error(transcoding_error::truncated_utf8_sequence);
+          error(utf_transcoding_error::truncated_utf8_sequence);
         } else {
           ++to_incr;
           c = (c << 6) | (u & 0x3F);
           u = *it;
 
           if (u < lo_bound || u > hi_bound) [[unlikely]]
-            error(transcoding_error::truncated_utf8_sequence);
+            error(utf_transcoding_error::truncated_utf8_sequence);
           else if (++it == last) {
             [[unlikely]]++ to_incr;
-            error(transcoding_error::truncated_utf8_sequence);
+            error(utf_transcoding_error::truncated_utf8_sequence);
           } else {
             ++to_incr;
             c = (c << 6) | (u & 0x3F);
             u = *it;
 
             if (u < lo_bound || u > hi_bound) [[unlikely]]
-              error(transcoding_error::truncated_utf8_sequence);
+              error(utf_transcoding_error::truncated_utf8_sequence);
             else {
               c = (c << 6) | (u & 0x3F);
               ++it;
@@ -560,9 +560,9 @@ public:
       std::uint16_t u = *it;
       ++it;
       std::uint8_t to_incr = 1;
-      std::expected<void, transcoding_error> success{};
+      std::expected<void, utf_transcoding_error> success{};
 
-      auto const error{[&](transcoding_error const error_enum_in) {
+      auto const error{[&](utf_transcoding_error const error_enum_in) {
         success = std::unexpected{error_enum_in};
         c = U'\uFFFD';
       }};
@@ -571,11 +571,11 @@ public:
         c = u;
       else if (u < 0xDC00) {
         if (it == last) [[unlikely]] {
-          error(transcoding_error::unpaired_high_surrogate);
+          error(utf_transcoding_error::unpaired_high_surrogate);
         } else {
           std::uint16_t u2 = *it;
           if (u2 < 0xDC00 || u2 > 0xDFFF) [[unlikely]]
-            error(transcoding_error::unpaired_high_surrogate);
+            error(utf_transcoding_error::unpaired_high_surrogate);
           else {
             ++it;
             to_incr = 2;
@@ -585,7 +585,7 @@ public:
           }
         }
       } else
-        error(transcoding_error::unpaired_low_surrogate);
+        error(utf_transcoding_error::unpaired_low_surrogate);
 
       return {.c{c}, .to_incr{to_incr}, .success{success}};
     }
@@ -598,18 +598,18 @@ public:
     static constexpr decode_code_point_result decode_code_point_utf32_impl(
         exposition_only_innermost_iter& it) {
       char32_t c = *it;
-      std::expected<void, transcoding_error> success{};
+      std::expected<void, utf_transcoding_error> success{};
       ++it;
-      auto const error{[&](transcoding_error const error_enum_in) {
+      auto const error{[&](utf_transcoding_error const error_enum_in) {
         success = std::unexpected{error_enum_in};
         c = U'\uFFFD';
       }};
       if (c >= 0xD800) {
         if (c < 0xE000) {
-          error(transcoding_error::encoded_surrogate);
+          error(utf_transcoding_error::encoded_surrogate);
         }
         if (c > 0x10FFFF) {
-          error(transcoding_error::out_of_range);
+          error(utf_transcoding_error::out_of_range);
         }
       }
       return {.c{c}, .to_incr{1}, .success{success}};
@@ -710,7 +710,7 @@ public:
             .decode_result{.c{U'\uFFFD'},
                            .to_incr{1},
                            .success{std::unexpected{
-                               transcoding_error::unexpected_utf8_continuation_byte}}},
+                               utf_transcoding_error::unexpected_utf8_continuation_byte}}},
             .new_curr{new_curr}};
       } else if (detail::is_ascii(*it) || detail::lead_code_unit(*it)) {
         int const expected_reversed{detail::utf8_code_units(*it)};
@@ -722,7 +722,7 @@ public:
               .decode_result{.c{U'\uFFFD'},
                              .to_incr{1},
                              .success{std::unexpected{
-                                 transcoding_error::unexpected_utf8_continuation_byte}}},
+                                 utf_transcoding_error::unexpected_utf8_continuation_byte}}},
               .new_curr{new_curr}};
         } else {
           auto lead{it};
@@ -730,7 +730,7 @@ public:
               decode_code_point_utf8_impl(it, end())};
           if (decode_result.success ||
               decode_result.success ==
-                  std::unexpected{transcoding_error::truncated_utf8_sequence}) {
+                  std::unexpected{utf_transcoding_error::truncated_utf8_sequence}) {
             assert(decode_result.to_incr == reversed);
             return {.decode_result{decode_result}, .new_curr{lead}};
           } else {
@@ -743,7 +743,7 @@ public:
                     .success{
                         reversed == 1
                             ? decode_result.success
-                            : std::unexpected{transcoding_error::
+                            : std::unexpected{utf_transcoding_error::
                                                   unexpected_utf8_continuation_byte}}},
                 .new_curr{new_curr}};
           }
@@ -758,8 +758,8 @@ public:
                 .to_incr{1},
                 .success{
                     reversed == 1
-                        ? std::unexpected{transcoding_error::invalid_utf8_leading_byte}
-                        : std::unexpected{transcoding_error::
+                        ? std::unexpected{utf_transcoding_error::invalid_utf8_leading_byte}
+                        : std::unexpected{utf_transcoding_error::
                                               unexpected_utf8_continuation_byte}}},
             .new_curr{it}};
       }
@@ -774,14 +774,14 @@ public:
         return {.decode_result{.c{U'\uFFFD'},
                                .to_incr{1},
                                .success{std::unexpected{
-                                   transcoding_error::unpaired_high_surrogate}}},
+                                   utf_transcoding_error::unpaired_high_surrogate}}},
                 .new_curr{it}};
       } else if (detail::low_surrogate(*it)) {
         if (it == begin()) {
           return {.decode_result{.c{U'\uFFFD'},
                                  .to_incr{1},
                                  .success{std::unexpected{
-                                     transcoding_error::unpaired_low_surrogate}}},
+                                     utf_transcoding_error::unpaired_low_surrogate}}},
                   .new_curr{it}};
         } else {
           --it;
@@ -795,7 +795,7 @@ public:
             return {.decode_result{.c{U'\uFFFD'},
                                    .to_incr{1},
                                    .success{std::unexpected{
-                                       transcoding_error::unpaired_low_surrogate}}},
+                                       utf_transcoding_error::unpaired_low_surrogate}}},
                     .new_curr{new_curr}};
           }
         }
@@ -866,7 +866,7 @@ public:
     std::uint8_t to_increment_ = 0; // @*exposition only*@
 
     /* !PAPER */
-    std::expected<void, transcoding_error> success_{}; // @*exposition only*@
+    std::expected<void, utf_transcoding_error> success_{}; // @*exposition only*@
     /* PAPER */
   };
 
