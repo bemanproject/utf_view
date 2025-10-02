@@ -58,23 +58,23 @@ std::u8string as_char32_t_example() {
   return input_utf8;
 }
 
-std::string enum_to_string(transcoding_error ec) {
+std::string enum_to_string(utf_transcoding_error ec) {
   switch (ec) {
-  case transcoding_error::truncated_utf8_sequence:
+  case utf_transcoding_error::truncated_utf8_sequence:
     return "truncated_utf8_sequence";
-  case transcoding_error::unpaired_high_surrogate:
+  case utf_transcoding_error::unpaired_high_surrogate:
     return "unpaired_high_surrogate";
-  case transcoding_error::unpaired_low_surrogate:
+  case utf_transcoding_error::unpaired_low_surrogate:
     return "unpaired_low_surrogate";
-  case transcoding_error::unexpected_utf8_continuation_byte:
+  case utf_transcoding_error::unexpected_utf8_continuation_byte:
     return "unexpected_utf8_continuation_byte";
-  case transcoding_error::overlong:
+  case utf_transcoding_error::overlong:
     return "overlong";
-  case transcoding_error::encoded_surrogate:
+  case utf_transcoding_error::encoded_surrogate:
     return "encoded_surrogate";
-  case transcoding_error::out_of_range:
+  case utf_transcoding_error::out_of_range:
     return "out_of_range";
-  case transcoding_error::invalid_utf8_leading_byte:
+  case utf_transcoding_error::invalid_utf8_leading_byte:
     return "invalid_utf8_leading_byte";
   }
   std::unreachable();
