@@ -265,15 +265,12 @@ public:
       return std::move(*this).curr();
     }
 
-    /* PAPER:       constexpr expected<void, utf_transcoding_error> success() const; */
-
+    /* PAPER:       constexpr expected<void, utf_transcoding_error> @*success*@() const; */
     /* !PAPER */
 
-#if 0
-    constexpr std::expected<void, utf_transcoding_error> success() const {
-      return success_;
+    constexpr bool exposition_only_success() const {
+      return !!success_;
     }
-#endif
 
     /* PAPER */
 
@@ -297,39 +294,48 @@ public:
     }
     /* PAPER */
 
-    constexpr exposition_only_utf_iterator& operator++() {
-      auto const advance{
-        [&] {
-          if constexpr (std::forward_iterator<exposition_only_innermost_iter>) {
-            if (buf_index_ + 1 < buf_last_) {
-              ++buf_index_;
-            } else if (buf_index_ + 1 == buf_last_) {
-              std::advance(curr(), to_increment_);
-              to_increment_ = 0;
-              if (curr() != last_) {
-                read();
-              } else {
-                buf_index_ = 0;
-              }
-            }
-          } else {
-            if (buf_index_ + 1 == buf_last_ && curr() != last_) {
-              read();
-            } else if (buf_index_ + 1 <= buf_last_) {
-              ++buf_index_;
-            }
-          }
-        }};
-      if constexpr (OrError) {
-        if (!success_.has_value()) {
-          assert(buf_index_ == 0);
-          if constexpr (std::is_same_v<ToType, char8_t>) {
-            advance();
-            advance();
-          }
+    constexpr void exposition_only_advance_one()
+      requires std::forward_iterator<exposition_only_innermost_iter>
+    {
+      if (buf_index_ + 1 < buf_last_) {
+        ++buf_index_;
+      } else if (buf_index_ + 1 == buf_last_) {
+        std::advance(curr(), to_increment_);
+        to_increment_ = 0;
+        if (curr() != last_) {
+          read();
+        } else {
+          buf_index_ = 0;
         }
       }
-      advance();
+    }
+
+    constexpr void exposition_only_advance_one()
+      requires (!std::forward_iterator<exposition_only_innermost_iter>)
+    {
+      if (buf_index_ + 1 == buf_last_ && curr() != last_) {
+        read();
+      } else if (buf_index_ + 1 <= buf_last_) {
+        ++buf_index_;
+      }
+    }
+
+    constexpr exposition_only_utf_iterator& operator++() requires(OrError)
+    {
+      if (!exposition_only_success()) {
+        assert(buf_index_ == 0);
+        if constexpr (std::is_same_v<ToType, char8_t>) {
+          exposition_only_advance_one();
+          exposition_only_advance_one();
+        }
+      }
+      exposition_only_advance_one();
+      return *this;
+    }
+
+    constexpr exposition_only_utf_iterator& operator++() requires(!OrError)
+    {
+      exposition_only_advance_one();
       return *this;
     }
 
