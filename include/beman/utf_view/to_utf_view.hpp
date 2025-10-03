@@ -1178,28 +1178,19 @@ inline constexpr detail::to_utf_impl<char32_t> to_utf32;
 
 } // namespace beman::utf_view
 
-template <class ToType, class V>
-inline constexpr bool std::ranges::enable_borrowed_range<
-    beman::utf_view::exposition_only_to_utf_view_impl<ToType, V>> =
-    std::ranges::enable_borrowed_range<V>;
+template <class T>
+inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf8_view<T>> =
+    std::ranges::enable_borrowed_range<T>;
 
-template <class V>
-inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf8_view<V>> =
-    std::ranges::enable_borrowed_range<V>;
+template <class T>
+inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf16_view<T>> =
+    std::ranges::enable_borrowed_range<T>;
 
-template <class V>
-inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf16_view<V>> =
-    std::ranges::enable_borrowed_range<V>;
-
-template <class V>
-inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf32_view<V>> =
-    std::ranges::enable_borrowed_range<V>;
+template <class T>
+inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf32_view<T>> =
+    std::ranges::enable_borrowed_range<T>;
 
 /* PAPER: namespace std::ranges {                                                                              */
-/* PAPER:                                                                                                      */
-/* PAPER:   template <class ToType, class V>                                                                   */
-/* PAPER:     inline constexpr bool enable_borrowed_range<                                                     */
-/* PAPER:       std::exposition_only_to_utf_view_impl<ToType, V>> = enable_borrowed_range<V>;                  */
 /* PAPER:                                                                                                      */
 /* PAPER:   template <class V>                                                                                 */
 /* PAPER:   inline constexpr bool enable_borrowed_range<std::to_utf8_view<V>> = enable_borrowed_range<V>;      */
