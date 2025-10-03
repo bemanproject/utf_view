@@ -17,7 +17,6 @@
 #include <expected>
 #include <iterator>
 #include <limits>
-#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
@@ -299,25 +298,39 @@ public:
     /* PAPER */
 
     constexpr exposition_only_utf_iterator& operator++() {
-      if constexpr (std::forward_iterator<exposition_only_innermost_iter>) {
-        if (buf_index_ + 1 < buf_last_) {
-          ++buf_index_;
-        } else if (buf_index_ + 1 == buf_last_) {
-          std::advance(curr(), to_increment_);
-          to_increment_ = 0;
-          if (curr() != last_) {
-            read();
+      auto const advance{
+        [&] {
+          if constexpr (std::forward_iterator<exposition_only_innermost_iter>) {
+            if (buf_index_ + 1 < buf_last_) {
+              ++buf_index_;
+            } else if (buf_index_ + 1 == buf_last_) {
+              std::advance(curr(), to_increment_);
+              to_increment_ = 0;
+              if (curr() != last_) {
+                read();
+              } else {
+                buf_index_ = 0;
+              }
+            }
           } else {
-            buf_index_ = 0;
+            if (buf_index_ + 1 == buf_last_ && curr() != last_) {
+              read();
+            } else if (buf_index_ + 1 <= buf_last_) {
+              ++buf_index_;
+            }
           }
-        }
-      } else {
-        if (buf_index_ + 1 == buf_last_ && curr() != last_) {
-          read();
-        } else if (buf_index_ + 1 <= buf_last_) {
-          ++buf_index_;
+        }};
+      if constexpr (OrError) {
+        if (!success_.has_value()) {
+          assert(buf_index_ == 0);
+          // 0xEF
+          advance();
+          // 0xBF
+          advance();
+          // 0xBD
         }
       }
+      advance();
       return *this;
     }
 
@@ -814,7 +827,11 @@ public:
       success_ = read_reverse_impl_result.decode_result.success;
       curr() = read_reverse_impl_result.new_curr;
       assert(buf_last_);
-      buf_index_ = buf_last_ - 1;
+      if constexpr (OrError) {
+        buf_index_ = 0;
+      } else {
+        buf_index_ = buf_last_ - 1;
+      }
     }
 
     /* PAPER */
@@ -979,6 +996,63 @@ template <class R>
 to_utf8_view(R&&) -> to_utf8_view<std::views::all_t<R>>;
 
 template <exposition_only_from_utf_view V>
+class to_utf8_or_error_view {
+private:
+  using exposition_only_iterator =
+      std::ranges::iterator_t<exposition_only_to_utf_view_impl<true, char8_t, V>>;
+  using exposition_only_sentinel =
+      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<true, char8_t, V>>;
+
+public:
+  constexpr to_utf8_or_error_view()
+    requires std::default_initializable<V>
+  = default;
+  constexpr to_utf8_or_error_view(V base)
+      : impl_(std::move(base)) { }
+
+  constexpr V base() const&
+    requires std::copy_constructible<V>
+  {
+    return impl_.base();
+  }
+  constexpr V base() && {
+    return std::move(impl_).base();
+  }
+
+  constexpr auto begin()
+    requires(!std::copyable<exposition_only_iterator>)
+  {
+    return impl_.begin();
+  }
+  constexpr auto begin() const
+    requires std::copyable<exposition_only_iterator>
+  {
+    return impl_.begin();
+  }
+
+  constexpr auto end()
+    requires(!std::copyable<exposition_only_iterator>)
+  {
+    return impl_.end();
+  }
+  constexpr auto end() const
+    requires std::copyable<exposition_only_iterator>
+  {
+    return impl_.end();
+  }
+
+  constexpr bool empty() const {
+    return impl_.empty();
+  }
+
+private:
+  exposition_only_to_utf_view_impl<true, char8_t, V> impl_;
+};
+
+template <class R>
+to_utf8_or_error_view(R&&) -> to_utf8_or_error_view<std::views::all_t<R>>;
+
+template <exposition_only_from_utf_view V>
 class to_utf16_view {
 private:
   using exposition_only_iterator =
@@ -1034,6 +1108,63 @@ private:
 
 template <class R>
 to_utf16_view(R&&) -> to_utf16_view<std::views::all_t<R>>;
+
+template <exposition_only_from_utf_view V>
+class to_utf16_or_error_view {
+private:
+  using exposition_only_iterator =
+      std::ranges::iterator_t<exposition_only_to_utf_view_impl<true, char16_t, V>>;
+  using exposition_only_sentinel =
+      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<true, char16_t, V>>;
+
+public:
+  constexpr to_utf16_or_error_view()
+    requires std::default_initializable<V>
+  = default;
+  constexpr to_utf16_or_error_view(V base)
+      : impl_(std::move(base)) { }
+
+  constexpr V base() const&
+    requires std::copy_constructible<V>
+  {
+    return impl_.base();
+  }
+  constexpr V base() && {
+    return std::move(impl_).base();
+  }
+
+  constexpr auto begin()
+    requires(!std::copyable<exposition_only_iterator>)
+  {
+    return impl_.begin();
+  }
+  constexpr auto begin() const
+    requires std::copyable<exposition_only_iterator>
+  {
+    return impl_.begin();
+  }
+
+  constexpr auto end()
+    requires(!std::copyable<exposition_only_iterator>)
+  {
+    return impl_.end();
+  }
+  constexpr auto end() const
+    requires std::copyable<exposition_only_iterator>
+  {
+    return impl_.end();
+  }
+
+  constexpr bool empty() const {
+    return impl_.empty();
+  }
+
+private:
+  exposition_only_to_utf_view_impl<true, char16_t, V> impl_;
+};
+
+template <class R>
+to_utf16_or_error_view(R&&) -> to_utf16_or_error_view<std::views::all_t<R>>;
 
 template <exposition_only_from_utf_view V>
 class to_utf32_view {
@@ -1092,19 +1223,84 @@ private:
 template <class R>
 to_utf32_view(R&&) -> to_utf32_view<std::views::all_t<R>>;
 
+template <exposition_only_from_utf_view V>
+class to_utf32_or_error_view {
+private:
+  using exposition_only_iterator =
+      std::ranges::iterator_t<exposition_only_to_utf_view_impl<true, char32_t, V>>;
+  using exposition_only_sentinel =
+      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<true, char32_t, V>>;
+
+public:
+  constexpr to_utf32_or_error_view()
+    requires std::default_initializable<V>
+  = default;
+  constexpr to_utf32_or_error_view(V base)
+      : impl_(std::move(base)) { }
+
+  constexpr V base() const&
+    requires std::copy_constructible<V>
+  {
+    return impl_.base();
+  }
+  constexpr V base() && {
+    return std::move(impl_).base();
+  }
+
+  constexpr auto begin()
+    requires(!std::copyable<exposition_only_iterator>)
+  {
+    return impl_.begin();
+  }
+  constexpr auto begin() const
+    requires std::copyable<exposition_only_iterator>
+  {
+    return impl_.begin();
+  }
+
+  constexpr auto end()
+    requires(!std::copyable<exposition_only_iterator>)
+  {
+    return impl_.end();
+  }
+  constexpr auto end() const
+    requires std::copyable<exposition_only_iterator>
+  {
+    return impl_.end();
+  }
+
+  constexpr bool empty() const {
+    return impl_.empty();
+  }
+
+private:
+  exposition_only_to_utf_view_impl<true, char32_t, V> impl_;
+};
+
+template <class R>
+to_utf32_or_error_view(R&&) -> to_utf32_or_error_view<std::views::all_t<R>>;
+
 /* !PAPER */
 
 namespace detail {
 
-  template <exposition_only_code_unit_to ToType, exposition_only_from_utf_view V>
+  template <bool OrError, exposition_only_code_unit_to ToType,
+            exposition_only_from_utf_view V>
   using to_utf_view = std::conditional_t<
-      std::is_same_v<ToType, char8_t>, to_utf8_view<V>,
+      OrError,
       std::conditional_t<
-          std::is_same_v<ToType, char16_t>, to_utf16_view<V>,
-          std::conditional_t<std::is_same_v<ToType, char32_t>, to_utf32_view<V>, void>>>;
+          std::is_same_v<ToType, char8_t>, to_utf8_or_error_view<V>,
+          std::conditional_t<std::is_same_v<ToType, char16_t>, to_utf16_or_error_view<V>,
+                             std::conditional_t<std::is_same_v<ToType, char32_t>,
+                                                to_utf32_or_error_view<V>, void>>>,
+      std::conditional_t<
+          std::is_same_v<ToType, char8_t>, to_utf8_view<V>,
+          std::conditional_t<std::is_same_v<ToType, char16_t>, to_utf16_view<V>,
+                             std::conditional_t<std::is_same_v<ToType, char32_t>,
+                                                to_utf32_view<V>, void>>>>;
 
-  template <exposition_only_code_unit_to ToType>
-  struct to_utf_impl : std::ranges::range_adaptor_closure<to_utf_impl<ToType>> {
+  template <bool OrError, exposition_only_code_unit_to ToType>
+  struct to_utf_impl : std::ranges::range_adaptor_closure<to_utf_impl<OrError, ToType>> {
     template <exposition_only_utf_range R>
     constexpr auto operator()(R&& r) const {
       using T = std::remove_cvref_t<R>;
@@ -1118,10 +1314,10 @@ namespace detail {
           --last;
         }
         std::ranges::subrange subrange(first, last);
-        return to_utf_view<ToType, decltype(subrange)>(std::move(subrange));
+        return to_utf_view<OrError, ToType, decltype(subrange)>(std::move(subrange));
       } else {
         auto view = std::views::all(std::forward<R>(r));
-        return to_utf_view<ToType, decltype(view)>(std::move(view));
+        return to_utf_view<OrError, ToType, decltype(view)>(std::move(view));
       }
     }
   };
@@ -1129,28 +1325,46 @@ namespace detail {
 } // namespace detail
 
 template <exposition_only_code_unit_to ToType>
-inline constexpr detail::to_utf_impl<ToType> to_utf;
+inline constexpr detail::to_utf_impl<false, ToType> to_utf;
 
-inline constexpr detail::to_utf_impl<char8_t> to_utf8;
+inline constexpr detail::to_utf_impl<false, char8_t> to_utf8;
 
-inline constexpr detail::to_utf_impl<char16_t> to_utf16;
+inline constexpr detail::to_utf_impl<false, char16_t> to_utf16;
 
-inline constexpr detail::to_utf_impl<char32_t> to_utf32;
+inline constexpr detail::to_utf_impl<false, char32_t> to_utf32;
 
-/* PAPER: namespace views {                            */
-/* PAPER:                                              */
-/* PAPER:   template<@*code-unit-to*@ ToType>          */
-/* PAPER:   inline constexpr @*unspecified*@ to_utf;   */
-/* PAPER:                                              */
-/* PAPER:   inline constexpr @*unspecified*@ to_utf8;  */
-/* PAPER:                                              */
-/* PAPER:   inline constexpr @*unspecified*@ to_utf16; */
-/* PAPER:                                              */
-/* PAPER:   inline constexpr @*unspecified*@ to_utf32; */
-/* PAPER:                                              */
-/* PAPER: }                                            */
-/* PAPER:                                              */
-/* PAPER: }                                            */
+template <exposition_only_code_unit_to ToType>
+inline constexpr detail::to_utf_impl<true, ToType> to_utf_or_error;
+
+inline constexpr detail::to_utf_impl<true, char8_t> to_utf8_or_error;
+
+inline constexpr detail::to_utf_impl<true, char16_t> to_utf16_or_error;
+
+inline constexpr detail::to_utf_impl<true, char32_t> to_utf32_or_error;
+
+/* PAPER: namespace views {                                     */
+/* PAPER:                                                       */
+/* PAPER:   template<@*code-unit-to*@ ToType>                   */
+/* PAPER:   inline constexpr @*unspecified*@ to_utf;            */
+/* PAPER:                                                       */
+/* PAPER:   template<@*code-unit-to*@ ToType>                   */
+/* PAPER:   inline constexpr @*unspecified*@ to_utf_or_error;   */
+/* PAPER:                                                       */
+/* PAPER:   inline constexpr @*unspecified*@ to_utf8;           */
+/* PAPER:                                                       */
+/* PAPER:   inline constexpr @*unspecified*@ to_utf8_or_error;  */
+/* PAPER:                                                       */
+/* PAPER:   inline constexpr @*unspecified*@ to_utf16;          */
+/* PAPER:                                                       */
+/* PAPER:   inline constexpr @*unspecified*@ to_utf16_or_error; */
+/* PAPER:                                                       */
+/* PAPER:   inline constexpr @*unspecified*@ to_utf32;          */
+/* PAPER:                                                       */
+/* PAPER:   inline constexpr @*unspecified*@ to_utf32_or_error; */
+/* PAPER:                                                       */
+/* PAPER: }                                                     */
+/* PAPER:                                                       */
+/* PAPER: }                                                     */
 
 } // namespace beman::utf_view
 
@@ -1166,17 +1380,26 @@ template <class T>
 inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf32_view<T>> =
     std::ranges::enable_borrowed_range<T>;
 
-/* PAPER: namespace std::ranges {                                                                              */
-/* PAPER:                                                                                                      */
-/* PAPER:   template <class V>                                                                                 */
-/* PAPER:   inline constexpr bool enable_borrowed_range<std::to_utf8_view<V>> = enable_borrowed_range<V>;      */
-/* PAPER:                                                                                                      */
-/* PAPER:   template <class V>                                                                                 */
-/* PAPER:   inline constexpr bool enable_borrowed_range<std::to_utf16_view<V>> = enable_borrowed_range<V>;     */
-/* PAPER:                                                                                                      */
-/* PAPER:   template <class V>                                                                                 */
-/* PAPER:   inline constexpr bool enable_borrowed_range<std::to_utf32_view<V>> = enable_borrowed_range<V>;     */
-/* PAPER:                                                                                                      */
-/* PAPER: }                                                                                                    */
+/* PAPER: namespace std::ranges {                                                                                   */
+/* PAPER:                                                                                                           */
+/* PAPER:   template <class V>                                                                                      */
+/* PAPER:   inline constexpr bool enable_borrowed_range<std::to_utf8_view<V>> = enable_borrowed_range<V>;           */
+/* PAPER:                                                                                                           */
+/* PAPER:   template <class V>                                                                                      */
+/* PAPER:   inline constexpr bool enable_borrowed_range<std::to_utf8_or_error_view<V>> = enable_borrowed_range<V>;  */
+/* PAPER:                                                                                                           */
+/* PAPER:   template <class V>                                                                                      */
+/* PAPER:   inline constexpr bool enable_borrowed_range<std::to_utf16_view<V>> = enable_borrowed_range<V>;          */
+/* PAPER:                                                                                                           */
+/* PAPER:   template <class V>                                                                                      */
+/* PAPER:   inline constexpr bool enable_borrowed_range<std::to_utf16_or_error_view<V>> = enable_borrowed_range<V>; */
+/* PAPER:                                                                                                           */
+/* PAPER:   template <class V>                                                                                      */
+/* PAPER:   inline constexpr bool enable_borrowed_range<std::to_utf32_view<V>> = enable_borrowed_range<V>;          */
+/* PAPER:                                                                                                           */
+/* PAPER:   template <class V>                                                                                      */
+/* PAPER:   inline constexpr bool enable_borrowed_range<std::to_utf32_or_error_view<V>> = enable_borrowed_range<V>; */
+/* PAPER:                                                                                                           */
+/* PAPER: }                                                                                                         */
 
 #endif // BEMAN_UTF_VIEW_TO_UTF_VIEW_HPP
