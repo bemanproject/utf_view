@@ -273,15 +273,16 @@ public:
     }
 
     constexpr exposition_only_iter base() &&
-        requires(!std::forward_iterator<exposition_only_innermost_iter>) {
-          return std::move(*this).curr();
-        }
+      requires(!std::forward_iterator<exposition_only_innermost_iter>)
+    {
+      return std::move(*this).curr();
+    }
 
-        /* PAPER:       constexpr expected<void, utf_transcoding_error> success() const; */
+    /* PAPER:       constexpr expected<void, utf_transcoding_error> success() const; */
 
-        /* !PAPER */
+    /* !PAPER */
 
-        constexpr std::expected<void, utf_transcoding_error> success() const {
+    constexpr std::expected<void, utf_transcoding_error> success() const {
       return success_;
     }
 
