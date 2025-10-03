@@ -75,10 +75,7 @@ static_assert(
                               test_bidi_iterator<char8_t>>>>>);
 
 template <exposition_only_code_unit_to CharT>
-struct test_case_code_unit_result {
-  CharT code_unit;
-  std::expected<void, utf_transcoding_error> success;
-};
+using test_case_code_unit_result = std::expected<CharT, utf_transcoding_error>;
 
 template <exposition_only_code_unit_from CharTFrom, exposition_only_code_unit_to CharTTo>
 struct test_case {
@@ -92,20 +89,15 @@ CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> table3_8{
            static_cast<char8_t>('\xbf'), static_cast<char8_t>('\xf0'),
            static_cast<char8_t>('\x81'), static_cast<char8_t>('\x82'),
            static_cast<char8_t>('A')},
-    .output{{U'\uFFFD', std::unexpected{utf_transcoding_error::invalid_utf8_leading_byte}},
-            {U'\uFFFD',
-             std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
-            {U'\uFFFD', std::unexpected{utf_transcoding_error::overlong}},
-            {U'\uFFFD',
-             std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
-            {U'\uFFFD',
-             std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
-            {U'\uFFFD', std::unexpected{utf_transcoding_error::overlong}},
-            {U'\uFFFD',
-             std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
-            {U'\uFFFD',
-             std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
-            {U'A', {}}}};
+    .output{{std::unexpected{utf_transcoding_error::invalid_utf8_leading_byte}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
+            {std::unexpected{utf_transcoding_error::overlong}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
+            {std::unexpected{utf_transcoding_error::overlong}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
+            {U'A'}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> table3_9{
     .input{static_cast<char8_t>('\xed'), static_cast<char8_t>('\xa0'),
@@ -113,20 +105,15 @@ CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> table3_9{
            static_cast<char8_t>('\xbf'), static_cast<char8_t>('\xbf'),
            static_cast<char8_t>('\xed'), static_cast<char8_t>('\xaf'),
            static_cast<char8_t>('A')},
-    .output{{U'\uFFFD', std::unexpected{utf_transcoding_error::encoded_surrogate}},
-            {U'\uFFFD',
-             std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
-            {U'\uFFFD',
-             std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
-            {U'\uFFFD', std::unexpected{utf_transcoding_error::encoded_surrogate}},
-            {U'\uFFFD',
-             std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
-            {U'\uFFFD',
-             std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
-            {U'\uFFFD', std::unexpected{utf_transcoding_error::encoded_surrogate}},
-            {U'\uFFFD',
-             std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
-            {U'A', {}}}};
+    .output{{std::unexpected{utf_transcoding_error::encoded_surrogate}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
+            {std::unexpected{utf_transcoding_error::encoded_surrogate}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
+            {std::unexpected{utf_transcoding_error::encoded_surrogate}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
+            {U'A'}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> table3_10{
     .input{static_cast<char8_t>('\xf4'), static_cast<char8_t>('\x91'),
@@ -134,20 +121,15 @@ CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> table3_10{
            static_cast<char8_t>('\xff'), static_cast<char8_t>('\x41'),
            static_cast<char8_t>('\x80'), static_cast<char8_t>('\xbf'),
            static_cast<char8_t>('B')},
-    .output{{U'\uFFFD', std::unexpected{utf_transcoding_error::out_of_range}},
-            {U'\uFFFD',
-             std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
-            {U'\uFFFD',
-             std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
-            {U'\uFFFD',
-             std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
-            {U'\uFFFD', std::unexpected{utf_transcoding_error::invalid_utf8_leading_byte}},
-            {U'A', {}},
-            {U'\uFFFD',
-             std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
-            {U'\uFFFD',
-             std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
-            {U'B', {}}}};
+    .output{{std::unexpected{utf_transcoding_error::out_of_range}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
+            {std::unexpected{utf_transcoding_error::invalid_utf8_leading_byte}},
+            {U'A'},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
+            {U'B'}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> table3_11{
     .input{static_cast<char8_t>('\xe1'), static_cast<char8_t>('\x80'),
@@ -155,76 +137,76 @@ CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> table3_11{
            static_cast<char8_t>('\x91'), static_cast<char8_t>('\x92'),
            static_cast<char8_t>('\xf1'), static_cast<char8_t>('\xbf'),
            static_cast<char8_t>('A')},
-    .output{{U'\uFFFD', std::unexpected{utf_transcoding_error::truncated_utf8_sequence}},
-            {U'\uFFFD', std::unexpected{utf_transcoding_error::truncated_utf8_sequence}},
-            {U'\uFFFD', std::unexpected{utf_transcoding_error::truncated_utf8_sequence}},
-            {U'\uFFFD', std::unexpected{utf_transcoding_error::truncated_utf8_sequence}},
-            {U'A', {}}}};
+    .output{{std::unexpected{utf_transcoding_error::truncated_utf8_sequence}},
+            {std::unexpected{utf_transcoding_error::truncated_utf8_sequence}},
+            {std::unexpected{utf_transcoding_error::truncated_utf8_sequence}},
+            {std::unexpected{utf_transcoding_error::truncated_utf8_sequence}},
+            {U'A'}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> two_byte{
     .input{static_cast<char8_t>('\xc2'), static_cast<char8_t>('\xa0')},
-    .output{{U'\u00A0', {}}}};
+    .output{{U'\u00A0'}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> two_byte_truncated_by_end{
     .input{static_cast<char8_t>('\xc2')},
-    .output{{U'\uFFFD', std::unexpected{utf_transcoding_error::truncated_utf8_sequence}}}};
+    .output{{std::unexpected{utf_transcoding_error::truncated_utf8_sequence}}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> two_byte_truncated_by_non_continuation{
     .input{static_cast<char8_t>('\xc2'), static_cast<char8_t>('A')},
-    .output{{U'\uFFFD', std::unexpected{utf_transcoding_error::truncated_utf8_sequence}},
-            {U'A', {}}}};
+    .output{{std::unexpected{utf_transcoding_error::truncated_utf8_sequence}},
+            {U'A'}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> three_byte{
     .input{static_cast<char8_t>('\xe4'), static_cast<char8_t>('\xba'),
            static_cast<char8_t>('\xba')},
-    .output{{U'\u4EBA', {}}}};
+    .output{{U'\u4EBA'}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> three_byte_truncated_at_third_by_end{
     .input{static_cast<char8_t>('\xe4'), static_cast<char8_t>('\xba')},
-    .output{{U'\uFFFD', std::unexpected{utf_transcoding_error::truncated_utf8_sequence}}}};
+    .output{{std::unexpected{utf_transcoding_error::truncated_utf8_sequence}}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t>
     four_byte_truncated_at_second_by_non_continuation{
         .input{static_cast<char8_t>('\xf0'), static_cast<char8_t>('A')},
-        .output{{U'\uFFFD', std::unexpected{utf_transcoding_error::truncated_utf8_sequence}},
-                {U'A', {}}}};
+        .output{{std::unexpected{utf_transcoding_error::truncated_utf8_sequence}},
+                {U'A'}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> four_byte_truncated_at_third_by_end{
     .input{static_cast<char8_t>('\xf0'), static_cast<char8_t>('\x90')},
-    .output{{U'\uFFFD', std::unexpected{utf_transcoding_error::truncated_utf8_sequence}}}};
+    .output{{std::unexpected{utf_transcoding_error::truncated_utf8_sequence}}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> four_byte_truncated_at_fourth_by_end{
     .input{static_cast<char8_t>('\xf0'), static_cast<char8_t>('\x90'),
            static_cast<char8_t>('\x80')},
-    .output{{U'\uFFFD', std::unexpected{utf_transcoding_error::truncated_utf8_sequence}}}};
+    .output{{std::unexpected{utf_transcoding_error::truncated_utf8_sequence}}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char16_t, char32_t> single_high{
     .input{u'\xD800'},
-    .output{{U'\uFFFD', std::unexpected{utf_transcoding_error::unpaired_high_surrogate}}}};
+    .output{{std::unexpected{utf_transcoding_error::unpaired_high_surrogate}}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char16_t, char32_t>
     surrogate_pair_truncated_by_non_low_surrogate{
         .input{u'\xD800', u'A'},
-        .output{{U'\uFFFD', std::unexpected{utf_transcoding_error::unpaired_high_surrogate}},
-                {U'A', {}}}};
+        .output{{std::unexpected{utf_transcoding_error::unpaired_high_surrogate}},
+                {U'A'}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char16_t, char32_t> single_low{
     .input{u'\xDC00'},
-    .output{{U'\uFFFD', std::unexpected{utf_transcoding_error::unpaired_low_surrogate}}}};
+    .output{{std::unexpected{utf_transcoding_error::unpaired_low_surrogate}}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char16_t, char32_t> surrogates{
-    .input{u'\xD800', u'\xDC00'}, .output{{U'\U00010000', {}}}};
+    .input{u'\xD800', u'\xDC00'}, .output{{U'\U00010000'}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char16_t, char32_t> nonsurrogates{
-    .input{u'X', u'Y', u'Z'}, .output{{U'X', {}}, {U'Y', {}}, {U'Z', {}}}};
+    .input{u'X', u'Y', u'Z'}, .output{{U'X'}, {U'Y'}, {U'Z'}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char32_t, char32_t> encoded_surrogate{
     .input{U'\x0000DC00'},
-    .output{{U'\uFFFD', std::unexpected{utf_transcoding_error::encoded_surrogate}}}};
+    .output{{std::unexpected{utf_transcoding_error::encoded_surrogate}}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char32_t, char32_t> out_of_range{
     .input{U'\x00110000'},
-    .output{{U'\uFFFD', std::unexpected{utf_transcoding_error::out_of_range}}}};
+    .output{{std::unexpected{utf_transcoding_error::out_of_range}}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char8_t, char8_t> valid_utf8_identity{
     .input{static_cast<char8_t>('A'), static_cast<char8_t>('\xc2'),
@@ -232,64 +214,62 @@ CONSTEXPR_UNLESS_MSVC test_case<char8_t, char8_t> valid_utf8_identity{
            static_cast<char8_t>('\xba'), static_cast<char8_t>('\xba'),
            static_cast<char8_t>('\xf0'), static_cast<char8_t>('\x90'),
            static_cast<char8_t>('\x80'), static_cast<char8_t>('\x80')},
-    .output{{static_cast<char8_t>('A'), {}},
-            {static_cast<char8_t>('\xc2'), {}},
-            {static_cast<char8_t>('\xa0'), {}},
-            {static_cast<char8_t>('\xe4'), {}},
-            {static_cast<char8_t>('\xba'), {}},
-            {static_cast<char8_t>('\xba'), {}},
-            {static_cast<char8_t>('\xf0'), {}},
-            {static_cast<char8_t>('\x90'), {}},
-            {static_cast<char8_t>('\x80'), {}},
-            {static_cast<char8_t>('\x80'), {}}}};
+    .output{{static_cast<char8_t>('A')},
+            {static_cast<char8_t>('\xc2')},
+            {static_cast<char8_t>('\xa0')},
+            {static_cast<char8_t>('\xe4')},
+            {static_cast<char8_t>('\xba')},
+            {static_cast<char8_t>('\xba')},
+            {static_cast<char8_t>('\xf0')},
+            {static_cast<char8_t>('\x90')},
+            {static_cast<char8_t>('\x80')},
+            {static_cast<char8_t>('\x80')}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char, char8_t> valid_utf8_char_identity{
     .input{'A', '\xc2', '\xa0', '\xe4', '\xba', '\xba', '\xf0', '\x90', '\x80', '\x80'},
-    .output{{static_cast<char8_t>('A'), {}},
-            {static_cast<char8_t>('\xc2'), {}},
-            {static_cast<char8_t>('\xa0'), {}},
-            {static_cast<char8_t>('\xe4'), {}},
-            {static_cast<char8_t>('\xba'), {}},
-            {static_cast<char8_t>('\xba'), {}},
-            {static_cast<char8_t>('\xf0'), {}},
-            {static_cast<char8_t>('\x90'), {}},
-            {static_cast<char8_t>('\x80'), {}},
-            {static_cast<char8_t>('\x80'), {}}}};
+    .output{{static_cast<char8_t>('A')},
+            {static_cast<char8_t>('\xc2')},
+            {static_cast<char8_t>('\xa0')},
+            {static_cast<char8_t>('\xe4')},
+            {static_cast<char8_t>('\xba')},
+            {static_cast<char8_t>('\xba')},
+            {static_cast<char8_t>('\xf0')},
+            {static_cast<char8_t>('\x90')},
+            {static_cast<char8_t>('\x80')},
+            {static_cast<char8_t>('\x80')}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char16_t, char16_t> valid_utf16_identity{
     .input{u'A', u'\xD800', u'\xDC00'},
-    .output{{u'A', {}}, {u'\xD800', {}}, {u'\xDC00', {}}}};
+    .output{{u'A'}, {u'\xD800'}, {u'\xDC00'}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<wchar_t, char16_t> valid_utf16_wchar_identity{
-    .input{L'A', L'\x4EBA'}, .output{{u'A', {}}, {u'\x4EBA', {}}}};
+    .input{L'A', L'\x4EBA'}, .output{{u'A'}, {u'\x4EBA'}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char32_t, char32_t> valid_utf32_identity{
-    .input{U'X', U'Y', U'Z'}, .output{{U'X', {}}, {U'Y', {}}, {U'Z', {}}}};
+    .input{U'X', U'Y', U'Z'}, .output{{U'X'}, {U'Y'}, {U'Z'}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> four_continuations{
     .input{static_cast<char8_t>('\xf0'), static_cast<char8_t>('\x90'),
            static_cast<char8_t>('\x80'), static_cast<char8_t>('\x80'),
            static_cast<char8_t>('\x80')},
-    .output{{U'\x00010000', {}},
-            {U'\uFFFD',
-             std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}}}};
+    .output{{U'\x00010000'},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char16_t, char32_t> two_low_surrogates{
     .input{u'\xD800', u'\xDC00', u'\xDC00'},
-    .output{{U'\x00010000', {}},
-            {U'\uFFFD', std::unexpected{utf_transcoding_error::unpaired_low_surrogate}}}};
+    .output{{U'\x00010000'},
+            {std::unexpected{utf_transcoding_error::unpaired_low_surrogate}}}};
 
 CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> ff_at_end{
     .input{static_cast<char8_t>('\xc3'), static_cast<char8_t>('\xa9'),
            static_cast<char8_t>('\xff')},
-    .output{{U'\u00E9', {}},
-            {U'\uFFFD', std::unexpected{utf_transcoding_error::invalid_utf8_leading_byte}}}};
+    .output{{U'\u00E9'},
+            {std::unexpected{utf_transcoding_error::invalid_utf8_leading_byte}}}};
 
 
 template <typename WrappingIterator, exposition_only_code_unit_from CharTFrom,
           exposition_only_code_unit_to CharTTo>
 constexpr bool run_test_case_impl(test_case<CharTFrom, CharTTo> test_case) {
-#if 0
   auto view{[&] {
     auto it{WrappingIterator(test_case.input)};
     if constexpr (!std::copyable<WrappingIterator>) {
@@ -309,10 +289,7 @@ constexpr bool run_test_case_impl(test_case<CharTFrom, CharTTo> test_case) {
     auto view_it{view.begin()};
     auto end{view.end()};
     do {
-      if (*view_it != output_it->code_unit) {
-        return false;
-      }
-      if (view_it.success() != output_it->success) {
+      if (*view_it != *output_it) {
         return false;
       }
       ++output_it;
@@ -327,10 +304,7 @@ constexpr bool run_test_case_impl(test_case<CharTFrom, CharTTo> test_case) {
       ++end;
     }
     do {
-      if (*view_it != output_it->code_unit) {
-        return false;
-      }
-      if (view_it.success() != output_it->success) {
+      if (*view_it != *output_it) {
         return false;
       }
       ++output_it;
@@ -349,19 +323,13 @@ constexpr bool run_test_case_impl(test_case<CharTFrom, CharTTo> test_case) {
       do {
         --view_it;
         --output_it;
-        if (*view_it != output_it->code_unit) {
-          return false;
-        }
-        if (view_it.success() != output_it->success) {
+        if (*view_it != *output_it) {
           return false;
         }
       } while (view_it != end);
     }
   }
   return true;
-#else
-  throw;
-#endif
 }
 
 template <exposition_only_code_unit_from CharTFrom, exposition_only_code_unit_to CharTTo>
