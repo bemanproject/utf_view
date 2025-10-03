@@ -197,7 +197,8 @@ public:
     /* PAPER:       using @*innermost-sent*@ = @*unspecified*@; // @*exposition only*@ */
 
   public:
-    using value_type = ToType;
+    using value_type =
+        std::conditional_t<OrError, std::expected<ToType, utf_transcoding_error>, ToType>;
     using reference_type = ToType&;
     using difference_type = ptrdiff_t;
     using iterator_concept =
@@ -280,11 +281,20 @@ public:
     /* PAPER:       constexpr value_type operator*() const; */
     /* !PAPER */
     constexpr value_type operator*() const {
-      if constexpr (std::forward_iterator<exposition_only_innermost_iter>) {
-        return buf_[buf_index_];
-      } else {
-        return buf_[buf_index_ & 3];
+      auto const code_unit{
+        [&] {
+          if constexpr (std::forward_iterator<exposition_only_innermost_iter>) {
+            return buf_[buf_index_];
+          } else {
+            return buf_[buf_index_ & 3];
+          }
+        }()};
+      if constexpr (OrError) {
+        if (!success_.has_value()) {
+          return std::unexpected{success_.error()};
+        }
       }
+      return code_unit;
     }
     /* PAPER */
 
