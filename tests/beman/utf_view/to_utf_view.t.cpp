@@ -6,7 +6,6 @@
 //          https://www.boost.org/LICENSE_1_0.txt)
 
 #include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
-#include <beman/utf_view/detail/erroneous_behavior_global.hpp>
 #include <beman/utf_view/null_term.hpp>
 #include <beman/utf_view/to_utf_view.hpp>
 #include <framework.hpp>
@@ -497,108 +496,6 @@ constexpr bool post_increment_decrement_test() {
       return false;
     }
   }
-  return true;
-}
-
-static bool past_the_end_increment_eb_test() {
-  std::initializer_list<char8_t> arr{u8'x'};
-  {
-    test_input_iterator it_begin(arr);
-    std::ranges::subrange subrange{std::move(it_begin), std::default_sentinel};
-    auto single_encoded_view = std::move(subrange) | to_utf16;
-    auto iter = single_encoded_view.begin();
-    if (*iter != u'x') {
-      return false;
-    }
-    ++iter;
-    if (detail::erroneous_behavior_global()) {
-      return false;
-    }
-    ++iter;
-    if (!detail::erroneous_behavior_global()) {
-      return false;
-    }
-    detail::erroneous_behavior_global() = false;
-  }
-  {
-    test_forward_iterator it_begin(arr);
-    std::ranges::subrange subrange{std::move(it_begin), std::default_sentinel};
-    auto single_encoded_view = subrange | to_utf16;
-    auto iter = single_encoded_view.begin();
-    if (*iter != u'x') {
-      return false;
-    }
-    ++iter;
-    if (detail::erroneous_behavior_global()) {
-      return false;
-    }
-    ++iter;
-    if (!detail::erroneous_behavior_global()) {
-      return false;
-    }
-    detail::erroneous_behavior_global() = false;
-  }
-  return true;
-}
-
-static bool past_the_end_dereference_eb_test() {
-  std::initializer_list<char8_t> arr{u8'x'};
-  {
-    test_input_iterator it_begin(arr);
-    std::ranges::subrange subrange{std::move(it_begin), std::default_sentinel};
-    auto single_encoded_view = std::move(subrange) | to_utf16;
-    auto iter = single_encoded_view.begin();
-    if (*iter != u'x') {
-      return false;
-    }
-    ++iter;
-    if (detail::erroneous_behavior_global()) {
-      return false;
-    }
-    *iter;
-    if (!detail::erroneous_behavior_global()) {
-      return false;
-    }
-    detail::erroneous_behavior_global() = false;
-  }
-  {
-    test_forward_iterator it_begin(arr);
-    std::ranges::subrange subrange{std::move(it_begin), std::default_sentinel};
-    auto single_encoded_view = subrange | to_utf16;
-    auto iter = single_encoded_view.begin();
-    if (*iter != u'x') {
-      return false;
-    }
-    ++iter;
-    if (detail::erroneous_behavior_global()) {
-      return false;
-    }
-    *iter;
-    if (!detail::erroneous_behavior_global()) {
-      return false;
-    }
-    detail::erroneous_behavior_global() = false;
-  }
-  return true;
-}
-
-static bool before_the_beginning_decrement_eb_test() {
-  std::initializer_list<char8_t> arr{u8'x'};
-  test_bidi_iterator it_begin(arr);
-  std::ranges::subrange subrange{std::move(it_begin), std::default_sentinel};
-  auto single_encoded_view = subrange | to_utf16;
-  auto iter = single_encoded_view.begin();
-  if (*iter != u'x') {
-    return false;
-  }
-  if (detail::erroneous_behavior_global()) {
-    return false;
-  }
-  --iter;
-  if (!detail::erroneous_behavior_global()) {
-    return false;
-  }
-  detail::erroneous_behavior_global() = false;
   return true;
 }
 
@@ -1666,21 +1563,6 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
   return true;
 }
 
-bool utf_view_eb_tests() {
-#ifndef NDEBUG
-  if (!past_the_end_increment_eb_test()) {
-    return false;
-  }
-  if (!past_the_end_dereference_eb_test()) {
-    return false;
-  }
-  if (!before_the_beginning_decrement_eb_test()) {
-    return false;
-  }
-#endif
-  return true;
-}
-
 bool utf_view_appendix_tests() {
   if (!iconv_test()) {
     return false;
@@ -1711,7 +1593,6 @@ static_assert(utf_view_constexpr_appendix_tests());
 
 static auto const init{[] {
   framework::tests().insert({"utf_view_test", &utf_view_test});
-  framework::tests().insert({"utf_view_eb_tests", &utf_view_eb_tests});
   framework::tests().insert(
       {"utf_view_constexpr_appendix_tests", &utf_view_constexpr_appendix_tests});
   framework::tests().insert({"utf_view_appendix_tests", &utf_view_appendix_tests});

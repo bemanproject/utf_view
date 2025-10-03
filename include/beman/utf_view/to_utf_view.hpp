@@ -10,7 +10,6 @@
 
 #include <beman/utf_view/detail/concepts.hpp>
 #include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
-#include <beman/utf_view/detail/erroneous_behavior_global.hpp>
 #include <bit>
 #include <cassert>
 #include <concepts>
@@ -55,18 +54,6 @@ namespace detail {
 
   constexpr bool low_surrogate(char16_t c) {
     return 0xDC00 <= c && c <= 0xDFFF;
-  }
-
-  inline CONSTEXPR_UNLESS_MSVC void erroneous() {
-#ifndef _MSC_VER
-    if !consteval {
-#endif
-#ifndef NDEBUG
-      erroneous_behavior_global() = true;
-#endif
-#ifndef _MSC_VER
-    }
-#endif
   }
 
 } // namespace detail
@@ -291,11 +278,6 @@ public:
     /* PAPER:       constexpr value_type operator*() const; */
     /* !PAPER */
     constexpr value_type operator*() const {
-#ifndef NDEBUG
-      if (*this == last_) {
-        detail::erroneous();
-      }
-#endif
       if constexpr (std::forward_iterator<exposition_only_innermost_iter>) {
         return buf_[buf_index_];
       } else {
@@ -309,13 +291,6 @@ public:
         if (buf_index_ + 1 < buf_last_) {
           ++buf_index_;
         } else if (buf_index_ + 1 == buf_last_) {
-/* !PAPER */
-#ifndef NDEBUG
-          if (curr() == last_) {
-            detail::erroneous();
-          }
-#endif
-          /* PAPER */
           std::advance(curr(), to_increment_);
           to_increment_ = 0;
           if (curr() != last_) {
@@ -330,13 +305,6 @@ public:
         } else if (buf_index_ + 1 <= buf_last_) {
           ++buf_index_;
         }
-/* !PAPER */
-#ifndef NDEBUG
-        else if (curr() == last_) {
-          detail::erroneous();
-        }
-#endif
-        /* PAPER */
       }
       return *this;
     }
@@ -819,10 +787,6 @@ public:
     /* PAPER:       constexpr void read_reverse(); // @*exposition only*@ */
 
     constexpr void read_reverse() { // @*exposition only*@
-      if (curr() == begin()) {
-        detail::erroneous();
-        return;
-      }
       success_.emplace();
       auto const read_reverse_impl_result{[&] {
         if constexpr (std::is_same_v<exposition_only_from_type, char8_t>) {
