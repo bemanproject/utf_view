@@ -106,9 +106,9 @@ concept exposition_only_from_utf_view =
     (!exposition_only_to_utf_view_iterator_optimizable<std::ranges::sentinel_t<V>> ||
      exposition_only_to_utf_view_iterator_optimizable<std::ranges::iterator_t<V>>);
 
-template <exposition_only_code_unit_to ToType, exposition_only_from_utf_view V>
+template <bool OrError, exposition_only_code_unit_to ToType, exposition_only_from_utf_view V>
 class exposition_only_to_utf_view_impl
-    : public std::ranges::view_interface<exposition_only_to_utf_view_impl<ToType, V>> {
+    : public std::ranges::view_interface<exposition_only_to_utf_view_impl<OrError, ToType, V>> {
 public:
   template <bool Const>
   class exposition_only_utf_iterator {
@@ -123,7 +123,7 @@ public:
     using exposition_only_sent =
         std::ranges::sentinel_t<exposition_only_maybe_const<Const, V>>;
 
-    template <exposition_only_code_unit_to ToType2,
+    template <bool OrError2, exposition_only_code_unit_to ToType2,
               exposition_only_from_utf_view V2>
     friend class exposition_only_to_utf_view_impl; // @*exposition only*@
 
@@ -269,9 +269,11 @@ public:
 
     /* !PAPER */
 
+#if 0
     constexpr std::expected<void, utf_transcoding_error> success() const {
       return success_;
     }
+#endif
 
     /* PAPER */
 
@@ -913,9 +915,9 @@ template <exposition_only_from_utf_view V>
 class to_utf8_view {
 private:
   using exposition_only_iterator =
-      std::ranges::iterator_t<exposition_only_to_utf_view_impl<char8_t, V>>;
+      std::ranges::iterator_t<exposition_only_to_utf_view_impl<false, char8_t, V>>;
   using exposition_only_sentinel =
-      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<char8_t, V>>;
+      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<false, char8_t, V>>;
 
 public:
   constexpr to_utf8_view()
@@ -960,7 +962,7 @@ public:
   }
 
 private:
-  exposition_only_to_utf_view_impl<char8_t, V> impl_;
+  exposition_only_to_utf_view_impl<false, char8_t, V> impl_;
 };
 
 template <class R>
@@ -970,9 +972,9 @@ template <exposition_only_from_utf_view V>
 class to_utf16_view {
 private:
   using exposition_only_iterator =
-      std::ranges::iterator_t<exposition_only_to_utf_view_impl<char16_t, V>>;
+      std::ranges::iterator_t<exposition_only_to_utf_view_impl<false, char16_t, V>>;
   using exposition_only_sentinel =
-      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<char16_t, V>>;
+      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<false, char16_t, V>>;
 
 public:
   constexpr to_utf16_view()
@@ -1017,7 +1019,7 @@ public:
   }
 
 private:
-  exposition_only_to_utf_view_impl<char16_t, V> impl_;
+  exposition_only_to_utf_view_impl<false, char16_t, V> impl_;
 };
 
 template <class R>
@@ -1027,9 +1029,9 @@ template <exposition_only_from_utf_view V>
 class to_utf32_view {
 private:
   using exposition_only_iterator =
-      std::ranges::iterator_t<exposition_only_to_utf_view_impl<char32_t, V>>;
+      std::ranges::iterator_t<exposition_only_to_utf_view_impl<false, char32_t, V>>;
   using exposition_only_sentinel =
-      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<char32_t, V>>;
+      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<false, char32_t, V>>;
 
 public:
   constexpr to_utf32_view()
@@ -1074,7 +1076,7 @@ public:
   }
 
 private:
-  exposition_only_to_utf_view_impl<char32_t, V> impl_;
+  exposition_only_to_utf_view_impl<false, char32_t, V> impl_;
 };
 
 template <class R>

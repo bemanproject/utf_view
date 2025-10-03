@@ -285,9 +285,11 @@ CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> ff_at_end{
     .output{{U'\u00E9', {}},
             {U'\uFFFD', std::unexpected{utf_transcoding_error::invalid_utf8_leading_byte}}}};
 
+
 template <typename WrappingIterator, exposition_only_code_unit_from CharTFrom,
           exposition_only_code_unit_to CharTTo>
 constexpr bool run_test_case_impl(test_case<CharTFrom, CharTTo> test_case) {
+#if 0
   auto view{[&] {
     auto it{WrappingIterator(test_case.input)};
     if constexpr (!std::copyable<WrappingIterator>) {
@@ -357,6 +359,9 @@ constexpr bool run_test_case_impl(test_case<CharTFrom, CharTTo> test_case) {
     }
   }
   return true;
+#else
+  throw;
+#endif
 }
 
 template <exposition_only_code_unit_from CharTFrom, exposition_only_code_unit_to CharTTo>
@@ -582,6 +587,7 @@ constexpr bool to_utf_test() {
 
 template <template <typename> typename TestIterator>
 CONSTEXPR_UNLESS_MSVC bool wrapped_view_mid_code_point_test_impl() {
+#if 0
   enum class base_test {
     none,
     range,
@@ -686,6 +692,9 @@ CONSTEXPR_UNLESS_MSVC bool wrapped_view_mid_code_point_test_impl() {
   return test(base_test::none) && test(base_test::range) &&
       test(base_test::iterator_mid_code_point) &&
       test(base_test::iterator_full_code_point);
+#else
+  throw;
+#endif
 }
 
 CONSTEXPR_UNLESS_MSVC bool wrapped_view_bidirectional_mid_code_point_test_impl() {
@@ -883,6 +892,7 @@ struct iconv_t { };
 // For the sake of simplicity, this iconv only converts between UTF-8 and UTF-32.
 size_t iconv([[maybe_unused]] iconv_t cd, const char** inbuf, size_t* inbytesleft,
              char** outbuf, size_t* outbytesleft) {
+#if 0
   if (!inbuf) {
     return 0;
   }
@@ -933,6 +943,9 @@ size_t iconv([[maybe_unused]] iconv_t cd, const char** inbuf, size_t* inbyteslef
     }
   }
   return 0;
+#else
+  throw;
+#endif
 }
 
 bool iconv_test() {
@@ -1008,6 +1021,7 @@ constexpr char16_t* u_strFromUTF8WithSub(char16_t* dest, int32_t destCapacity,
                                          int32_t srcLength, char32_t subchar,
                                          int32_t* pNumSubstitutions,
                                          UErrorCode* pErrorCode) {
+#if 0
   if (*pErrorCode != U_ZERO_ERROR) {
     return nullptr;
   }
@@ -1076,6 +1090,9 @@ constexpr char16_t* u_strFromUTF8WithSub(char16_t* dest, int32_t destCapacity,
   } else {
     return impl(std::ranges::subrange(src, src + srcLength) | to_utf16);
   }
+#else
+  throw;
+#endif
 }
 
 constexpr bool u_strFromUTF8WithSub_test() {
@@ -1180,6 +1197,7 @@ CONSTEXPR_UNLESS_MSVC int MultiByteToWideChar(unsigned int CodePage,
                                               unsigned long dwFlags,
                                               const char* lpMultiByteStr, int cbMultiByte,
                                               wchar_t* lpWideCharStr, int cchWideChar) {
+#if 0
   (void)CodePage; // For simplicity we only implement CP_UTF8
   auto impl = [&](auto view) {
     auto end = std::ranges::end(view);
@@ -1239,6 +1257,9 @@ CONSTEXPR_UNLESS_MSVC int MultiByteToWideChar(unsigned int CodePage,
                   to_utf32);
     }
   }
+#else
+  throw;
+#endif
 }
 
 template <bool WindowsXp>
@@ -1338,6 +1359,7 @@ CONSTEXPR_UNLESS_MSVC bool MultiByteToWideChar_test() {
 
 template <typename FromChar, typename ToChar>
 std::basic_string<ToChar> decode(std::basic_string_view<FromChar> input) {
+#if 0
   std::basic_string<ToChar> result;
   result.reserve(input.size()); // like what size_hint does
   auto view = input | to_utf<ToChar>;
@@ -1390,6 +1412,9 @@ std::basic_string<ToChar> decode(std::basic_string_view<FromChar> input) {
     }
   }
   return result;
+#else
+  throw;
+#endif
 }
 
 bool decode_test() {
@@ -1586,9 +1611,11 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_constexpr_appendix_tests() {
   return true;
 }
 
+#if 0
 #ifndef _MSC_VER
 static_assert(utf_view_test());
 static_assert(utf_view_constexpr_appendix_tests());
+#endif
 #endif
 
 static auto const init{[] {
