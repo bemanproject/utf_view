@@ -71,7 +71,7 @@ namespace detail {
 
 } // namespace detail
 
-/* PAPER: namespace std::uc { */
+/* PAPER: namespace std::ranges { */
 
 /* PAPER */
 
@@ -1160,6 +1160,8 @@ inline constexpr detail::to_utf_impl<char16_t> to_utf16;
 
 inline constexpr detail::to_utf_impl<char32_t> to_utf32;
 
+/* PAPER: namespace views {                            */
+/* PAPER:                                              */
 /* PAPER:   template<@*code-unit-to*@ ToType>          */
 /* PAPER:   inline constexpr @*unspecified*@ to_utf;   */
 /* PAPER:                                              */
@@ -1168,10 +1170,12 @@ inline constexpr detail::to_utf_impl<char32_t> to_utf32;
 /* PAPER:   inline constexpr @*unspecified*@ to_utf16; */
 /* PAPER:                                              */
 /* PAPER:   inline constexpr @*unspecified*@ to_utf32; */
+/* PAPER:                                              */
+/* PAPER: }                                            */
+/* PAPER:                                              */
+/* PAPER: }                                            */
 
 } // namespace beman::utf_view
-
-/* PAPER: } */
 
 template <class ToType, class V>
 inline constexpr bool std::ranges::enable_borrowed_range<
@@ -1194,16 +1198,16 @@ inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf
 /* PAPER:                                                                                                      */
 /* PAPER:   template <class ToType, class V>                                                                   */
 /* PAPER:     inline constexpr bool enable_borrowed_range<                                                     */
-/* PAPER:       std::uc::exposition_only_to_utf_view_impl<ToType, V>> = enable_borrowed_range<V>;              */
+/* PAPER:       std::exposition_only_to_utf_view_impl<ToType, V>> = enable_borrowed_range<V>;                  */
 /* PAPER:                                                                                                      */
 /* PAPER:   template <class V>                                                                                 */
-/* PAPER:   inline constexpr bool enable_borrowed_range<std::uc::to_utf8_view<V>> = enable_borrowed_range<V>;  */
+/* PAPER:   inline constexpr bool enable_borrowed_range<std::to_utf8_view<V>> = enable_borrowed_range<V>;      */
 /* PAPER:                                                                                                      */
 /* PAPER:   template <class V>                                                                                 */
-/* PAPER:   inline constexpr bool enable_borrowed_range<std::uc::to_utf16_view<V>> = enable_borrowed_range<V>; */
+/* PAPER:   inline constexpr bool enable_borrowed_range<std::to_utf16_view<V>> = enable_borrowed_range<V>;     */
 /* PAPER:                                                                                                      */
 /* PAPER:   template <class V>                                                                                 */
-/* PAPER:   inline constexpr bool enable_borrowed_range<std::uc::to_utf32_view<V>> = enable_borrowed_range<V>; */
+/* PAPER:   inline constexpr bool enable_borrowed_range<std::to_utf32_view<V>> = enable_borrowed_range<V>;     */
 /* PAPER:                                                                                                      */
 /* PAPER: }                                                                                                    */
 

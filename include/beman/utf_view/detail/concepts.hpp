@@ -15,7 +15,7 @@
 
 namespace beman::utf_view {
 
-/* PAPER: namespace std::uc { */
+/* PAPER: namespace std::ranges { */
 
 template <class T>
 using exposition_only_with_reference = T&; // exposition only
