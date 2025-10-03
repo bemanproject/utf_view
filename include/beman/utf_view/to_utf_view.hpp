@@ -1379,11 +1379,23 @@ inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf
     std::ranges::enable_borrowed_range<T>;
 
 template <class T>
+inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf8_or_error_view<T>> =
+    std::ranges::enable_borrowed_range<T>;
+
+template <class T>
 inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf16_view<T>> =
     std::ranges::enable_borrowed_range<T>;
 
 template <class T>
+inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf16_or_error_view<T>> =
+    std::ranges::enable_borrowed_range<T>;
+
+template <class T>
 inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf32_view<T>> =
+    std::ranges::enable_borrowed_range<T>;
+
+template <class T>
+inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf32_or_error_view<T>> =
     std::ranges::enable_borrowed_range<T>;
 
 /* PAPER: namespace std::ranges {                                                                                   */

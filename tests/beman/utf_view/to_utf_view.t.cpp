@@ -855,10 +855,10 @@ CONSTEXPR_UNLESS_MSVC bool rvalue_array_test() {
 
 struct iconv_t { };
 
+#if 0
 // For the sake of simplicity, this iconv only converts between UTF-8 and UTF-32.
 size_t iconv([[maybe_unused]] iconv_t cd, const char** inbuf, size_t* inbytesleft,
              char** outbuf, size_t* outbytesleft) {
-#if 0
   if (!inbuf) {
     return 0;
   }
@@ -909,11 +909,10 @@ size_t iconv([[maybe_unused]] iconv_t cd, const char** inbuf, size_t* inbyteslef
     }
   }
   return 0;
-#else
-  throw;
-#endif
 }
+#endif
 
+#if 0
 bool iconv_test() {
   {
     std::array const input{'\xc3', '\xa9'};
@@ -975,6 +974,7 @@ bool iconv_test() {
   }
   return true;
 }
+#endif
 
 enum UErrorCode {
   U_ZERO_ERROR = 0,
@@ -982,12 +982,12 @@ enum UErrorCode {
   U_INVALID_CHAR_FOUND
 };
 
+#if 0
 constexpr char16_t* u_strFromUTF8WithSub(char16_t* dest, int32_t destCapacity,
                                          int32_t* pDestLength, const char* src,
                                          int32_t srcLength, char32_t subchar,
                                          int32_t* pNumSubstitutions,
                                          UErrorCode* pErrorCode) {
-#if 0
   if (*pErrorCode != U_ZERO_ERROR) {
     return nullptr;
   }
@@ -1056,11 +1056,10 @@ constexpr char16_t* u_strFromUTF8WithSub(char16_t* dest, int32_t destCapacity,
   } else {
     return impl(std::ranges::subrange(src, src + srcLength) | to_utf16);
   }
-#else
-  throw;
-#endif
 }
+#endif
 
+#if 0
 constexpr bool u_strFromUTF8WithSub_test() {
   auto test = [](bool const use_nullterm, bool const preflight) {
     {
@@ -1146,6 +1145,7 @@ constexpr bool u_strFromUTF8WithSub_test() {
   }
   return true;
 }
+#endif
 
 inline constexpr unsigned long MB_ERR_INVALID_CHARS = 1;
 inline constexpr unsigned long ERROR_INSUFFICIENT_BUFFER = 1;
@@ -1158,12 +1158,12 @@ CONSTEXPR_UNLESS_MSVC void SetLastError(unsigned long dwErrCode) {
   (void)dwErrCode;
 }
 
+#if 0
 template <bool WindowsXp>
 CONSTEXPR_UNLESS_MSVC int MultiByteToWideChar(unsigned int CodePage,
                                               unsigned long dwFlags,
                                               const char* lpMultiByteStr, int cbMultiByte,
                                               wchar_t* lpWideCharStr, int cchWideChar) {
-#if 0
   (void)CodePage; // For simplicity we only implement CP_UTF8
   auto impl = [&](auto view) {
     auto end = std::ranges::end(view);
@@ -1223,11 +1223,10 @@ CONSTEXPR_UNLESS_MSVC int MultiByteToWideChar(unsigned int CodePage,
                   to_utf32);
     }
   }
-#else
-  throw;
-#endif
 }
+#endif
 
+#if 0
 template <bool WindowsXp>
 CONSTEXPR_UNLESS_MSVC bool MultiByteToWideChar_test() {
   auto test = [](bool const use_nullterm, bool const preflight,
@@ -1322,10 +1321,11 @@ CONSTEXPR_UNLESS_MSVC bool MultiByteToWideChar_test() {
   }
   return true;
 }
+#endif
 
+#if 0
 template <typename FromChar, typename ToChar>
 std::basic_string<ToChar> decode(std::basic_string_view<FromChar> input) {
-#if 0
   std::basic_string<ToChar> result;
   result.reserve(input.size()); // like what size_hint does
   auto view = input | to_utf<ToChar>;
@@ -1378,11 +1378,10 @@ std::basic_string<ToChar> decode(std::basic_string_view<FromChar> input) {
     }
   }
   return result;
-#else
-  throw;
-#endif
 }
+#endif
 
+#if 0
 bool decode_test() {
   auto check_exception_what = [](auto func, std::string const& what) {
     try {
@@ -1410,10 +1409,14 @@ bool decode_test() {
   }
   return true;
 }
+#endif
 
 static_assert(std::ranges::borrowed_range<to_utf8_view<std::string_view>>);
 static_assert(std::ranges::borrowed_range<to_utf16_view<std::string_view>>);
 static_assert(std::ranges::borrowed_range<to_utf32_view<std::string_view>>);
+static_assert(std::ranges::borrowed_range<to_utf8_or_error_view<std::string_view>>);
+static_assert(std::ranges::borrowed_range<to_utf16_or_error_view<std::string_view>>);
+static_assert(std::ranges::borrowed_range<to_utf32_or_error_view<std::string_view>>);
 
 CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
   if (!input_iterator_test(std::initializer_list<char8_t>{u8'x'})) {
@@ -1554,6 +1557,7 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
   return true;
 }
 
+#if 0
 bool utf_view_appendix_tests() {
   if (!iconv_test()) {
     return false;
@@ -1576,6 +1580,7 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_constexpr_appendix_tests() {
   }
   return true;
 }
+#endif
 
 #if 0
 #ifndef _MSC_VER
