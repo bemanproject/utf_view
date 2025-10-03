@@ -10,19 +10,12 @@
 
 namespace beman::utf_view::tests {
 
-static_assert(exposition_only_code_unit_to<char8_t>);
-static_assert(exposition_only_code_unit_to<char16_t>);
-static_assert(exposition_only_code_unit_to<char32_t>);
-static_assert(!exposition_only_code_unit_to<wchar_t>);
-static_assert(!exposition_only_code_unit_to<char>);
-static_assert(!exposition_only_code_unit_to<int>);
-
-static_assert(exposition_only_code_unit_from<char8_t>);
-static_assert(exposition_only_code_unit_from<char16_t>);
-static_assert(exposition_only_code_unit_from<char32_t>);
-static_assert(exposition_only_code_unit_from<wchar_t>);
-static_assert(exposition_only_code_unit_from<char>);
-static_assert(!exposition_only_code_unit_from<int>);
+static_assert(exposition_only_code_unit<char8_t>);
+static_assert(exposition_only_code_unit<char16_t>);
+static_assert(exposition_only_code_unit<char32_t>);
+static_assert(!exposition_only_code_unit<wchar_t>);
+static_assert(!exposition_only_code_unit<char>);
+static_assert(!exposition_only_code_unit<int>);
 
 // todo: utf_range
 
