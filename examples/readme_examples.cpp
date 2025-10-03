@@ -82,6 +82,7 @@ std::string enum_to_string(utf_transcoding_error ec) {
 
 template <typename FromChar, typename ToChar>
 std::basic_string<ToChar> transcode_or_throw(std::basic_string_view<FromChar> input) {
+#if 0
   std::basic_string<ToChar> result;
   auto view = input | to_utf<ToChar>;
   for (auto it = view.begin(), end = view.end(); it != end; ++it) {
@@ -94,6 +95,9 @@ std::basic_string<ToChar> transcode_or_throw(std::basic_string_view<FromChar> in
     }
   }
   return result;
+#else
+  throw;
+#endif
 }
 
 template <typename I, typename O>
