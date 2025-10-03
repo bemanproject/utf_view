@@ -555,7 +555,6 @@ constexpr bool to_utf_test() {
 
 template <template <typename> typename TestIterator>
 CONSTEXPR_UNLESS_MSVC bool wrapped_view_mid_code_point_test_impl() {
-#if 0
   enum class base_test {
     none,
     range,
@@ -595,7 +594,7 @@ CONSTEXPR_UNLESS_MSVC bool wrapped_view_mid_code_point_test_impl() {
           return std::optional{std::ranges::subrange(std::move(u16_begin), u16_end)};
         }};
     auto u16_subrange{make_u16_subrange().value()};
-    to_utf8_view u8v{std::move(u16_subrange)};
+    to_utf8_or_error_view u8v{std::move(u16_subrange)};
     if (base_testing == base_test::range) {
       auto u16_subrange2{make_u16_subrange().value()};
       auto u8v_base{std::move(u8v).base()};
@@ -605,7 +604,7 @@ CONSTEXPR_UNLESS_MSVC bool wrapped_view_mid_code_point_test_impl() {
       return true;
     }
     auto u8_begin{u8v.begin()};
-    if (u8_begin.success() !=
+    if (*u8_begin !=
         std::unexpected{utf_transcoding_error::unpaired_low_surrogate}) {
       return false;
     }
@@ -633,7 +632,7 @@ CONSTEXPR_UNLESS_MSVC bool wrapped_view_mid_code_point_test_impl() {
       return false;
     }
     ++u8_begin;
-    if (!u8_begin.success().has_value()) {
+    if (!(*u8_begin).has_value()) {
       return false;
     }
     if (base_testing == base_test::iterator_full_code_point) {
@@ -660,9 +659,6 @@ CONSTEXPR_UNLESS_MSVC bool wrapped_view_mid_code_point_test_impl() {
   return test(base_test::none) && test(base_test::range) &&
       test(base_test::iterator_mid_code_point) &&
       test(base_test::iterator_full_code_point);
-#else
-  throw;
-#endif
 }
 
 CONSTEXPR_UNLESS_MSVC bool wrapped_view_bidirectional_mid_code_point_test_impl() {
