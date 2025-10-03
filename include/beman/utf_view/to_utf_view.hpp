@@ -324,11 +324,8 @@ public:
         if (!success_.has_value()) {
           assert(buf_index_ == 0);
           if constexpr (std::is_same_v<ToType, char8_t>) {
-            // 0xEF
             advance();
-            // 0xBF
             advance();
-            // 0xBD
           }
         }
       }
