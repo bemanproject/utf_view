@@ -17,7 +17,6 @@
 #include <expected>
 #include <iterator>
 #include <limits>
-#include <stdexcept>
 #include <type_traits>
 #include <utility>
 
@@ -88,27 +87,12 @@ enum class utf_transcoding_error {
   invalid_utf8_leading_byte
 };
 
-/* !PAPER */
-
-template <class T>
-concept exposition_only_to_utf_view_iterator_optimizable =
-    std::bidirectional_iterator<T> &&
-    requires { typename T::reserved_to_utf_view_iterator; };
-
-/* PAPER */
-
-/* PAPER:   template<class T> */
-/* PAPER:   concept exposition_only_to_utf_view_iterator_optimizable = @*unspecified*@ // @*exposition only*@ */
-
 template <class V>
 concept exposition_only_from_utf_view =
-    exposition_only_utf_range<V> && std::ranges::view<V> &&
-    (!exposition_only_to_utf_view_iterator_optimizable<std::ranges::sentinel_t<V>> ||
-     exposition_only_to_utf_view_iterator_optimizable<std::ranges::iterator_t<V>>);
+    exposition_only_utf_range<V> && std::ranges::view<V>;
 
-template <exposition_only_code_unit_to ToType, exposition_only_from_utf_view V>
-class exposition_only_to_utf_view_impl
-    : public std::ranges::view_interface<exposition_only_to_utf_view_impl<ToType, V>> {
+template <bool OrError, exposition_only_code_unit ToType, exposition_only_from_utf_view V>
+class exposition_only_to_utf_view_impl {
 public:
   template <bool Const>
   class exposition_only_utf_iterator {
@@ -123,82 +107,18 @@ public:
     using exposition_only_sent =
         std::ranges::sentinel_t<exposition_only_maybe_const<Const, V>>;
 
-    template <exposition_only_code_unit_to ToType2,
+    template <bool OrError2, exposition_only_code_unit ToType2,
               exposition_only_from_utf_view V2>
     friend class exposition_only_to_utf_view_impl; // @*exposition only*@
 
-    template <class I>
-    struct exposition_only_first_and_curr { // @*exposition only*@
-      exposition_only_first_and_curr() = default;
-      constexpr exposition_only_first_and_curr(I curr)
-          : curr(std::move(curr)) { }
-
-      I curr;
-    };
-    template <std::bidirectional_iterator I>
-    struct exposition_only_first_and_curr<I> { // @*exposition only*@
-      exposition_only_first_and_curr() = default;
-      constexpr exposition_only_first_and_curr(I first, I curr)
-          : first(first),
-            curr(curr) { }
-
-      I first;
-      I curr;
-    };
-
     /* PAPER:       using @*innermost-iter*@ = @*unspecified*@; // @*exposition only*@ */
 
-    /* !PAPER */
-    template <class Iter>
-    struct innermost_iter_trait {
-      using type = Iter;
-    };
-
-    template <exposition_only_to_utf_view_iterator_optimizable Iter>
-    struct innermost_iter_trait<Iter> {
-      using type = Iter::exposition_only_innermost_iter;
-    };
-
-    template <class Sent>
-    struct innermost_sent_trait {
-      using type = Sent;
-    };
-
-    template <exposition_only_to_utf_view_iterator_optimizable Sent>
-    struct innermost_sent_trait<Sent> {
-      using type = Sent::exposition_only_innermost_sent;
-    };
-
-    using exposition_only_innermost_iter =
-        innermost_iter_trait<exposition_only_iter>::type;
-
-    using exposition_only_innermost_sent =
-        innermost_sent_trait<exposition_only_sent>::type;
-
-    /* PAPER */
-    using exposition_only_from_type = decltype([] {
-      if constexpr (std::is_same_v<char,
-                                   std::iter_value_t<exposition_only_innermost_iter>>) {
-        return char8_t{};
-      } else if constexpr (std::is_same_v<
-                               wchar_t,
-                               std::iter_value_t<exposition_only_innermost_iter>>) {
-        if constexpr (sizeof(wchar_t) == 2) {
-          return char16_t{};
-        } else if constexpr (sizeof(wchar_t) == 4) {
-          return char32_t{};
-        }
-      } else {
-        return std::iter_value_t<exposition_only_innermost_iter>{};
-      }
-    }()); // @*exposition only *@
-
-    /* PAPER:       using @*innermost-iter*@ = @*unspecified*@; // @*exposition only*@ */
-    /* PAPER:       using @*innermost-sent*@ = @*unspecified*@; // @*exposition only*@ */
+    using exposition_only_from_type = std::iter_value_t<exposition_only_iter>; // @*exposition only *@
 
   public:
-    using value_type = ToType;
-    using reference_type = ToType&;
+    using value_type =
+        std::conditional_t<OrError, std::expected<ToType, utf_transcoding_error>, ToType>;
+    using reference_type = value_type;
     using difference_type = ptrdiff_t;
     using iterator_concept =
         exposition_only_bidirectional_at_most_t<exposition_only_iter>;
@@ -209,21 +129,19 @@ public:
 
   private:
     constexpr exposition_only_utf_iterator(
-        exposition_only_innermost_iter first, exposition_only_innermost_iter it,
-        exposition_only_innermost_sent last) // @*exposition only*@
-      requires std::bidirectional_iterator<exposition_only_innermost_iter>
-        : first_and_curr_(first, it),
-          last_(last) {
-      if (curr() != last_)
+        exposition_only_to_utf_view_impl const* parent, exposition_only_iter begin) // @*exposition only*@
+        : backptr_(parent),
+          base_(std::move(begin))
+    {
+      if (base() != end())
         read();
     }
-    constexpr exposition_only_utf_iterator(
-        exposition_only_innermost_iter it,
-        exposition_only_innermost_sent last) // @*exposition only*@
-      requires(!std::bidirectional_iterator<exposition_only_innermost_iter>)
-        : first_and_curr_(std::move(it)),
-          last_(last) {
-      if (curr() != last_)
+
+    constexpr exposition_only_utf_iterator(exposition_only_to_utf_view_impl const* parent) // @*exposition only*@
+        : backptr_(parent),
+          base_(end())
+    {
+      if (base() != end())
         read();
     }
 
@@ -231,12 +149,12 @@ public:
     CONSTEXPR_UNLESS_MSVC exposition_only_utf_iterator() = default;
     CONSTEXPR_UNLESS_MSVC exposition_only_utf_iterator(
         exposition_only_utf_iterator const&)
-      requires std::copyable<exposition_only_innermost_iter>
+      requires std::copyable<exposition_only_iter>
     = default;
 
     CONSTEXPR_UNLESS_MSVC exposition_only_utf_iterator& operator=(
         exposition_only_utf_iterator const&)
-      requires std::copyable<exposition_only_innermost_iter>
+      requires std::copyable<exposition_only_iter>
     = default;
 
     constexpr exposition_only_utf_iterator(exposition_only_utf_iterator&&) = default;
@@ -244,33 +162,25 @@ public:
     constexpr exposition_only_utf_iterator& operator=(exposition_only_utf_iterator&&) =
         default;
 
-    constexpr exposition_only_iter base() const
-      requires std::forward_iterator<exposition_only_innermost_iter>
-    {
-      if constexpr (exposition_only_to_utf_view_iterator_optimizable<
-                        exposition_only_iter>) {
-        if constexpr (std::bidirectional_iterator<exposition_only_innermost_iter>) {
-          return exposition_only_iter(begin(), curr(), last_);
-        } else {
-          return exposition_only_iter(curr(), last_);
-        }
-      } else {
-        return curr();
-      }
+    constexpr exposition_only_iter& base() & {
+      return base_;
     }
 
-    constexpr exposition_only_iter base() &&
-      requires(!std::forward_iterator<exposition_only_innermost_iter>)
-    {
-      return std::move(*this).curr();
+    constexpr exposition_only_iter const& base() const& {
+      return base_;
     }
 
-    /* PAPER:       constexpr expected<void, utf_transcoding_error> success() const; */
+    constexpr exposition_only_iter base() && {
+      return std::move(base_);
+    }
 
+    /* PAPER:       constexpr expected<void, utf_transcoding_error> @*success*@() const noexcept requires(OrError); // @*exposition only*@ */
     /* !PAPER */
 
-    constexpr std::expected<void, utf_transcoding_error> success() const {
-      return success_;
+    constexpr bool exposition_only_success() const noexcept // @*exposition only*@
+      requires(OrError)
+    {
+      return !!success_;
     }
 
     /* PAPER */
@@ -278,34 +188,65 @@ public:
     /* PAPER:       constexpr value_type operator*() const; */
     /* !PAPER */
     constexpr value_type operator*() const {
-      if constexpr (std::forward_iterator<exposition_only_innermost_iter>) {
-        return buf_[buf_index_];
-      } else {
-        return buf_[buf_index_ & 3];
+      auto const code_unit{
+        [&] {
+          if constexpr (std::forward_iterator<exposition_only_iter>) {
+            return buf_[buf_index_];
+          } else {
+            return buf_[buf_index_ & 3];
+          }
+        }()};
+      if constexpr (OrError) {
+        if (!success_.has_value()) {
+          return std::unexpected{success_.error()};
+        }
       }
+      return code_unit;
     }
     /* PAPER */
 
-    constexpr exposition_only_utf_iterator& operator++() {
-      if constexpr (std::forward_iterator<exposition_only_innermost_iter>) {
-        if (buf_index_ + 1 < buf_last_) {
-          ++buf_index_;
-        } else if (buf_index_ + 1 == buf_last_) {
-          std::advance(curr(), to_increment_);
-          to_increment_ = 0;
-          if (curr() != last_) {
-            read();
-          } else {
-            buf_index_ = 0;
-          }
-        }
-      } else {
-        if (buf_index_ + 1 == buf_last_ && curr() != last_) {
+    constexpr void exposition_only_advance_one() // @*exposition only*@
+      requires std::forward_iterator<exposition_only_iter>
+    {
+      if (buf_index_ + 1 < buf_last_) {
+        ++buf_index_;
+      } else if (buf_index_ + 1 == buf_last_) {
+        std::advance(base(), to_increment_);
+        to_increment_ = 0;
+        if (base() != end()) {
           read();
-        } else if (buf_index_ + 1 <= buf_last_) {
-          ++buf_index_;
+        } else {
+          buf_index_ = 0;
         }
       }
+    }
+
+    constexpr void exposition_only_advance_one() // @*exposition only*@
+      requires (!std::forward_iterator<exposition_only_iter>)
+    {
+      if (buf_index_ + 1 == buf_last_ && base() != end()) {
+        read();
+      } else if (buf_index_ + 1 <= buf_last_) {
+        ++buf_index_;
+      }
+    }
+
+    constexpr exposition_only_utf_iterator& operator++() requires(OrError)
+    {
+      if (!exposition_only_success()) {
+        assert(buf_index_ == 0);
+        if constexpr (std::is_same_v<ToType, char8_t>) {
+          exposition_only_advance_one();
+          exposition_only_advance_one();
+        }
+      }
+      exposition_only_advance_one();
+      return *this;
+    }
+
+    constexpr exposition_only_utf_iterator& operator++() requires(!OrError)
+    {
+      exposition_only_advance_one();
       return *this;
     }
 
@@ -320,7 +261,7 @@ public:
     }
 
     constexpr exposition_only_utf_iterator& operator--()
-      requires std::bidirectional_iterator<exposition_only_innermost_iter>
+      requires std::bidirectional_iterator<exposition_only_iter>
     {
       if (!buf_index_)
         read_reverse();
@@ -330,7 +271,7 @@ public:
     }
 
     constexpr exposition_only_utf_iterator operator--(int)
-      requires std::bidirectional_iterator<exposition_only_innermost_iter>
+      requires std::bidirectional_iterator<exposition_only_iter>
     {
       auto retval = *this;
       --*this;
@@ -339,13 +280,13 @@ public:
 
     friend constexpr bool operator==(exposition_only_utf_iterator const& lhs,
                                      exposition_only_utf_iterator const& rhs)
-      requires std::forward_iterator<exposition_only_innermost_iter> ||
-        requires(exposition_only_innermost_iter i) { i != i; }
+      requires std::forward_iterator<exposition_only_iter> ||
+        requires(exposition_only_iter i) { i != i; }
     {
-      if constexpr (std::forward_iterator<exposition_only_innermost_iter>) {
-        return lhs.curr() == rhs.curr() && lhs.buf_index_ == rhs.buf_index_;
+      if constexpr (std::forward_iterator<exposition_only_iter>) {
+        return lhs.base() == rhs.base() && lhs.buf_index_ == rhs.buf_index_;
       } else {
-        if (lhs.curr() != rhs.curr())
+        if (lhs.base() != rhs.base())
           return false;
 
         if (lhs.buf_index_ == rhs.buf_index_ && lhs.buf_last_ == rhs.buf_last_) {
@@ -357,21 +298,21 @@ public:
     }
 
     friend constexpr bool operator==(exposition_only_utf_iterator const& lhs,
-                                     exposition_only_innermost_sent rhs)
-      requires std::copyable<exposition_only_innermost_iter>
+                                     exposition_only_sent rhs)
+      requires std::copyable<exposition_only_iter>
     {
-      if constexpr (std::forward_iterator<exposition_only_innermost_iter>) {
-        return lhs.curr() == rhs;
+      if constexpr (std::forward_iterator<exposition_only_iter>) {
+        return lhs.base() == rhs;
       } else {
-        return lhs.curr() == rhs && lhs.buf_index_ == lhs.buf_last_;
+        return lhs.base() == rhs && lhs.buf_index_ == lhs.buf_last_;
       }
     }
 
     friend constexpr bool operator==(exposition_only_utf_iterator const& lhs,
-                                     exposition_only_innermost_sent rhs)
-      requires(!std::copyable<exposition_only_innermost_iter>)
+                                     exposition_only_sent rhs)
+      requires(!std::copyable<exposition_only_iter>)
     {
-      return lhs.curr() == rhs && lhs.buf_index_ == lhs.buf_last_;
+      return lhs.base() == rhs && lhs.buf_index_ == lhs.buf_last_;
     }
 
     /* !PAPER */
@@ -385,7 +326,7 @@ public:
 
     template <class>
     struct guard {
-      constexpr guard(exposition_only_innermost_iter&, exposition_only_innermost_iter&) {
+      constexpr guard(exposition_only_iter&, exposition_only_iter&) {
       }
     };
 
@@ -401,19 +342,24 @@ public:
 
     /* PAPER */
 
-    constexpr exposition_only_innermost_iter begin() const // @*exposition only*@
-      requires std::bidirectional_iterator<exposition_only_innermost_iter>
+    constexpr exposition_only_iter begin() const // @*exposition only*@
+      requires std::bidirectional_iterator<exposition_only_iter>
     {
-      return first_and_curr_.first;
+      return std::ranges::begin(backptr_->base_);
     }
-    constexpr exposition_only_innermost_sent end() const { // @*exposition only*@
-      return last_;
+    constexpr exposition_only_sent end() const { // @*exposition only*@
+      if constexpr (!std::forward_iterator<exposition_only_iter>) {
+        // TODO: The fact that I need to do this deserves its own paper
+        return std::ranges::end(const_cast<exposition_only_to_utf_view_impl*>(backptr_)->base_);
+      } else {
+        return std::ranges::end(backptr_->base_);
+      }
     }
 
     /* !PAPER */
 
     static constexpr decode_code_point_result decode_code_point_utf8_impl(
-        exposition_only_innermost_iter& it, exposition_only_innermost_sent const& last) {
+        exposition_only_iter& it, exposition_only_sent const& last) {
       char32_t c{};
       std::uint8_t u = *it;
       ++it;
@@ -519,12 +465,12 @@ public:
     }
 
     constexpr decode_code_point_result decode_code_point_utf8() {
-      guard<exposition_only_innermost_iter> g{curr(), curr()};
-      return decode_code_point_utf8_impl(curr(), last_);
+      guard<exposition_only_iter> g{base(), base()};
+      return decode_code_point_utf8_impl(base(), end());
     }
 
     static constexpr decode_code_point_result decode_code_point_utf16_impl(
-        exposition_only_innermost_iter& it, exposition_only_innermost_sent const& last) {
+        exposition_only_iter& it, exposition_only_sent const& last) {
       char32_t c{};
       std::uint16_t u = *it;
       ++it;
@@ -560,12 +506,12 @@ public:
     }
 
     constexpr decode_code_point_result decode_code_point_utf16() {
-      guard<exposition_only_innermost_iter> g{curr(), curr()};
-      return decode_code_point_utf16_impl(curr(), last_);
+      guard<exposition_only_iter> g{base(), base()};
+      return decode_code_point_utf16_impl(base(), end());
     }
 
     static constexpr decode_code_point_result decode_code_point_utf32_impl(
-        exposition_only_innermost_iter& it) {
+        exposition_only_iter& it) {
       char32_t c = *it;
       std::expected<void, utf_transcoding_error> success{};
       ++it;
@@ -585,8 +531,8 @@ public:
     }
 
     constexpr decode_code_point_result decode_code_point_utf32() {
-      guard<exposition_only_innermost_iter> g{curr(), curr()};
-      return decode_code_point_utf32_impl(curr());
+      guard<exposition_only_iter> g{base(), base()};
+      return decode_code_point_utf32_impl(base());
     }
 
     // Encode the code point c as one or more code units in buf.
@@ -660,12 +606,12 @@ public:
 
     struct read_reverse_impl_result {
       decode_code_point_result decode_result;
-      exposition_only_innermost_iter new_curr;
+      exposition_only_iter new_curr;
     };
 
     constexpr read_reverse_impl_result read_reverse_utf8() const {
-      assert(curr() != begin());
-      auto it{curr()};
+      assert(base() != begin());
+      auto it{base()};
       auto const orig{it};
       unsigned reversed{};
       do {
@@ -735,8 +681,8 @@ public:
     }
 
     constexpr read_reverse_impl_result read_reverse_utf16() const {
-      assert(curr() != begin());
-      auto it{curr()};
+      assert(base() != begin());
+      auto it{base()};
       auto const orig{it};
       --it;
       if (detail::high_surrogate(*it)) {
@@ -775,8 +721,8 @@ public:
     }
 
     constexpr read_reverse_impl_result read_reverse_utf32() const {
-      assert(curr() != begin());
-      auto it{curr()};
+      assert(base() != begin());
+      auto it{base()};
       auto const orig{it};
       --it;
       auto new_curr{orig};
@@ -800,31 +746,22 @@ public:
       update(read_reverse_impl_result.decode_result.c,
              read_reverse_impl_result.decode_result.to_incr);
       success_ = read_reverse_impl_result.decode_result.success;
-      curr() = read_reverse_impl_result.new_curr;
+      base() = read_reverse_impl_result.new_curr;
       assert(buf_last_);
       buf_index_ = buf_last_ - 1;
+      if constexpr (OrError) {
+        if (!success_.has_value()) {
+          buf_index_ = 0;
+        }
+      }
     }
 
     /* PAPER */
-
-    constexpr exposition_only_innermost_iter& curr() & {
-      return first_and_curr_.curr;
-    } // @*exposition only*@
-
-    constexpr exposition_only_innermost_iter const& curr() const& {
-      return first_and_curr_.curr;
-    } // @*exposition only*@
-
-    constexpr exposition_only_innermost_iter curr() && {
-      return std::move(first_and_curr_.curr);
-    } // @*exposition only*@
-
     std::array<value_type, 4 / sizeof(ToType)> buf_{}; // @*exposition only*@
 
-    exposition_only_first_and_curr<exposition_only_innermost_iter>
-        first_and_curr_; // @*exposition only*@
+    exposition_only_to_utf_view_impl const* backptr_;
 
-    [[no_unique_address]] exposition_only_innermost_sent last_; // @*exposition only*@
+    exposition_only_iter base_;
 
     std::uint8_t buf_index_ = 0; // @*exposition only*@
     std::uint8_t buf_last_ = 0; // @*exposition only*@
@@ -836,35 +773,24 @@ public:
   };
 
 private:
+  V base_ = V(); // @*exposition only*@
+
   template <bool Const>
-  static constexpr auto make_begin(auto first, auto last) { // @*exposition only*@
+  static constexpr auto make_begin(exposition_only_to_utf_view_impl const* self, auto first) { // @*exposition only*@
     if constexpr (std::bidirectional_iterator<std::ranges::iterator_t<V>>) {
-      if constexpr (exposition_only_to_utf_view_iterator_optimizable<
-                        std::ranges::iterator_t<V>>) {
-        return exposition_only_utf_iterator<Const>(first.begin(), first.curr(),
-                                                   first.last_);
-      } else {
-        return exposition_only_utf_iterator<Const>(first, first, last);
-      }
+      return exposition_only_utf_iterator<Const>(self, first);
     } else {
-      return exposition_only_utf_iterator<Const>(std::move(first), last);
+      return exposition_only_utf_iterator<Const>(self, std::move(first));
     }
   }
   template <bool Const>
-  static constexpr auto make_end(auto first, auto last) { // @*exposition only*@
+  static constexpr auto make_end(exposition_only_to_utf_view_impl const* self, auto last) { // @*exposition only*@
     if constexpr (std::bidirectional_iterator<std::ranges::sentinel_t<V>>) {
-      if constexpr (exposition_only_to_utf_view_iterator_optimizable<
-                        std::ranges::sentinel_t<V>>) {
-        return exposition_only_utf_iterator<Const>(last.begin(), last.curr(), last.last_);
-      } else {
-        return exposition_only_utf_iterator<Const>(first, last, last);
-      }
+      return exposition_only_utf_iterator<Const>(self);
     } else {
       return last;
     }
   }
-
-  V base_ = V(); // @*exposition only*@
 
 public:
   constexpr exposition_only_to_utf_view_impl()
@@ -885,23 +811,23 @@ public:
   constexpr auto begin()
     requires(!std::copyable<std::ranges::iterator_t<V>>)
   {
-    return make_begin<false>(std::ranges::begin(base_), std::ranges::end(base_));
+    return make_begin<false>(this, std::ranges::begin(base_));
   }
   constexpr auto begin() const
     requires std::copyable<std::ranges::iterator_t<V>>
   {
-    return make_begin<true>(std::ranges::begin(base_), std::ranges::end(base_));
+    return make_begin<true>(this, std::ranges::begin(base_));
   }
 
   constexpr auto end()
     requires(!std::copyable<std::ranges::iterator_t<V>>)
   {
-    return make_end<false>(std::ranges::begin(base_), std::ranges::end(base_));
+    return make_end<false>(this, std::ranges::end(base_));
   }
   constexpr auto end() const
     requires std::copyable<std::ranges::iterator_t<V>>
   {
-    return make_end<true>(std::ranges::begin(base_), std::ranges::end(base_));
+    return make_end<true>(this, std::ranges::end(base_));
   }
 
   constexpr bool empty() const {
@@ -910,12 +836,12 @@ public:
 };
 
 template <exposition_only_from_utf_view V>
-class to_utf8_view {
+class to_utf8_view : public std::ranges::view_interface<to_utf8_view<V>> {
 private:
   using exposition_only_iterator =
-      std::ranges::iterator_t<exposition_only_to_utf_view_impl<char8_t, V>>;
+      std::ranges::iterator_t<exposition_only_to_utf_view_impl<false, char8_t, V>>;
   using exposition_only_sentinel =
-      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<char8_t, V>>;
+      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<false, char8_t, V>>;
 
 public:
   constexpr to_utf8_view()
@@ -960,19 +886,77 @@ public:
   }
 
 private:
-  exposition_only_to_utf_view_impl<char8_t, V> impl_;
+  exposition_only_to_utf_view_impl<false, char8_t, V> impl_;
 };
 
 template <class R>
 to_utf8_view(R&&) -> to_utf8_view<std::views::all_t<R>>;
 
 template <exposition_only_from_utf_view V>
-class to_utf16_view {
+class to_utf8_or_error_view
+    : public std::ranges::view_interface<to_utf8_or_error_view<V>> {
 private:
   using exposition_only_iterator =
-      std::ranges::iterator_t<exposition_only_to_utf_view_impl<char16_t, V>>;
+      std::ranges::iterator_t<exposition_only_to_utf_view_impl<true, char8_t, V>>;
   using exposition_only_sentinel =
-      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<char16_t, V>>;
+      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<true, char8_t, V>>;
+
+public:
+  constexpr to_utf8_or_error_view()
+    requires std::default_initializable<V>
+  = default;
+  constexpr to_utf8_or_error_view(V base)
+      : impl_(std::move(base)) { }
+
+  constexpr V base() const&
+    requires std::copy_constructible<V>
+  {
+    return impl_.base();
+  }
+  constexpr V base() && {
+    return std::move(impl_).base();
+  }
+
+  constexpr auto begin()
+    requires(!std::copyable<exposition_only_iterator>)
+  {
+    return impl_.begin();
+  }
+  constexpr auto begin() const
+    requires std::copyable<exposition_only_iterator>
+  {
+    return impl_.begin();
+  }
+
+  constexpr auto end()
+    requires(!std::copyable<exposition_only_iterator>)
+  {
+    return impl_.end();
+  }
+  constexpr auto end() const
+    requires std::copyable<exposition_only_iterator>
+  {
+    return impl_.end();
+  }
+
+  constexpr bool empty() const {
+    return impl_.empty();
+  }
+
+private:
+  exposition_only_to_utf_view_impl<true, char8_t, V> impl_;
+};
+
+template <class R>
+to_utf8_or_error_view(R&&) -> to_utf8_or_error_view<std::views::all_t<R>>;
+
+template <exposition_only_from_utf_view V>
+class to_utf16_view : public std::ranges::view_interface<to_utf16_view<V>> {
+private:
+  using exposition_only_iterator =
+      std::ranges::iterator_t<exposition_only_to_utf_view_impl<false, char16_t, V>>;
+  using exposition_only_sentinel =
+      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<false, char16_t, V>>;
 
 public:
   constexpr to_utf16_view()
@@ -1017,19 +1001,77 @@ public:
   }
 
 private:
-  exposition_only_to_utf_view_impl<char16_t, V> impl_;
+  exposition_only_to_utf_view_impl<false, char16_t, V> impl_;
 };
 
 template <class R>
 to_utf16_view(R&&) -> to_utf16_view<std::views::all_t<R>>;
 
 template <exposition_only_from_utf_view V>
-class to_utf32_view {
+class to_utf16_or_error_view
+    : public std::ranges::view_interface<to_utf16_or_error_view<V>> {
 private:
   using exposition_only_iterator =
-      std::ranges::iterator_t<exposition_only_to_utf_view_impl<char32_t, V>>;
+      std::ranges::iterator_t<exposition_only_to_utf_view_impl<true, char16_t, V>>;
   using exposition_only_sentinel =
-      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<char32_t, V>>;
+      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<true, char16_t, V>>;
+
+public:
+  constexpr to_utf16_or_error_view()
+    requires std::default_initializable<V>
+  = default;
+  constexpr to_utf16_or_error_view(V base)
+      : impl_(std::move(base)) { }
+
+  constexpr V base() const&
+    requires std::copy_constructible<V>
+  {
+    return impl_.base();
+  }
+  constexpr V base() && {
+    return std::move(impl_).base();
+  }
+
+  constexpr auto begin()
+    requires(!std::copyable<exposition_only_iterator>)
+  {
+    return impl_.begin();
+  }
+  constexpr auto begin() const
+    requires std::copyable<exposition_only_iterator>
+  {
+    return impl_.begin();
+  }
+
+  constexpr auto end()
+    requires(!std::copyable<exposition_only_iterator>)
+  {
+    return impl_.end();
+  }
+  constexpr auto end() const
+    requires std::copyable<exposition_only_iterator>
+  {
+    return impl_.end();
+  }
+
+  constexpr bool empty() const {
+    return impl_.empty();
+  }
+
+private:
+  exposition_only_to_utf_view_impl<true, char16_t, V> impl_;
+};
+
+template <class R>
+to_utf16_or_error_view(R&&) -> to_utf16_or_error_view<std::views::all_t<R>>;
+
+template <exposition_only_from_utf_view V>
+class to_utf32_view : public std::ranges::view_interface<to_utf32_view<V>> {
+private:
+  using exposition_only_iterator =
+      std::ranges::iterator_t<exposition_only_to_utf_view_impl<false, char32_t, V>>;
+  using exposition_only_sentinel =
+      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<false, char32_t, V>>;
 
 public:
   constexpr to_utf32_view()
@@ -1074,25 +1116,87 @@ public:
   }
 
 private:
-  exposition_only_to_utf_view_impl<char32_t, V> impl_;
+  exposition_only_to_utf_view_impl<false, char32_t, V> impl_;
 };
 
 template <class R>
 to_utf32_view(R&&) -> to_utf32_view<std::views::all_t<R>>;
 
+template <exposition_only_from_utf_view V>
+class to_utf32_or_error_view
+    : public std::ranges::view_interface<to_utf32_or_error_view<V>> {
+private:
+  using exposition_only_iterator =
+      std::ranges::iterator_t<exposition_only_to_utf_view_impl<true, char32_t, V>>;
+  using exposition_only_sentinel =
+      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<true, char32_t, V>>;
+
+public:
+  constexpr to_utf32_or_error_view()
+    requires std::default_initializable<V>
+  = default;
+  constexpr to_utf32_or_error_view(V base)
+      : impl_(std::move(base)) { }
+
+  constexpr V base() const&
+    requires std::copy_constructible<V>
+  {
+    return impl_.base();
+  }
+  constexpr V base() && {
+    return std::move(impl_).base();
+  }
+
+  constexpr auto begin()
+  {
+    return impl_.begin();
+  }
+  constexpr auto begin() const
+  {
+    return impl_.begin();
+  }
+
+  constexpr auto end()
+  {
+    return impl_.end();
+  }
+  constexpr auto end() const
+  {
+    return impl_.end();
+  }
+
+  constexpr bool empty() const {
+    return impl_.empty();
+  }
+
+private:
+  exposition_only_to_utf_view_impl<true, char32_t, V> impl_;
+};
+
+template <class R>
+to_utf32_or_error_view(R&&) -> to_utf32_or_error_view<std::views::all_t<R>>;
+
 /* !PAPER */
 
 namespace detail {
 
-  template <exposition_only_code_unit_to ToType, exposition_only_from_utf_view V>
+  template <bool OrError, exposition_only_code_unit ToType,
+            exposition_only_from_utf_view V>
   using to_utf_view = std::conditional_t<
-      std::is_same_v<ToType, char8_t>, to_utf8_view<V>,
+      OrError,
       std::conditional_t<
-          std::is_same_v<ToType, char16_t>, to_utf16_view<V>,
-          std::conditional_t<std::is_same_v<ToType, char32_t>, to_utf32_view<V>, void>>>;
+          std::is_same_v<ToType, char8_t>, to_utf8_or_error_view<V>,
+          std::conditional_t<std::is_same_v<ToType, char16_t>, to_utf16_or_error_view<V>,
+                             std::conditional_t<std::is_same_v<ToType, char32_t>,
+                                                to_utf32_or_error_view<V>, void>>>,
+      std::conditional_t<
+          std::is_same_v<ToType, char8_t>, to_utf8_view<V>,
+          std::conditional_t<std::is_same_v<ToType, char16_t>, to_utf16_view<V>,
+                             std::conditional_t<std::is_same_v<ToType, char32_t>,
+                                                to_utf32_view<V>, void>>>>;
 
-  template <exposition_only_code_unit_to ToType>
-  struct to_utf_impl : std::ranges::range_adaptor_closure<to_utf_impl<ToType>> {
+  template <bool OrError, exposition_only_code_unit ToType>
+  struct to_utf_impl : std::ranges::range_adaptor_closure<to_utf_impl<OrError, ToType>> {
     template <exposition_only_utf_range R>
     constexpr auto operator()(R&& r) const {
       using T = std::remove_cvref_t<R>;
@@ -1106,65 +1210,58 @@ namespace detail {
           --last;
         }
         std::ranges::subrange subrange(first, last);
-        return to_utf_view<ToType, decltype(subrange)>(std::move(subrange));
+        return to_utf_view<OrError, ToType, decltype(subrange)>(std::move(subrange));
       } else {
         auto view = std::views::all(std::forward<R>(r));
-        return to_utf_view<ToType, decltype(view)>(std::move(view));
+        return to_utf_view<OrError, ToType, decltype(view)>(std::move(view));
       }
     }
   };
 
 } // namespace detail
 
-template <exposition_only_code_unit_to ToType>
-inline constexpr detail::to_utf_impl<ToType> to_utf;
+template <exposition_only_code_unit ToType>
+inline constexpr detail::to_utf_impl<false, ToType> to_utf;
 
-inline constexpr detail::to_utf_impl<char8_t> to_utf8;
+inline constexpr detail::to_utf_impl<false, char8_t> to_utf8;
 
-inline constexpr detail::to_utf_impl<char16_t> to_utf16;
+inline constexpr detail::to_utf_impl<false, char16_t> to_utf16;
 
-inline constexpr detail::to_utf_impl<char32_t> to_utf32;
+inline constexpr detail::to_utf_impl<false, char32_t> to_utf32;
 
-/* PAPER: namespace views {                            */
-/* PAPER:                                              */
-/* PAPER:   template<@*code-unit-to*@ ToType>          */
-/* PAPER:   inline constexpr @*unspecified*@ to_utf;   */
-/* PAPER:                                              */
-/* PAPER:   inline constexpr @*unspecified*@ to_utf8;  */
-/* PAPER:                                              */
-/* PAPER:   inline constexpr @*unspecified*@ to_utf16; */
-/* PAPER:                                              */
-/* PAPER:   inline constexpr @*unspecified*@ to_utf32; */
-/* PAPER:                                              */
-/* PAPER: }                                            */
-/* PAPER:                                              */
-/* PAPER: }                                            */
+template <exposition_only_code_unit ToType>
+inline constexpr detail::to_utf_impl<true, ToType> to_utf_or_error;
+
+inline constexpr detail::to_utf_impl<true, char8_t> to_utf8_or_error;
+
+inline constexpr detail::to_utf_impl<true, char16_t> to_utf16_or_error;
+
+inline constexpr detail::to_utf_impl<true, char32_t> to_utf32_or_error;
+
+/* PAPER: namespace views {                                     */
+/* PAPER:                                                       */
+/* PAPER:   template<@*code-unit-to*@ ToType>                   */
+/* PAPER:   inline constexpr @*unspecified*@ to_utf;            */
+/* PAPER:                                                       */
+/* PAPER:   template<@*code-unit-to*@ ToType>                   */
+/* PAPER:   inline constexpr @*unspecified*@ to_utf_or_error;   */
+/* PAPER:                                                       */
+/* PAPER:   inline constexpr @*unspecified*@ to_utf8;           */
+/* PAPER:                                                       */
+/* PAPER:   inline constexpr @*unspecified*@ to_utf8_or_error;  */
+/* PAPER:                                                       */
+/* PAPER:   inline constexpr @*unspecified*@ to_utf16;          */
+/* PAPER:                                                       */
+/* PAPER:   inline constexpr @*unspecified*@ to_utf16_or_error; */
+/* PAPER:                                                       */
+/* PAPER:   inline constexpr @*unspecified*@ to_utf32;          */
+/* PAPER:                                                       */
+/* PAPER:   inline constexpr @*unspecified*@ to_utf32_or_error; */
+/* PAPER:                                                       */
+/* PAPER: }                                                     */
+/* PAPER:                                                       */
+/* PAPER: }                                                     */
 
 } // namespace beman::utf_view
-
-template <class T>
-inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf8_view<T>> =
-    std::ranges::enable_borrowed_range<T>;
-
-template <class T>
-inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf16_view<T>> =
-    std::ranges::enable_borrowed_range<T>;
-
-template <class T>
-inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf32_view<T>> =
-    std::ranges::enable_borrowed_range<T>;
-
-/* PAPER: namespace std::ranges {                                                                              */
-/* PAPER:                                                                                                      */
-/* PAPER:   template <class V>                                                                                 */
-/* PAPER:   inline constexpr bool enable_borrowed_range<std::to_utf8_view<V>> = enable_borrowed_range<V>;      */
-/* PAPER:                                                                                                      */
-/* PAPER:   template <class V>                                                                                 */
-/* PAPER:   inline constexpr bool enable_borrowed_range<std::to_utf16_view<V>> = enable_borrowed_range<V>;     */
-/* PAPER:                                                                                                      */
-/* PAPER:   template <class V>                                                                                 */
-/* PAPER:   inline constexpr bool enable_borrowed_range<std::to_utf32_view<V>> = enable_borrowed_range<V>;     */
-/* PAPER:                                                                                                      */
-/* PAPER: }                                                                                                    */
 
 #endif // BEMAN_UTF_VIEW_TO_UTF_VIEW_HPP

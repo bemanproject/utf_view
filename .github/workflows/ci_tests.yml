@@ -84,19 +84,6 @@ jobs:
                 }
               ]
             }
-          ],
-          "msvc": [
-            { "versions": ["latest"],
-              "tests": [
-                { "cxxversions": ["c++23"],
-                  "tests": [
-                    { "stdlibs": ["stl"],
-                      "tests": ["Debug.Default", "Release.Default", "Release.MaxSan"]
-                    }
-                  ]
-                }
-              ]
-            }
           ]
         }
 

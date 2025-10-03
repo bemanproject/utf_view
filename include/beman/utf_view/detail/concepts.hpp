@@ -35,17 +35,13 @@ template <class T>
 constexpr bool exposition_only_is_empty_view<std::ranges::empty_view<T>> = true;
 
 template <class T>
-concept exposition_only_code_unit_to = std::same_as<std::remove_cv_t<T>, char8_t> ||
+concept exposition_only_code_unit = std::same_as<std::remove_cv_t<T>, char8_t> ||
     std::same_as<std::remove_cv_t<T>, char16_t> ||
     std::same_as<std::remove_cv_t<T>, char32_t>;
 
 template <class T>
-concept exposition_only_code_unit_from = std::same_as<std::remove_cv_t<T>, char> ||
-    std::same_as<std::remove_cv_t<T>, wchar_t> || exposition_only_code_unit_to<T>;
-
-template <class T>
 concept exposition_only_utf_range = std::ranges::input_range<T> &&
-    exposition_only_code_unit_from<std::ranges::range_value_t<T>>;
+    exposition_only_code_unit<std::ranges::range_value_t<T>>;
 
 /* !PAPER */
 

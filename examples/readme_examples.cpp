@@ -29,9 +29,8 @@ std::basic_string<CharT> sanitize(CharT const* str) {
 }
 
 std::optional<char32_t> last_nonascii(std::ranges::view auto str) {
-  for (auto c : str | to_utf32 | std::views::reverse |
-           std::views::filter([](char32_t c) { return c > 0x7f; }) |
-           std::views::take(1)) {
+  for (auto c : str | as_char8_t | to_utf32 | std::views::reverse |
+           std::views::filter([](char32_t c) { return c > 0x7f; })) {
     return c;
   }
   return std::nullopt;
@@ -83,14 +82,14 @@ std::string enum_to_string(utf_transcoding_error ec) {
 template <typename FromChar, typename ToChar>
 std::basic_string<ToChar> transcode_or_throw(std::basic_string_view<FromChar> input) {
   std::basic_string<ToChar> result;
-  auto view = input | to_utf<ToChar>;
+  auto view = input | to_utf_or_error<ToChar>;
   for (auto it = view.begin(), end = view.end(); it != end; ++it) {
-    if (it.success()) {
-      result.push_back(*it);
+    if ((*it).has_value()) {
+      result.push_back(**it);
     } else {
       throw std::runtime_error("error at position " +
                                std::to_string(it.base() - input.begin()) + ": " +
-                               enum_to_string(it.success().error()));
+                               enum_to_string((*it).error()));
     }
   }
   return result;
@@ -183,6 +182,12 @@ static_assert(take_five_c("Dave") == "Dave"sv); // passes
 static_assert(take_five_c("Brubeck") == "Brube"sv); // passes
 #endif
 
+static_assert((u8"\xf0\x9f\x99\x82" | to_utf32 | std::ranges::to<std::u32string>()) == U"\x0001F642");
+static_assert((u8"\xf0\x9f\x99\x82" | std::views::take(3) | to_utf32 | std::ranges::to<std::u32string>()) == U"�");
+static_assert(
+  *(u8"\xf0\x9f\x99\x82" | std::views::take(3) | to_utf32_or_error).begin() ==
+  std::unexpected{utf_transcoding_error::truncated_utf8_sequence});
+
 bool readme_examples() {
   using namespace std::string_view_literals;
 #ifndef _MSC_VER
@@ -229,6 +234,17 @@ bool readme_examples() {
 
 } // namespace beman::utf_view::examples
 
-int main() {
+void windows_function(std::ranges::view auto) {
+
+}
+
+void foo(std::ranges::view auto v) {
+  windows_function(v | beman::utf_view::to_utf16);
+}
+
+int main(int, char const* argv[]) {
+  foo(beman::utf_view::null_term(argv[1]) | beman::utf_view::as_char8_t | beman::utf_view::to_utf32);
+  beman::utf_view::examples::transcode_or_throw<char8_t, char16_t>(
+      u8"hi🙂" | std::views::take(5) | std::ranges::to<std::u8string>());
   return beman::utf_view::examples::readme_examples() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
