@@ -82,22 +82,18 @@ std::string enum_to_string(utf_transcoding_error ec) {
 
 template <typename FromChar, typename ToChar>
 std::basic_string<ToChar> transcode_or_throw(std::basic_string_view<FromChar> input) {
-#if 0
   std::basic_string<ToChar> result;
-  auto view = input | to_utf<ToChar>;
+  auto view = input | to_utf_or_error<ToChar>;
   for (auto it = view.begin(), end = view.end(); it != end; ++it) {
-    if (it.success()) {
-      result.push_back(*it);
+    if ((*it).has_value()) {
+      result.push_back(**it);
     } else {
       throw std::runtime_error("error at position " +
                                std::to_string(it.base() - input.begin()) + ": " +
-                               enum_to_string(it.success().error()));
+                               enum_to_string((*it).error()));
     }
   }
   return result;
-#else
-  throw;
-#endif
 }
 
 template <typename I, typename O>
