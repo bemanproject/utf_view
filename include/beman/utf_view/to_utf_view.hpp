@@ -323,11 +323,13 @@ public:
       if constexpr (OrError) {
         if (!success_.has_value()) {
           assert(buf_index_ == 0);
-          // 0xEF
-          advance();
-          // 0xBF
-          advance();
-          // 0xBD
+          if constexpr (std::is_same_v<ToType, char8_t>) {
+            // 0xEF
+            advance();
+            // 0xBF
+            advance();
+            // 0xBD
+          }
         }
       }
       advance();
@@ -827,10 +829,11 @@ public:
       success_ = read_reverse_impl_result.decode_result.success;
       curr() = read_reverse_impl_result.new_curr;
       assert(buf_last_);
+      buf_index_ = buf_last_ - 1;
       if constexpr (OrError) {
-        buf_index_ = 0;
-      } else {
-        buf_index_ = buf_last_ - 1;
+        if (!success_.has_value()) {
+          buf_index_ = 0;
+        }
       }
     }
 
