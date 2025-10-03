@@ -15,7 +15,7 @@
 
 namespace beman::utf_view {
 
-/* PAPER: namespace std::uc { */
+/* PAPER: namespace std::ranges::views { */
 
 namespace detail {
 
