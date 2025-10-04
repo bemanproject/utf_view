@@ -265,10 +265,12 @@ public:
       return std::move(*this).curr();
     }
 
-    /* PAPER:       constexpr expected<void, utf_transcoding_error> @*success*@() const; */
+    /* PAPER:       constexpr expected<void, utf_transcoding_error> @*success*@() const noexcept requires(OrError); // @*exposition only*@ */
     /* !PAPER */
 
-    constexpr bool exposition_only_success() const {
+    constexpr bool exposition_only_success() const noexcept // @*exposition only*@
+      requires(OrError)
+    {
       return !!success_;
     }
 
@@ -294,7 +296,7 @@ public:
     }
     /* PAPER */
 
-    constexpr void exposition_only_advance_one()
+    constexpr void exposition_only_advance_one() // @*exposition only*@
       requires std::forward_iterator<exposition_only_innermost_iter>
     {
       if (buf_index_ + 1 < buf_last_) {
@@ -310,7 +312,7 @@ public:
       }
     }
 
-    constexpr void exposition_only_advance_one()
+    constexpr void exposition_only_advance_one() // @*exposition only*@
       requires (!std::forward_iterator<exposition_only_innermost_iter>)
     {
       if (buf_index_ + 1 == buf_last_ && curr() != last_) {

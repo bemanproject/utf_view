@@ -118,7 +118,7 @@ CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> table3_9{
 CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> table3_10{
     .input{static_cast<char8_t>('\xf4'), static_cast<char8_t>('\x91'),
            static_cast<char8_t>('\x92'), static_cast<char8_t>('\x93'),
-           static_cast<char8_t>('\xff'), static_cast<char8_t>('\x41'),
+           static_cast<char8_t>('\xff'), static_cast<char8_t>('A'),
            static_cast<char8_t>('\x80'), static_cast<char8_t>('\xbf'),
            static_cast<char8_t>('B')},
     .output{{std::unexpected{utf_transcoding_error::out_of_range}},
