@@ -266,6 +266,23 @@ CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> ff_at_end{
     .output{{U'\u00E9'},
             {std::unexpected{utf_transcoding_error::invalid_utf8_leading_byte}}}};
 
+CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> truncated_slightly_smiling_face{
+    .input{static_cast<char8_t>('\xf0'), static_cast<char8_t>('\x9f'),
+           static_cast<char8_t>('\x99')},
+    .output{{std::unexpected{utf_transcoding_error::truncated_utf8_sequence}}}};
+
+CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> corrupted_slightly_smiling_face{
+    .input{static_cast<char8_t>('\xff'), static_cast<char8_t>('\x9f'),
+           static_cast<char8_t>('\x99'), static_cast<char8_t>('\x82')},
+    .output{{std::unexpected{utf_transcoding_error::invalid_utf8_leading_byte}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}}}};
+
+CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> surrogate_prefix{
+    .input{static_cast<char8_t>('\xed'), static_cast<char8_t>('\xa0')},
+    .output{{std::unexpected{utf_transcoding_error::encoded_surrogate}},
+            {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}}}};
 
 template <typename WrappingIterator, exposition_only_code_unit_from CharTFrom,
           exposition_only_code_unit_to CharTTo>
@@ -1534,6 +1551,15 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
     return false;
   }
   if (!run_test_case(ff_at_end)) {
+    return false;
+  }
+  if (!run_test_case(truncated_slightly_smiling_face)) {
+    return false;
+  }
+  if (!run_test_case(corrupted_slightly_smiling_face)) {
+    return false;
+  }
+  if (!run_test_case(surrogate_prefix)) {
     return false;
   }
   if (!utf_iterator_base_test()) {
