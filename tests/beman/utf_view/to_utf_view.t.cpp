@@ -284,6 +284,14 @@ CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> surrogate_prefix{
     .output{{std::unexpected{utf_transcoding_error::encoded_surrogate}},
             {std::unexpected{utf_transcoding_error::unexpected_utf8_continuation_byte}}}};
 
+CONSTEXPR_UNLESS_MSVC test_case<char8_t, char32_t> example_with_rare_chinese_character{
+    .input{static_cast<char8_t>('\x51'), static_cast<char8_t>('\xCF'),
+           static_cast<char8_t>('\x95'), static_cast<char8_t>('\xE5'),
+           static_cast<char8_t>('\xAD'), static_cast<char8_t>('\xA6'),
+           static_cast<char8_t>('\xF0'), static_cast<char8_t>('\xA1'),
+           static_cast<char8_t>('\xA8'), static_cast<char8_t>('\x87')},
+    .output{{U'\u0051'}, {U'\u03D5'}, {U'\u5BD6'}, {U'\x00021A87'}}};
+
 template <typename WrappingIterator, exposition_only_code_unit_from CharTFrom,
           exposition_only_code_unit_to CharTTo>
 constexpr bool run_test_case_impl(test_case<CharTFrom, CharTTo> test_case) {
@@ -1608,11 +1616,9 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_constexpr_appendix_tests() {
 }
 #endif
 
-#if 0
 #ifndef _MSC_VER
 static_assert(utf_view_test());
-static_assert(utf_view_constexpr_appendix_tests());
-#endif
+// static_assert(utf_view_constexpr_appendix_tests());
 #endif
 
 static auto const init{[] {
