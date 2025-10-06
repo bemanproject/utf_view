@@ -235,6 +235,15 @@ bool readme_examples() {
 
 } // namespace beman::utf_view::examples
 
-int main() {
+void windows_function(std::ranges::view auto v) {
+
+}
+
+void foo(std::ranges::view auto v) {
+  windows_function(v | beman::utf_view::to_utf16);
+}
+
+int main(int argc, char const* argv[]) {
+  foo(beman::utf_view::null_term(argv[1]) | beman::utf_view::as_char8_t | beman::utf_view::to_utf32);
   return beman::utf_view::examples::readme_examples() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
