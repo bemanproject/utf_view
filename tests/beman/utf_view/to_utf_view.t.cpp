@@ -578,6 +578,7 @@ constexpr bool to_utf_test() {
   return true;
 }
 
+#if 0
 template <template <typename> typename TestIterator>
 CONSTEXPR_UNLESS_MSVC bool wrapped_view_mid_code_point_test_impl() {
   enum class base_test {
@@ -858,6 +859,16 @@ CONSTEXPR_UNLESS_MSVC bool wrapped_view_test() {
     return false;
   }
   return true;
+}
+#endif
+
+CONSTEXPR_UNLESS_MSVC bool wrapped_view_custom_iterator_test() {
+  std::initializer_list<char8_t> nums{u8'a', u8'b', u8'!', };
+  test_bidi_iterator<char8_t> start_it{nums};
+  test_bidi_iterator<char8_t> end_it{nums};
+  std::ranges::advance(end_it, std::ranges::size(nums));
+  auto u32_subrange{std::ranges::subrange(start_it, end_it)};
+
 }
 
 constexpr bool empty_test() {

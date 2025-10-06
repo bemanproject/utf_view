@@ -183,10 +183,10 @@ static_assert(take_five_c("Dave") == "Dave"sv); // passes
 static_assert(take_five_c("Brubeck") == "Brube"sv); // passes
 #endif
 
-static_assert((u8"🙂" | to_utf32 | std::ranges::to<std::u32string>()) == U"🙂");
-static_assert((u8"🙂" | std::views::take(3) | to_utf32 | std::ranges::to<std::u32string>()) == U"�");
+static_assert((u8"\xf0\x9f\x99\x82" | to_utf32 | std::ranges::to<std::u32string>()) == U"\x0001F642");
+static_assert((u8"\xf0\x9f\x99\x82" | std::views::take(3) | to_utf32 | std::ranges::to<std::u32string>()) == U"�");
 static_assert(
-  *(u8"🙂" | std::views::take(3) | to_utf32_or_error).begin() ==
+  *(u8"\xf0\x9f\x99\x82" | std::views::take(3) | to_utf32_or_error).begin() ==
   std::unexpected{utf_transcoding_error::truncated_utf8_sequence});
 
 bool readme_examples() {
@@ -243,7 +243,7 @@ void foo(std::ranges::view auto v) {
   windows_function(v | beman::utf_view::to_utf16);
 }
 
-int main(int argc, char const* argv[]) {
+int main(int, char const* argv[]) {
   foo(beman::utf_view::null_term(argv[1]) | beman::utf_view::as_char8_t | beman::utf_view::to_utf32);
   return beman::utf_view::examples::readme_examples() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
