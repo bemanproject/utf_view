@@ -946,7 +946,7 @@ public:
 };
 
 template <exposition_only_from_utf_view V>
-class to_utf8_view : std::ranges::view_interface<to_utf8_view<V>> {
+class to_utf8_view : public std::ranges::view_interface<to_utf8_view<V>> {
 private:
   using exposition_only_iterator =
       std::ranges::iterator_t<exposition_only_to_utf_view_impl<false, char8_t, V>>;
@@ -1003,7 +1003,7 @@ template <class R>
 to_utf8_view(R&&) -> to_utf8_view<std::views::all_t<R>>;
 
 template <exposition_only_from_utf_view V>
-class to_utf8_or_error_view : std::ranges::view_interface<to_utf8_or_error_view<V>> {
+class to_utf8_or_error_view : public std::ranges::view_interface<to_utf8_or_error_view<V>> {
 private:
   using exposition_only_iterator =
       std::ranges::iterator_t<exposition_only_to_utf_view_impl<true, char8_t, V>>;
@@ -1060,7 +1060,7 @@ template <class R>
 to_utf8_or_error_view(R&&) -> to_utf8_or_error_view<std::views::all_t<R>>;
 
 template <exposition_only_from_utf_view V>
-class to_utf16_view : std::ranges::view_interface<to_utf16_view<V>> {
+class to_utf16_view : public std::ranges::view_interface<to_utf16_view<V>> {
 private:
   using exposition_only_iterator =
       std::ranges::iterator_t<exposition_only_to_utf_view_impl<false, char16_t, V>>;
@@ -1117,7 +1117,7 @@ template <class R>
 to_utf16_view(R&&) -> to_utf16_view<std::views::all_t<R>>;
 
 template <exposition_only_from_utf_view V>
-class to_utf16_or_error_view : std::ranges::view_interface<to_utf16_or_error_view<V>> {
+class to_utf16_or_error_view : public std::ranges::view_interface<to_utf16_or_error_view<V>> {
 private:
   using exposition_only_iterator =
       std::ranges::iterator_t<exposition_only_to_utf_view_impl<true, char16_t, V>>;
@@ -1174,7 +1174,7 @@ template <class R>
 to_utf16_or_error_view(R&&) -> to_utf16_or_error_view<std::views::all_t<R>>;
 
 template <exposition_only_from_utf_view V>
-class to_utf32_view : std::ranges::view_interface<to_utf32_view<V>> {
+class to_utf32_view : public std::ranges::view_interface<to_utf32_view<V>> {
 private:
   using exposition_only_iterator =
       std::ranges::iterator_t<exposition_only_to_utf_view_impl<false, char32_t, V>>;
@@ -1231,7 +1231,7 @@ template <class R>
 to_utf32_view(R&&) -> to_utf32_view<std::views::all_t<R>>;
 
 template <exposition_only_from_utf_view V>
-class to_utf32_or_error_view : std::ranges::view_interface<to_utf32_or_error_view<V>> {
+class to_utf32_or_error_view : public std::ranges::view_interface<to_utf32_or_error_view<V>> {
 private:
   using exposition_only_iterator =
       std::ranges::iterator_t<exposition_only_to_utf_view_impl<true, char32_t, V>>;
