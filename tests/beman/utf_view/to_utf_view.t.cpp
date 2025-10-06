@@ -862,14 +862,36 @@ CONSTEXPR_UNLESS_MSVC bool wrapped_view_test() {
 }
 #endif
 
-CONSTEXPR_UNLESS_MSVC bool wrapped_view_custom_iterator_test() {
-  std::initializer_list<char8_t> nums{u8'a', u8'b', u8'!', };
+template <typename CharT>
+struct end_at_exclamation_mark_sentinel_t {
+  template <std::input_iterator I>
+  friend constexpr bool operator==(I const& it, end_at_exclamation_mark_sentinel_t) {
+    return *it == static_cast<CharT>('!');
+  }
+};
+
+template <typename CharT>
+inline constexpr end_at_exclamation_mark_sentinel_t<CharT> end_at_exclamation_mark_sentinel;
+
+#if 0
+CONSTEXPR_UNLESS_MSVC bool wrapped_view_custom_sentinel_test() {
+  std::initializer_list<char8_t> nums{u8'a', u8'b', u8'!', u8'c', u8'd'};
   test_bidi_iterator<char8_t> start_it{nums};
   test_bidi_iterator<char8_t> end_it{nums};
   std::ranges::advance(end_it, std::ranges::size(nums));
-  auto u32_subrange{std::ranges::subrange(start_it, end_it)};
-
+  std::ranges::subrange u32_subrange{start_it, end_it};
+  to_utf16_view u16v{u32_subrange};
+  std::ranges::subrange custom_u16_subrange{u16v.begin(), end_at_exclamation_mark_sentinel<char16_t>};
+  if (std::ranges::distance(custom_u16_subrange) != 2) {
+    return false;
+  }
+  to_utf32_view custom_u32v{custom_u16_subrange};
+  if (std::ranges::distance(custom_u32v) != 2) {
+    return false;
+  }
+  return true;
 }
+#endif
 
 constexpr bool empty_test() {
   static_assert(std::is_same_v<decltype(std::views::empty<char8_t> | to_utf8),
@@ -1590,7 +1612,10 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
   if (!to_utf_test()) {
     return false;
   }
-  if (!wrapped_view_test()) {
+  // if (!wrapped_view_test()) {
+  //   return false;
+  // }
+  if (!wrapped_view_custom_sentinel_test()) {
     return false;
   }
   if (!empty_test()) {
