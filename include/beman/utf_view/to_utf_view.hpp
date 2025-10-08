@@ -234,7 +234,9 @@ public:
     constexpr exposition_only_utf_iterator& operator++() requires(OrError)
     {
       if (!exposition_only_success()) {
+        /* !PAPER */
         assert(buf_index_ == 0);
+        /* PAPER */
         if constexpr (std::is_same_v<ToType, char8_t>) {
           exposition_only_advance_one();
           exposition_only_advance_one();
