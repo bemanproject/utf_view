@@ -113,7 +113,12 @@ public:
 
     /* PAPER:       using @*innermost-iter*@ = @*unspecified*@; // @*exposition only*@ */
 
-    using exposition_only_from_type = std::iter_value_t<exposition_only_iter>; // @*exposition only *@
+    using exposition_only_from_type = std::iter_value_t<exposition_only_iter>; // @*exposition only*@
+
+    using exposition_only_backptr_type =
+        std::conditional_t<std::copyable<std::ranges::iterator_t<V>>,
+                           exposition_only_to_utf_view_impl const*,
+                           exposition_only_to_utf_view_impl*>; // @*exposition only*@
 
   public:
     using value_type =
@@ -129,7 +134,7 @@ public:
 
   private:
     constexpr exposition_only_utf_iterator(
-        exposition_only_to_utf_view_impl const* parent, exposition_only_iter begin) // @*exposition only*@
+        exposition_only_backptr_type parent, exposition_only_iter begin) // @*exposition only*@
         : backptr_(parent),
           base_(std::move(begin))
     {
@@ -350,12 +355,7 @@ public:
       return std::ranges::begin(backptr_->base_);
     }
     constexpr exposition_only_sent end() const { // @*exposition only*@
-      if constexpr (!std::forward_iterator<exposition_only_iter>) {
-        // TODO: The fact that I need to do this deserves its own paper
-        return std::ranges::end(const_cast<exposition_only_to_utf_view_impl*>(backptr_)->base_);
-      } else {
-        return std::ranges::end(backptr_->base_);
-      }
+      return std::ranges::end(backptr_->base_);
     }
 
     /* !PAPER */
@@ -761,7 +761,7 @@ public:
     /* PAPER */
     std::array<value_type, 4 / sizeof(ToType)> buf_{}; // @*exposition only*@
 
-    exposition_only_to_utf_view_impl const* backptr_;
+    exposition_only_backptr_type backptr_;
 
     exposition_only_iter base_;
 
@@ -777,20 +777,16 @@ public:
 private:
   V base_ = V(); // @*exposition only*@
 
-  template <bool Const>
-  static constexpr auto make_begin(exposition_only_to_utf_view_impl const* self, auto first) { // @*exposition only*@
-    if constexpr (std::bidirectional_iterator<std::ranges::iterator_t<V>>) {
-      return exposition_only_utf_iterator<Const>(self, first);
-    } else {
-      return exposition_only_utf_iterator<Const>(self, std::move(first));
-    }
+  constexpr auto make_begin(this auto& self) { // @*exposition only*@
+    constexpr bool const_{std::is_const_v<std::remove_reference_t<decltype(self)>>};
+    return exposition_only_utf_iterator<const_>(&self, std::ranges::begin(self.base_));
   }
-  template <bool Const>
-  static constexpr auto make_end(exposition_only_to_utf_view_impl const* self, auto last) { // @*exposition only*@
+  constexpr auto make_end(this auto& self) { // @*exposition only*@
     if constexpr (std::bidirectional_iterator<std::ranges::sentinel_t<V>>) {
-      return exposition_only_utf_iterator<Const>(self);
+      constexpr bool const_{std::is_const_v<std::remove_reference_t<decltype(self)>>};
+      return exposition_only_utf_iterator<const_>(&self);
     } else {
-      return last;
+      return std::ranges::end(self.base_);
     }
   }
 
@@ -813,23 +809,23 @@ public:
   constexpr auto begin()
     requires(!std::copyable<std::ranges::iterator_t<V>>)
   {
-    return make_begin<false>(this, std::ranges::begin(base_));
+    return make_begin();
   }
   constexpr auto begin() const
     requires std::copyable<std::ranges::iterator_t<V>>
   {
-    return make_begin<true>(this, std::ranges::begin(base_));
+    return make_begin();
   }
 
   constexpr auto end()
     requires(!std::copyable<std::ranges::iterator_t<V>>)
   {
-    return make_end<false>(this, std::ranges::end(base_));
+    return make_end();
   }
   constexpr auto end() const
     requires std::copyable<std::ranges::iterator_t<V>>
   {
-    return make_end<true>(this, std::ranges::end(base_));
+    return make_end();
   }
 
   constexpr bool empty() const {
