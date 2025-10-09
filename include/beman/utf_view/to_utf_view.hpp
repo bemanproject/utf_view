@@ -111,8 +111,6 @@ public:
               exposition_only_from_utf_view V2>
     friend class exposition_only_to_utf_view_impl; // @*exposition only*@
 
-    /* PAPER:       using @*innermost-iter*@ = @*unspecified*@; // @*exposition only*@ */
-
     using exposition_only_from_type = std::iter_value_t<exposition_only_iter>; // @*exposition only*@
 
     using exposition_only_backptr_type =
