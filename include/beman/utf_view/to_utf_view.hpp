@@ -10,6 +10,7 @@
 
 #include <beman/utf_view/detail/concepts.hpp>
 #include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
+#include <beman/utf_view/detail/fake_inplace_vector.hpp>
 #include <bit>
 #include <cassert>
 #include <concepts>
@@ -203,7 +204,7 @@ public:
     constexpr void exposition_only_advance_one() // @*exposition only*@
     {
       ++buf_index_;
-      if (buf_index_ == buf_last_) {
+      if (buf_index_ == buf_.size()) {
         if constexpr (std::forward_iterator<exposition_only_iter>) {
           buf_index_ = 0;
           std::advance(base(), to_increment_);
@@ -278,7 +279,7 @@ public:
       if constexpr (std::forward_iterator<exposition_only_iter>) {
         return lhs.base() == rhs;
       } else {
-        return lhs.base() == rhs && lhs.buf_index_ == lhs.buf_last_;
+        return lhs.base() == rhs && lhs.buf_index_ == lhs.buf_.size();
       }
     }
 
@@ -286,7 +287,7 @@ public:
                                      exposition_only_sent rhs)
       requires(!std::copyable<exposition_only_iter>)
     {
-      return lhs.base() == rhs && lhs.buf_index_ == lhs.buf_last_;
+      return lhs.base() == rhs && lhs.buf_index_ == lhs.buf_.size();
     }
 
     /* !PAPER */
@@ -508,46 +509,36 @@ public:
     constexpr void update(char32_t c, std::uint8_t to_incr) {
       to_increment_ = to_incr;
       buf_index_ = 0;
+      buf_.clear();
       if constexpr (std::is_same_v<ToType, char32_t>) {
-        buf_[0] = c;
-        buf_last_ = 1;
+        buf_.push_back(c);
       } else if constexpr (std::is_same_v<ToType, char16_t>) {
         if (c <= std::numeric_limits<char16_t>::max()) {
-          buf_[0] = static_cast<char16_t>(c);
-          buf_[1] = 0;
-          buf_last_ = 1;
+          buf_.push_back(static_cast<char16_t>(c));
         } else {
           // From http://www.unicode.org/faq/utf_bom.html#utf16-4
           const char32_t lead_offset = 0xD800 - (0x10000 >> 10);
           char16_t lead = lead_offset + (c >> 10);
           char16_t trail = 0xDC00 + (c & 0x3FF);
-          buf_[0] = lead;
-          buf_[1] = trail;
-          buf_last_ = 2;
+          buf_.push_back(lead);
+          buf_.push_back(trail);
         }
       } else if constexpr (std::is_same_v<ToType, char8_t>) {
         int bits = std::bit_width(static_cast<std::uint32_t>(c));
         if (bits <= 7) [[likely]] {
-          buf_[0] = static_cast<char8_t>(c);
-          buf_[1] = buf_[2] = buf_[3] = 0;
-          buf_last_ = 1;
+          buf_.push_back(static_cast<char8_t>(c));
         } else if (bits <= 11) {
-          buf_[0] = 0xC0 | (c >> 6);
-          buf_[1] = 0x80 | (c & 0x3F);
-          buf_[2] = buf_[3] = 0;
-          buf_last_ = 2;
+          buf_.push_back(0xC0 | (c >> 6));
+          buf_.push_back(0x80 | (c & 0x3F));
         } else if (bits <= 16) {
-          buf_[0] = 0xE0 | (c >> 12);
-          buf_[1] = 0x80 | ((c >> 6) & 0x3F);
-          buf_[2] = 0x80 | (c & 0x3F);
-          buf_[3] = 0;
-          buf_last_ = 3;
+          buf_.push_back(0xE0 | (c >> 12));
+          buf_.push_back(0x80 | ((c >> 6) & 0x3F));
+          buf_.push_back(0x80 | (c & 0x3F));
         } else {
-          buf_[0] = 0xF0 | ((c >> 18) & 0x07);
-          buf_[1] = 0x80 | ((c >> 12) & 0x3F);
-          buf_[2] = 0x80 | ((c >> 6) & 0x3F);
-          buf_[3] = 0x80 | (c & 0x3F);
-          buf_last_ = 4;
+          buf_.push_back(0xF0 | ((c >> 18) & 0x07));
+          buf_.push_back(0x80 | ((c >> 12) & 0x3F));
+          buf_.push_back(0x80 | ((c >> 6) & 0x3F));
+          buf_.push_back(0x80 | (c & 0x3F));
         }
       } else {
         static_assert(false);
@@ -716,8 +707,8 @@ public:
              read_reverse_impl_result.decode_result.to_incr);
       success_ = read_reverse_impl_result.decode_result.success;
       base() = read_reverse_impl_result.new_curr;
-      assert(buf_last_);
-      buf_index_ = buf_last_ - 1;
+      assert(buf_.size());
+      buf_index_ = buf_.size() - 1;
       if constexpr (OrError) {
         if (!success_.has_value()) {
           buf_index_ = 0;
@@ -726,14 +717,13 @@ public:
     }
 
     /* PAPER */
-    std::array<value_type, 4 / sizeof(ToType)> buf_{}; // @*exposition only*@
+    detail::fake_inplace_vector<value_type, 4 / sizeof(ToType)> buf_{}; // @*exposition only*@
 
     exposition_only_backptr_type backptr_;
 
     exposition_only_iter base_;
 
     std::uint8_t buf_index_ = 0; // @*exposition only*@
-    std::uint8_t buf_last_ = 0; // @*exposition only*@
     std::uint8_t to_increment_ = 0; // @*exposition only*@
 
     /* !PAPER */
