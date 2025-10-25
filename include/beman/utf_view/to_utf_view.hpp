@@ -205,7 +205,7 @@ public:
     {
       if (buf_index_ + 1 < buf_last_) {
         ++buf_index_;
-      } else if (buf_index_ + 1 == buf_last_) {
+      } else {
         std::advance(base(), to_increment_);
         to_increment_ = 0;
         if (base() != end()) {
@@ -221,7 +221,7 @@ public:
     {
       if (buf_index_ + 1 == buf_last_ && base() != end()) {
         read();
-      } else if (buf_index_ + 1 <= buf_last_) {
+      } else {
         ++buf_index_;
       }
     }
