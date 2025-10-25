@@ -201,28 +201,16 @@ public:
     /* PAPER */
 
     constexpr void exposition_only_advance_one() // @*exposition only*@
-      requires std::forward_iterator<exposition_only_iter>
     {
-      if (buf_index_ + 1 < buf_last_) {
-        ++buf_index_;
-      } else {
-        std::advance(base(), to_increment_);
-        to_increment_ = 0;
+      ++buf_index_;
+      if (buf_index_ == buf_last_) {
+        if constexpr (std::forward_iterator<exposition_only_iter>) {
+          buf_index_ = 0;
+          std::advance(base(), to_increment_);
+        }
         if (base() != end()) {
           read();
-        } else {
-          buf_index_ = 0;
         }
-      }
-    }
-
-    constexpr void exposition_only_advance_one() // @*exposition only*@
-      requires (!std::forward_iterator<exposition_only_iter>)
-    {
-      if (buf_index_ + 1 == buf_last_ && base() != end()) {
-        read();
-      } else {
-        ++buf_index_;
       }
     }
 
@@ -262,7 +250,7 @@ public:
     {
       if (!buf_index_)
         read_reverse();
-      else if (buf_index_)
+      else
         --buf_index_;
       return *this;
     }
@@ -280,18 +268,7 @@ public:
       requires std::forward_iterator<exposition_only_iter> ||
         requires(exposition_only_iter i) { i != i; }
     {
-      if constexpr (std::forward_iterator<exposition_only_iter>) {
-        return lhs.base() == rhs.base() && lhs.buf_index_ == rhs.buf_index_;
-      } else {
-        if (lhs.base() != rhs.base())
-          return false;
-
-        if (lhs.buf_index_ == rhs.buf_index_ && lhs.buf_last_ == rhs.buf_last_) {
-          return true;
-        }
-
-        return lhs.buf_index_ == lhs.buf_last_ && rhs.buf_index_ == rhs.buf_last_;
-      }
+      return lhs.base() == rhs.base() && lhs.buf_index_ == rhs.buf_index_;
     }
 
     friend constexpr bool operator==(exposition_only_utf_iterator const& lhs,
