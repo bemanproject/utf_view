@@ -191,20 +191,12 @@ public:
     /* PAPER:       constexpr value_type operator*() const; */
     /* !PAPER */
     constexpr value_type operator*() const {
-      auto const code_unit{
-        [&] {
-          if constexpr (std::forward_iterator<exposition_only_iter>) {
-            return buf_[buf_index_];
-          } else {
-            return buf_[buf_index_ & 3];
-          }
-        }()};
       if constexpr (OrError) {
         if (!success_.has_value()) {
           return std::unexpected{success_.error()};
         }
       }
-      return code_unit;
+      return buf_[buf_index_];
     }
     /* PAPER */
 
