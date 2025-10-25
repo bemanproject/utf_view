@@ -133,6 +133,7 @@ This project officially supports:
 - Clang 19/libc++
 - Clang 20/libc++
 - Clang 21/libc++
+- MSVC 19.41
 
 Note: Building with Clang and libstdc++ is not currently supported due to various bugs.
 
