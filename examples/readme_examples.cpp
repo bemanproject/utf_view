@@ -182,11 +182,13 @@ static_assert(take_five_c("Dave") == "Dave"sv); // passes
 static_assert(take_five_c("Brubeck") == "Brube"sv); // passes
 #endif
 
+#ifndef _MSC_VER
 static_assert((u8"\xf0\x9f\x99\x82" | to_utf32 | std::ranges::to<std::u32string>()) == U"\x0001F642");
 static_assert((u8"\xf0\x9f\x99\x82" | std::views::take(3) | to_utf32 | std::ranges::to<std::u32string>()) == U"�");
 static_assert(
   *(u8"\xf0\x9f\x99\x82" | std::views::take(3) | to_utf32_or_error).begin() ==
   std::unexpected{utf_transcoding_error::truncated_utf8_sequence});
+#endif
 
 bool readme_examples() {
   using namespace std::string_view_literals;
