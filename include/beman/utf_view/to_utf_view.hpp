@@ -178,17 +178,6 @@ public:
       return std::move(base_);
     }
 
-    /* PAPER:       constexpr expected<void, utf_transcoding_error> @*success*@() const noexcept requires(OrError); // @*exposition only*@ */
-    /* !PAPER */
-
-    constexpr bool exposition_only_success() const noexcept // @*exposition only*@
-      requires(OrError)
-    {
-      return !!success_;
-    }
-
-    /* PAPER */
-
     /* PAPER:       constexpr value_type operator*() const; */
     /* !PAPER */
     constexpr value_type operator*() const {
@@ -200,20 +189,6 @@ public:
       return buf_[buf_index_];
     }
     /* PAPER */
-
-    constexpr void exposition_only_advance_one() // @*exposition only*@
-    {
-      ++buf_index_;
-      if (buf_index_ == buf_.size()) {
-        if constexpr (std::forward_iterator<exposition_only_iter>) {
-          buf_index_ = 0;
-          std::advance(base(), to_increment_);
-        }
-        if (base() != end()) {
-          read();
-        }
-      }
-    }
 
     constexpr exposition_only_utf_iterator& operator++() requires(OrError)
     {
@@ -324,6 +299,31 @@ public:
     }
     constexpr exposition_only_sent end() const { // @*exposition only*@
       return std::ranges::end(backptr_->base_);
+    }
+
+    /* PAPER:       constexpr expected<void, utf_transcoding_error> @*success*@() const noexcept requires(OrError); // @*exposition only*@ */
+    /* !PAPER */
+
+    constexpr bool exposition_only_success() const noexcept // @*exposition only*@
+      requires(OrError)
+    {
+      return !!success_;
+    }
+
+    /* PAPER */
+
+    constexpr void exposition_only_advance_one() // @*exposition only*@
+    {
+      ++buf_index_;
+      if (buf_index_ == buf_.size()) {
+        if constexpr (std::forward_iterator<exposition_only_iter>) {
+          buf_index_ = 0;
+          std::advance(base(), to_increment_);
+        }
+        if (base() != end()) {
+          read();
+        }
+      }
     }
 
     /* !PAPER */
