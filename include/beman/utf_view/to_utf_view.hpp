@@ -113,7 +113,7 @@ public:
   constexpr exposition_only_to_utf_view_impl()
     requires std::default_initializable<V>
   = default;
-  constexpr exposition_only_to_utf_view_impl(V base)
+  constexpr explicit exposition_only_to_utf_view_impl(V base)
       : base_(std::move(base)) { }
 
   constexpr V base() const&
@@ -809,7 +809,7 @@ public:
   constexpr to_utf8_view()
     requires std::default_initializable<V>
   = default;
-  constexpr to_utf8_view(V base)
+  constexpr explicit to_utf8_view(V base)
       : impl_(std::move(base)) { }
 
   constexpr V base() const&
@@ -868,7 +868,7 @@ public:
   constexpr to_utf8_or_error_view()
     requires std::default_initializable<V>
   = default;
-  constexpr to_utf8_or_error_view(V base)
+  constexpr explicit to_utf8_or_error_view(V base)
       : impl_(std::move(base)) { }
 
   constexpr V base() const&
@@ -926,7 +926,7 @@ public:
   constexpr to_utf16_view()
     requires std::default_initializable<V>
   = default;
-  constexpr to_utf16_view(V base)
+  constexpr explicit to_utf16_view(V base)
       : impl_(std::move(base)) { }
 
   constexpr V base() const&
@@ -985,7 +985,7 @@ public:
   constexpr to_utf16_or_error_view()
     requires std::default_initializable<V>
   = default;
-  constexpr to_utf16_or_error_view(V base)
+  constexpr explicit to_utf16_or_error_view(V base)
       : impl_(std::move(base)) { }
 
   constexpr V base() const&
@@ -1043,7 +1043,7 @@ public:
   constexpr to_utf32_view()
     requires std::default_initializable<V>
   = default;
-  constexpr to_utf32_view(V base)
+  constexpr explicit to_utf32_view(V base)
       : impl_(std::move(base)) { }
 
   constexpr V base() const&
@@ -1102,7 +1102,7 @@ public:
   constexpr to_utf32_or_error_view()
     requires std::default_initializable<V>
   = default;
-  constexpr to_utf32_or_error_view(V base)
+  constexpr explicit to_utf32_or_error_view(V base)
       : impl_(std::move(base)) { }
 
   constexpr V base() const&
