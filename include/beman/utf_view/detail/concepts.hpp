@@ -39,10 +39,6 @@ concept exposition_only_code_unit = std::same_as<std::remove_cv_t<T>, char8_t> |
     std::same_as<std::remove_cv_t<T>, char16_t> ||
     std::same_as<std::remove_cv_t<T>, char32_t>;
 
-template <class T>
-concept exposition_only_utf_range = std::ranges::input_range<T> &&
-    exposition_only_code_unit<std::ranges::range_value_t<T>>;
-
 /* !PAPER */
 
 } // namespace beman::utf_view
