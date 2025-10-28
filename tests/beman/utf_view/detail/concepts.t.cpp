@@ -17,6 +17,4 @@ static_assert(!exposition_only_code_unit<wchar_t>);
 static_assert(!exposition_only_code_unit<char>);
 static_assert(!exposition_only_code_unit<int>);
 
-// todo: utf_range
-
 } // namespace beman::utf_view::detail::tests

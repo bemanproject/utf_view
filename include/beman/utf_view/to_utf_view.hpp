@@ -88,11 +88,8 @@ enum class utf_transcoding_error {
   invalid_utf8_leading_byte
 };
 
-template <class V>
-concept exposition_only_from_utf_view =
-    exposition_only_utf_range<V> && std::ranges::view<V>;
-
-template <bool OrError, exposition_only_code_unit ToType, exposition_only_from_utf_view V>
+template <std::ranges::input_range V, bool OrError, exposition_only_code_unit ToType>
+  requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 class exposition_only_to_utf_view_impl {
 public:
   template <bool Const>
@@ -108,8 +105,8 @@ public:
     using exposition_only_sent =
         std::ranges::sentinel_t<exposition_only_maybe_const<Const, V>>;
 
-    template <bool OrError2, exposition_only_code_unit ToType2,
-              exposition_only_from_utf_view V2>
+    template <std::ranges::input_range V2, bool OrError2, exposition_only_code_unit ToType2>
+      requires std::ranges::view<V2> && exposition_only_code_unit<std::ranges::range_value_t<V2>>
     friend class exposition_only_to_utf_view_impl; // @*exposition only*@
 
     using exposition_only_from_type = std::iter_value_t<exposition_only_iter>; // @*exposition only*@
@@ -790,13 +787,14 @@ public:
   }
 };
 
-template <exposition_only_from_utf_view V>
+template <std::ranges::input_range V>
+  requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 class to_utf8_view : public std::ranges::view_interface<to_utf8_view<V>> {
 private:
   using exposition_only_iterator =
-      std::ranges::iterator_t<exposition_only_to_utf_view_impl<false, char8_t, V>>;
+    std::ranges::iterator_t<exposition_only_to_utf_view_impl<V, false, char8_t>>;
   using exposition_only_sentinel =
-      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<false, char8_t, V>>;
+    std::ranges::sentinel_t<exposition_only_to_utf_view_impl<V, false, char8_t>>;
 
 public:
   constexpr to_utf8_view()
@@ -841,20 +839,21 @@ public:
   }
 
 private:
-  exposition_only_to_utf_view_impl<false, char8_t, V> impl_;
+  exposition_only_to_utf_view_impl<V, false, char8_t> impl_;
 };
 
 template <class R>
 to_utf8_view(R&&) -> to_utf8_view<std::views::all_t<R>>;
 
-template <exposition_only_from_utf_view V>
+template <std::ranges::input_range V>
+  requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 class to_utf8_or_error_view
     : public std::ranges::view_interface<to_utf8_or_error_view<V>> {
 private:
   using exposition_only_iterator =
-      std::ranges::iterator_t<exposition_only_to_utf_view_impl<true, char8_t, V>>;
+    std::ranges::iterator_t<exposition_only_to_utf_view_impl<V, true, char8_t>>;
   using exposition_only_sentinel =
-      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<true, char8_t, V>>;
+    std::ranges::sentinel_t<exposition_only_to_utf_view_impl<V, true, char8_t>>;
 
 public:
   constexpr to_utf8_or_error_view()
@@ -899,19 +898,20 @@ public:
   }
 
 private:
-  exposition_only_to_utf_view_impl<true, char8_t, V> impl_;
+  exposition_only_to_utf_view_impl<V, true, char8_t> impl_;
 };
 
 template <class R>
 to_utf8_or_error_view(R&&) -> to_utf8_or_error_view<std::views::all_t<R>>;
 
-template <exposition_only_from_utf_view V>
+template <std::ranges::input_range V>
+  requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 class to_utf16_view : public std::ranges::view_interface<to_utf16_view<V>> {
 private:
   using exposition_only_iterator =
-      std::ranges::iterator_t<exposition_only_to_utf_view_impl<false, char16_t, V>>;
+    std::ranges::iterator_t<exposition_only_to_utf_view_impl<V, false, char16_t>>;
   using exposition_only_sentinel =
-      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<false, char16_t, V>>;
+    std::ranges::sentinel_t<exposition_only_to_utf_view_impl<V, false, char16_t>>;
 
 public:
   constexpr to_utf16_view()
@@ -956,20 +956,21 @@ public:
   }
 
 private:
-  exposition_only_to_utf_view_impl<false, char16_t, V> impl_;
+  exposition_only_to_utf_view_impl<V, false, char16_t> impl_;
 };
 
 template <class R>
 to_utf16_view(R&&) -> to_utf16_view<std::views::all_t<R>>;
 
-template <exposition_only_from_utf_view V>
+template <std::ranges::input_range V>
+  requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 class to_utf16_or_error_view
     : public std::ranges::view_interface<to_utf16_or_error_view<V>> {
 private:
   using exposition_only_iterator =
-      std::ranges::iterator_t<exposition_only_to_utf_view_impl<true, char16_t, V>>;
+    std::ranges::iterator_t<exposition_only_to_utf_view_impl<V, true, char16_t>>;
   using exposition_only_sentinel =
-      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<true, char16_t, V>>;
+    std::ranges::sentinel_t<exposition_only_to_utf_view_impl<V, true, char16_t>>;
 
 public:
   constexpr to_utf16_or_error_view()
@@ -1014,19 +1015,20 @@ public:
   }
 
 private:
-  exposition_only_to_utf_view_impl<true, char16_t, V> impl_;
+  exposition_only_to_utf_view_impl<V, true, char16_t> impl_;
 };
 
 template <class R>
 to_utf16_or_error_view(R&&) -> to_utf16_or_error_view<std::views::all_t<R>>;
 
-template <exposition_only_from_utf_view V>
+template <std::ranges::input_range V>
+  requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 class to_utf32_view : public std::ranges::view_interface<to_utf32_view<V>> {
 private:
   using exposition_only_iterator =
-      std::ranges::iterator_t<exposition_only_to_utf_view_impl<false, char32_t, V>>;
+    std::ranges::iterator_t<exposition_only_to_utf_view_impl<V, false, char32_t>>;
   using exposition_only_sentinel =
-      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<false, char32_t, V>>;
+    std::ranges::sentinel_t<exposition_only_to_utf_view_impl<V, false, char32_t>>;
 
 public:
   constexpr to_utf32_view()
@@ -1071,20 +1073,21 @@ public:
   }
 
 private:
-  exposition_only_to_utf_view_impl<false, char32_t, V> impl_;
+  exposition_only_to_utf_view_impl<V, false, char32_t> impl_;
 };
 
 template <class R>
 to_utf32_view(R&&) -> to_utf32_view<std::views::all_t<R>>;
 
-template <exposition_only_from_utf_view V>
+template <std::ranges::input_range V>
+  requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 class to_utf32_or_error_view
     : public std::ranges::view_interface<to_utf32_or_error_view<V>> {
 private:
   using exposition_only_iterator =
-      std::ranges::iterator_t<exposition_only_to_utf_view_impl<true, char32_t, V>>;
+    std::ranges::iterator_t<exposition_only_to_utf_view_impl<V, true, char32_t>>;
   using exposition_only_sentinel =
-      std::ranges::sentinel_t<exposition_only_to_utf_view_impl<true, char32_t, V>>;
+    std::ranges::sentinel_t<exposition_only_to_utf_view_impl<V, true, char32_t>>;
 
 public:
   constexpr to_utf32_or_error_view()
@@ -1125,7 +1128,7 @@ public:
   }
 
 private:
-  exposition_only_to_utf_view_impl<true, char32_t, V> impl_;
+  exposition_only_to_utf_view_impl<V, true, char32_t> impl_;
 };
 
 template <class R>
@@ -1135,8 +1138,7 @@ to_utf32_or_error_view(R&&) -> to_utf32_or_error_view<std::views::all_t<R>>;
 
 namespace detail {
 
-  template <bool OrError, exposition_only_code_unit ToType,
-            exposition_only_from_utf_view V>
+  template <class V, bool OrError, exposition_only_code_unit ToType>
   using to_utf_view = std::conditional_t<
       OrError,
       std::conditional_t<
@@ -1152,7 +1154,7 @@ namespace detail {
 
   template <bool OrError, exposition_only_code_unit ToType>
   struct to_utf_impl : std::ranges::range_adaptor_closure<to_utf_impl<OrError, ToType>> {
-    template <exposition_only_utf_range R>
+    template <class R>
     constexpr auto operator()(R&& r) const {
       using T = std::remove_cvref_t<R>;
       if constexpr (exposition_only_is_empty_view<T>) {
@@ -1165,10 +1167,10 @@ namespace detail {
           --last;
         }
         std::ranges::subrange subrange(first, last);
-        return to_utf_view<OrError, ToType, decltype(subrange)>(std::move(subrange));
+        return to_utf_view<decltype(subrange), OrError, ToType>(std::move(subrange));
       } else {
         auto view = std::views::all(std::forward<R>(r));
-        return to_utf_view<OrError, ToType, decltype(view)>(std::move(view));
+        return to_utf_view<decltype(view), OrError, ToType>(std::move(view));
       }
     }
   };
