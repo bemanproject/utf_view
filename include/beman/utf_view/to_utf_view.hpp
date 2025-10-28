@@ -94,11 +94,6 @@ class exposition_only_to_utf_view_impl {
 public:
   template <bool Const>
   class exposition_only_utf_iterator {
-    /* !PAPER */
-  public:
-    using reserved_to_utf_view_iterator = void;
-
-    /* PAPER */
   private:
     using exposition_only_iter =
         std::ranges::iterator_t<exposition_only_maybe_const<Const, V>>;
