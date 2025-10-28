@@ -92,19 +92,19 @@ template <std::ranges::input_range V, bool OrError, exposition_only_code_unit To
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 class exposition_only_to_utf_view_impl {
 public:
-  template<bool> struct exposition_only_utf_iterator;
+  template<bool> struct exposition_only_iterator;
 
 private:
   V base_ = V(); // @*exposition only*@
 
   constexpr auto make_begin(this auto& self) { // @*exposition only*@
     constexpr bool const_{std::is_const_v<std::remove_reference_t<decltype(self)>>};
-    return exposition_only_utf_iterator<const_>(&self, std::ranges::begin(self.base_));
+    return exposition_only_iterator<const_>(&self, std::ranges::begin(self.base_));
   }
   constexpr auto make_end(this auto& self) { // @*exposition only*@
     if constexpr (std::bidirectional_iterator<std::ranges::sentinel_t<V>>) {
       constexpr bool const_{std::is_const_v<std::remove_reference_t<decltype(self)>>};
-      return exposition_only_utf_iterator<const_>(&self);
+      return exposition_only_iterator<const_>(&self);
     } else {
       return std::ranges::end(self.base_);
     }
@@ -162,7 +162,7 @@ template <bool Const>
   #pragma clang diagnostic ignored "-Wmismatched-tags"
 #endif
 /* PAPER */
-class exposition_only_to_utf_view_impl<V, OrError, ToType>::exposition_only_utf_iterator {
+class exposition_only_to_utf_view_impl<V, OrError, ToType>::exposition_only_iterator {
 /* !PAPER */
 #if defined(__clang__)
   #pragma clang diagnostic pop
@@ -193,12 +193,12 @@ public:
   using iterator_concept =
       exposition_only_bidirectional_at_most_t<exposition_only_iter>;
 
-  CONSTEXPR_UNLESS_MSVC exposition_only_utf_iterator()
+  CONSTEXPR_UNLESS_MSVC exposition_only_iterator()
     requires std::default_initializable<V>
   = default;
 
 private:
-  constexpr exposition_only_utf_iterator(
+  constexpr exposition_only_iterator(
       exposition_only_backptr_type parent, exposition_only_iter begin) // @*exposition only*@
       : backptr_(parent),
         base_(std::move(begin))
@@ -207,7 +207,7 @@ private:
       read();
   }
 
-  constexpr exposition_only_utf_iterator(exposition_only_to_utf_view_impl const* parent) // @*exposition only*@
+  constexpr exposition_only_iterator(exposition_only_to_utf_view_impl const* parent) // @*exposition only*@
       : backptr_(parent),
         base_(end())
   {
@@ -216,20 +216,20 @@ private:
   }
 
 public:
-  CONSTEXPR_UNLESS_MSVC exposition_only_utf_iterator() = default;
-  CONSTEXPR_UNLESS_MSVC exposition_only_utf_iterator(
-      exposition_only_utf_iterator const&)
+  CONSTEXPR_UNLESS_MSVC exposition_only_iterator() = default;
+  CONSTEXPR_UNLESS_MSVC exposition_only_iterator(
+      exposition_only_iterator const&)
     requires std::copyable<exposition_only_iter>
   = default;
 
-  CONSTEXPR_UNLESS_MSVC exposition_only_utf_iterator& operator=(
-      exposition_only_utf_iterator const&)
+  CONSTEXPR_UNLESS_MSVC exposition_only_iterator& operator=(
+      exposition_only_iterator const&)
     requires std::copyable<exposition_only_iter>
   = default;
 
-  constexpr exposition_only_utf_iterator(exposition_only_utf_iterator&&) = default;
+  constexpr exposition_only_iterator(exposition_only_iterator&&) = default;
 
-  constexpr exposition_only_utf_iterator& operator=(exposition_only_utf_iterator&&) =
+  constexpr exposition_only_iterator& operator=(exposition_only_iterator&&) =
       default;
 
   constexpr exposition_only_iter& base() & {
@@ -256,7 +256,7 @@ public:
   }
   /* PAPER */
 
-  constexpr exposition_only_utf_iterator& operator++() requires(OrError)
+  constexpr exposition_only_iterator& operator++() requires(OrError)
   {
     if (!exposition_only_success()) {
       /* !PAPER */
@@ -271,7 +271,7 @@ public:
     return *this;
   }
 
-  constexpr exposition_only_utf_iterator& operator++() requires(!OrError)
+  constexpr exposition_only_iterator& operator++() requires(!OrError)
   {
     exposition_only_advance_one();
     return *this;
@@ -287,7 +287,7 @@ public:
     }
   }
 
-  constexpr exposition_only_utf_iterator& operator--()
+  constexpr exposition_only_iterator& operator--()
     requires std::bidirectional_iterator<exposition_only_iter>
   {
     if (!buf_index_)
@@ -297,7 +297,7 @@ public:
     return *this;
   }
 
-  constexpr exposition_only_utf_iterator operator--(int)
+  constexpr exposition_only_iterator operator--(int)
     requires std::bidirectional_iterator<exposition_only_iter>
   {
     auto retval = *this;
@@ -305,15 +305,15 @@ public:
     return retval;
   }
 
-  friend constexpr bool operator==(exposition_only_utf_iterator const& lhs,
-                                   exposition_only_utf_iterator const& rhs)
+  friend constexpr bool operator==(exposition_only_iterator const& lhs,
+                                   exposition_only_iterator const& rhs)
     requires std::forward_iterator<exposition_only_iter> ||
       requires(exposition_only_iter i) { i != i; }
   {
     return lhs.base() == rhs.base() && lhs.buf_index_ == rhs.buf_index_;
   }
 
-  friend constexpr bool operator==(exposition_only_utf_iterator const& lhs,
+  friend constexpr bool operator==(exposition_only_iterator const& lhs,
                                    exposition_only_sent rhs)
     requires std::copyable<exposition_only_iter>
   {
@@ -324,7 +324,7 @@ public:
     }
   }
 
-  friend constexpr bool operator==(exposition_only_utf_iterator const& lhs,
+  friend constexpr bool operator==(exposition_only_iterator const& lhs,
                                    exposition_only_sent rhs)
     requires(!std::copyable<exposition_only_iter>)
   {
