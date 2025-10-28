@@ -91,10 +91,9 @@ enum class utf_transcoding_error {
 template <std::ranges::input_range V, bool OrError, exposition_only_code_unit ToType>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 class exposition_only_to_utf_view_impl {
-public:
+private:
   template<bool> struct exposition_only_iterator;
 
-private:
   V base_ = V(); // @*exposition only*@
 
   constexpr auto make_begin(this auto& self) { // @*exposition only*@
