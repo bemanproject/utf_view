@@ -62,21 +62,6 @@ namespace detail {
 
 /* PAPER */
 
-template <class I>
-consteval auto exposition_only_bidirectional_at_most() { // @*exposition only*@
-  if constexpr (std::bidirectional_iterator<I>) {
-    return std::bidirectional_iterator_tag{};
-  } else if constexpr (std::forward_iterator<I>) {
-    return std::forward_iterator_tag{};
-  } else if constexpr (std::input_iterator<I>) {
-    return std::input_iterator_tag{};
-  }
-}
-
-template <class I>
-using exposition_only_bidirectional_at_most_t =
-    decltype(exposition_only_bidirectional_at_most<I>()); // @*exposition only*@
-
 enum class utf_transcoding_error {
   truncated_utf8_sequence,
   unpaired_high_surrogate,
@@ -168,16 +153,30 @@ class exposition_only_to_utf_view_impl<V, OrError, ToType>::exposition_only_iter
 #endif
 /* PAPER */
 private:
+  using exposition_only_Base = exposition_only_maybe_const<Const, V>;
+
+  /* !PAPER */
+  static consteval auto iter_concept_impl() { // @*exposition only*@
+    if constexpr (std::ranges::bidirectional_range<exposition_only_Base>) {
+      return std::bidirectional_iterator_tag{};
+    } else if constexpr (std::ranges::forward_range<exposition_only_Base>) {
+      return std::forward_iterator_tag{};
+    } else if constexpr (std::ranges::input_range<exposition_only_Base>) {
+      return std::input_iterator_tag{};
+    }
+  }
+  /* PAPER */
+
   using exposition_only_iter =
-      std::ranges::iterator_t<exposition_only_maybe_const<Const, V>>;
+      std::ranges::iterator_t<exposition_only_Base>;
   using exposition_only_sent =
-      std::ranges::sentinel_t<exposition_only_maybe_const<Const, V>>;
+      std::ranges::sentinel_t<exposition_only_Base>;
 
   template <std::ranges::input_range V2, bool OrError2, exposition_only_code_unit ToType2>
     requires std::ranges::view<V2> && exposition_only_code_unit<std::ranges::range_value_t<V2>>
   friend class exposition_only_to_utf_view_impl; // @*exposition only*@
 
-  using exposition_only_from_type = std::iter_value_t<exposition_only_iter>; // @*exposition only*@
+  using exposition_only_from_type = std::ranges::range_value_t<exposition_only_Base>; // @*exposition only*@
 
   using exposition_only_backptr_type =
       std::conditional_t<std::copyable<std::ranges::iterator_t<V>>,
@@ -189,8 +188,10 @@ public:
       std::conditional_t<OrError, std::expected<ToType, utf_transcoding_error>, ToType>;
   using reference_type = value_type;
   using difference_type = ptrdiff_t;
-  using iterator_concept =
-      exposition_only_bidirectional_at_most_t<exposition_only_iter>;
+  /* PAPER:   using iterator_concept = @*see below*@; */
+  /* !PAPER */
+  using iterator_concept = decltype(iter_concept_impl());
+  /* PAPER */
 
   CONSTEXPR_UNLESS_MSVC exposition_only_iterator()
     requires std::default_initializable<V>
