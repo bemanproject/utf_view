@@ -32,6 +32,7 @@ def process_file(file_path):
             line = line.replace("detail::", "")
             line = line.replace("boost::stl_interfaces::", "")
             line = line.replace("CONSTEXPR_UNLESS_MSVC", "constexpr")
+            line = line.replace("move", "std::move")
 
             if "/* !PAPER */" in line:
                 in_paper_section = False

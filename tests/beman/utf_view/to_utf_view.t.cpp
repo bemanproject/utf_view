@@ -448,7 +448,7 @@ constexpr bool post_increment_decrement_test() {
     }
     static_assert(std::is_same_v<void, decltype(iter++)>);
     iter++;
-    if (iter != std::default_sentinel) {
+    if (iter != single_encoded_view.end()) {
       return false;
     }
   }
@@ -464,11 +464,11 @@ constexpr bool post_increment_decrement_test() {
     if (inc_result != single_encoded_view.begin()) {
       return false;
     }
-    if (iter != std::default_sentinel) {
+    if (iter != single_encoded_view.end()) {
       return false;
     }
     auto dec_result = iter--;
-    if (dec_result != std::default_sentinel) {
+    if (dec_result != single_encoded_view.end()) {
       return false;
     }
     if (iter != single_encoded_view.begin()) {
