@@ -167,8 +167,6 @@ private:
   }
   /* PAPER */
 
-  using exposition_only_iter =
-      std::ranges::iterator_t<exposition_only_Base>;
   using exposition_only_sent =
       std::ranges::sentinel_t<exposition_only_Base>;
 
