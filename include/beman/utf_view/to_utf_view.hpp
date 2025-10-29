@@ -153,7 +153,8 @@ class exposition_only_to_utf_view_impl<V, OrError, ToType>::exposition_only_iter
 #endif
 /* PAPER */
 private:
-  using exposition_only_Base = exposition_only_maybe_const<Const, V>;
+  using exposition_only_Parent = exposition_only_maybe_const<Const, exposition_only_to_utf_view_impl>; // @*exposition only*@
+  using exposition_only_Base = exposition_only_maybe_const<Const, V>; // @*exposition only*@
 
   /* !PAPER */
   static consteval auto iter_concept_impl() { // @*exposition only*@
@@ -178,11 +179,6 @@ private:
 
   using exposition_only_from_type = std::ranges::range_value_t<exposition_only_Base>; // @*exposition only*@
 
-  using exposition_only_backptr_type =
-      std::conditional_t<std::copyable<std::ranges::iterator_t<V>>,
-                         exposition_only_to_utf_view_impl const*,
-                         exposition_only_to_utf_view_impl*>; // @*exposition only*@
-
 public:
   using value_type =
       std::conditional_t<OrError, std::expected<ToType, utf_transcoding_error>, ToType>;
@@ -199,8 +195,8 @@ public:
 
 private:
   constexpr exposition_only_iterator(
-      exposition_only_backptr_type parent, std::ranges::iterator_t<exposition_only_Base> begin) // @*exposition only*@
-      : backptr_(parent),
+      exposition_only_Parent* parent, std::ranges::iterator_t<exposition_only_Base> begin) // @*exposition only*@
+      : parent_(parent),
         base_(std::move(begin))
   {
     if (base() != end())
@@ -208,7 +204,7 @@ private:
   }
 
   constexpr exposition_only_iterator(exposition_only_to_utf_view_impl const* parent) // @*exposition only*@
-      : backptr_(parent),
+      : parent_(parent),
         base_(end())
   {
     if (base() != end())
@@ -361,10 +357,10 @@ private:
   constexpr std::ranges::iterator_t<exposition_only_Base> begin() const // @*exposition only*@
     requires std::ranges::bidirectional_range<exposition_only_Base>
   {
-    return std::ranges::begin(backptr_->base_);
+    return std::ranges::begin(parent_->base_);
   }
   constexpr exposition_only_sent end() const { // @*exposition only*@
-    return std::ranges::end(backptr_->base_);
+    return std::ranges::end(parent_->base_);
   }
 
   /* PAPER:       constexpr expected<void, utf_transcoding_error> @*success*@() const noexcept requires(OrError); // @*exposition only*@ */
@@ -785,7 +781,7 @@ private:
   /* PAPER */
   detail::fake_inplace_vector<value_type, 4 / sizeof(ToType)> buf_{}; // @*exposition only*@
 
-  exposition_only_backptr_type backptr_;
+  exposition_only_Parent* parent_;
 
   std::ranges::iterator_t<exposition_only_Base> base_;
 
