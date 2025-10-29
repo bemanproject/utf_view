@@ -56,6 +56,24 @@ namespace detail {
     return 0xDC00 <= c && c <= 0xDFFF;
   }
 
+  template<typename T>
+  struct iter_category_impl {};
+
+  template<std::ranges::forward_range R>
+  struct iter_category_impl<R> {
+    static consteval auto impl() {
+      using category = typename std::iterator_traits<std::ranges::iterator_t<R>>::iterator_category;
+      if constexpr (std::derived_from<category, std::bidirectional_iterator_tag>) {
+        return std::bidirectional_iterator_tag{};
+      } else if constexpr (std::derived_from<category, std::forward_iterator_tag>) {
+        return std::forward_iterator_tag{};
+      } else {
+        return category{};
+      }
+    }
+    using iterator_category = decltype(impl());
+  };
+
 } // namespace detail
 
 /* PAPER: namespace std::ranges { */
@@ -88,7 +106,7 @@ private:
   constexpr auto make_end(this auto& self) { // @*exposition only*@
     if constexpr (std::bidirectional_iterator<std::ranges::sentinel_t<V>>) {
       constexpr bool const_{std::is_const_v<std::remove_reference_t<decltype(self)>>};
-      return exposition_only_iterator<const_>(&self);
+      return exposition_only_iterator<const_>(&self, std::ranges::end(self.base_));
     } else {
       return std::ranges::end(self.base_);
     }
@@ -140,24 +158,16 @@ public:
 template <std::ranges::input_range V, bool OrError, exposition_only_code_unit ToType>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 template <bool Const>
+/* PAPER: class @*to_utf_view_impl*@<V, OrError, ToType>::@*iterator*@ { */
 /* !PAPER */
-#if defined(__clang__)
-  #pragma clang diagnostic push
-  #pragma clang diagnostic ignored "-Wmismatched-tags"
-#endif
-/* PAPER */
-class exposition_only_to_utf_view_impl<V, OrError, ToType>::exposition_only_iterator {
-/* !PAPER */
-#if defined(__clang__)
-  #pragma clang diagnostic pop
-#endif
+struct exposition_only_to_utf_view_impl<V, OrError, ToType>::exposition_only_iterator : detail::iter_category_impl<V> {
 /* PAPER */
 private:
   using exposition_only_Parent = exposition_only_maybe_const<Const, exposition_only_to_utf_view_impl>; // @*exposition only*@
   using exposition_only_Base = exposition_only_maybe_const<Const, V>; // @*exposition only*@
 
-  /* !PAPER */
-  static consteval auto iter_concept_impl() { // @*exposition only*@
+/* !PAPER */
+  static consteval auto iter_concept_impl() {
     if constexpr (std::ranges::bidirectional_range<exposition_only_Base>) {
       return std::bidirectional_iterator_tag{};
     } else if constexpr (std::ranges::forward_range<exposition_only_Base>) {
@@ -166,6 +176,31 @@ private:
       return std::input_iterator_tag{};
     }
   }
+
+/* PAPER */
+public:
+  /* PAPER:   using iterator_concept = @*see below*@; */
+  /* PAPER:   using iterator_category = @*see below*@;  // @*not always present*@ */
+  /* !PAPER */
+  using iterator_concept = decltype(iter_concept_impl());
+  /* PAPER */
+  using value_type =
+      std::conditional_t<OrError, std::expected<ToType, utf_transcoding_error>, ToType>;
+  using reference_type = value_type;
+  using difference_type = ptrdiff_t;
+
+private:
+  std::ranges::iterator_t<exposition_only_Base> current_ = std::ranges::iterator_t<exposition_only_Base>();
+  exposition_only_Parent* parent_ = nullptr;
+
+  detail::fake_inplace_vector<value_type, 4 / sizeof(ToType)> buf_{}; // @*exposition only*@
+
+  std::uint8_t buf_index_ = 0; // @*exposition only*@
+  std::uint8_t to_increment_ = 0; // @*exposition only*@
+
+  /* !PAPER */
+  std::expected<void, utf_transcoding_error> success_{};
+
   /* PAPER */
 
   using exposition_only_sent =
@@ -178,14 +213,6 @@ private:
   using exposition_only_from_type = std::ranges::range_value_t<exposition_only_Base>; // @*exposition only*@
 
 public:
-  using value_type =
-      std::conditional_t<OrError, std::expected<ToType, utf_transcoding_error>, ToType>;
-  using reference_type = value_type;
-  using difference_type = ptrdiff_t;
-  /* PAPER:   using iterator_concept = @*see below*@; */
-  /* !PAPER */
-  using iterator_concept = decltype(iter_concept_impl());
-  /* PAPER */
 
   CONSTEXPR_UNLESS_MSVC exposition_only_iterator()
     requires std::default_initializable<V>
@@ -194,16 +221,8 @@ public:
 private:
   constexpr exposition_only_iterator(
       exposition_only_Parent* parent, std::ranges::iterator_t<exposition_only_Base> begin) // @*exposition only*@
-      : parent_(parent),
-        current_(std::move(begin))
-  {
-    if (base() != end())
-      read();
-  }
-
-  constexpr exposition_only_iterator(exposition_only_to_utf_view_impl const* parent) // @*exposition only*@
-      : parent_(parent),
-        current_(end())
+    : current_(std::move(begin)),
+      parent_(parent)
   {
     if (base() != end())
       read();
@@ -321,9 +340,10 @@ public:
     return lhs.base() == rhs && lhs.buf_index_ == lhs.buf_.size();
   }
 
-  /* !PAPER */
 
 private:
+  /* !PAPER */
+
   struct decode_code_point_result {
     char32_t c;
     std::uint8_t to_incr;
@@ -347,7 +367,6 @@ private:
   };
 
   /* PAPER */
-
   constexpr std::ranges::iterator_t<exposition_only_Base> begin() const // @*exposition only*@
     requires std::ranges::bidirectional_range<exposition_only_Base>
   {
@@ -772,18 +791,6 @@ private:
     }
   }
 
-  /* PAPER */
-  detail::fake_inplace_vector<value_type, 4 / sizeof(ToType)> buf_{}; // @*exposition only*@
-
-  exposition_only_Parent* parent_;
-
-  std::ranges::iterator_t<exposition_only_Base> current_;
-
-  std::uint8_t buf_index_ = 0; // @*exposition only*@
-  std::uint8_t to_increment_ = 0; // @*exposition only*@
-
-  /* !PAPER */
-  std::expected<void, utf_transcoding_error> success_{}; // @*exposition only*@
   /* PAPER */
 };
 
