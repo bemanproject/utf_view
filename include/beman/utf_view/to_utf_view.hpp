@@ -195,7 +195,7 @@ private:
   constexpr exposition_only_iterator(
       exposition_only_Parent* parent, std::ranges::iterator_t<exposition_only_Base> begin) // @*exposition only*@
       : parent_(parent),
-        base_(std::move(begin))
+        current_(std::move(begin))
   {
     if (base() != end())
       read();
@@ -203,7 +203,7 @@ private:
 
   constexpr exposition_only_iterator(exposition_only_to_utf_view_impl const* parent) // @*exposition only*@
       : parent_(parent),
-        base_(end())
+        current_(end())
   {
     if (base() != end())
       read();
@@ -226,16 +226,12 @@ public:
   constexpr exposition_only_iterator& operator=(exposition_only_iterator&&) =
       default;
 
-  constexpr std::ranges::iterator_t<exposition_only_Base>& base() & {
-    return base_;
-  }
-
-  constexpr std::ranges::iterator_t<exposition_only_Base> const& base() const& {
-    return base_;
+  constexpr std::ranges::iterator_t<exposition_only_Base> const& base() const& noexcept {
+    return current_;
   }
 
   constexpr std::ranges::iterator_t<exposition_only_Base> base() && {
-    return std::move(base_);
+    return std::move(current_);
   }
 
   /* PAPER:       constexpr value_type operator*() const; */
@@ -378,7 +374,7 @@ private:
     if (buf_index_ == buf_.size()) {
       if constexpr (std::ranges::forward_range<exposition_only_Base>) {
         buf_index_ = 0;
-        std::advance(base(), to_increment_);
+        std::advance(current_, to_increment_);
       }
       if (base() != end()) {
         read();
@@ -495,8 +491,8 @@ private:
   }
 
   constexpr decode_code_point_result decode_code_point_utf8() {
-    guard<std::ranges::iterator_t<exposition_only_Base>> g{base(), base()};
-    return decode_code_point_utf8_impl(base(), end());
+    guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
+    return decode_code_point_utf8_impl(current_, end());
   }
 
   static constexpr decode_code_point_result decode_code_point_utf16_impl(
@@ -536,8 +532,8 @@ private:
   }
 
   constexpr decode_code_point_result decode_code_point_utf16() {
-    guard<std::ranges::iterator_t<exposition_only_Base>> g{base(), base()};
-    return decode_code_point_utf16_impl(base(), end());
+    guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
+    return decode_code_point_utf16_impl(current_, end());
   }
 
   static constexpr decode_code_point_result decode_code_point_utf32_impl(
@@ -561,8 +557,8 @@ private:
   }
 
   constexpr decode_code_point_result decode_code_point_utf32() {
-    guard<std::ranges::iterator_t<exposition_only_Base>> g{base(), base()};
-    return decode_code_point_utf32_impl(base());
+    guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
+    return decode_code_point_utf32_impl(current_);
   }
 
   // Encode the code point c as one or more code units in buf.
@@ -766,7 +762,7 @@ private:
     update(read_reverse_impl_result.decode_result.c,
            read_reverse_impl_result.decode_result.to_incr);
     success_ = read_reverse_impl_result.decode_result.success;
-    base() = read_reverse_impl_result.new_curr;
+    current_ = read_reverse_impl_result.new_curr;
     assert(buf_.size());
     buf_index_ = buf_.size() - 1;
     if constexpr (OrError) {
@@ -781,7 +777,7 @@ private:
 
   exposition_only_Parent* parent_;
 
-  std::ranges::iterator_t<exposition_only_Base> base_;
+  std::ranges::iterator_t<exposition_only_Base> current_;
 
   std::uint8_t buf_index_ = 0; // @*exposition only*@
   std::uint8_t to_increment_ = 0; // @*exposition only*@
