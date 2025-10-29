@@ -199,7 +199,7 @@ public:
 
 private:
   constexpr exposition_only_iterator(
-      exposition_only_backptr_type parent, exposition_only_iter begin) // @*exposition only*@
+      exposition_only_backptr_type parent, std::ranges::iterator_t<exposition_only_Base> begin) // @*exposition only*@
       : backptr_(parent),
         base_(std::move(begin))
   {
@@ -219,12 +219,12 @@ public:
   CONSTEXPR_UNLESS_MSVC exposition_only_iterator() = default;
   CONSTEXPR_UNLESS_MSVC exposition_only_iterator(
       exposition_only_iterator const&)
-    requires std::copyable<exposition_only_iter>
+    requires std::copyable<std::ranges::iterator_t<exposition_only_Base>>
   = default;
 
   CONSTEXPR_UNLESS_MSVC exposition_only_iterator& operator=(
       exposition_only_iterator const&)
-    requires std::copyable<exposition_only_iter>
+    requires std::copyable<std::ranges::iterator_t<exposition_only_Base>>
   = default;
 
   constexpr exposition_only_iterator(exposition_only_iterator&&) = default;
@@ -232,15 +232,15 @@ public:
   constexpr exposition_only_iterator& operator=(exposition_only_iterator&&) =
       default;
 
-  constexpr exposition_only_iter& base() & {
+  constexpr std::ranges::iterator_t<exposition_only_Base>& base() & {
     return base_;
   }
 
-  constexpr exposition_only_iter const& base() const& {
+  constexpr std::ranges::iterator_t<exposition_only_Base> const& base() const& {
     return base_;
   }
 
-  constexpr exposition_only_iter base() && {
+  constexpr std::ranges::iterator_t<exposition_only_Base> base() && {
     return std::move(base_);
   }
 
@@ -288,7 +288,7 @@ public:
   }
 
   constexpr exposition_only_iterator& operator--()
-    requires std::bidirectional_iterator<exposition_only_iter>
+    requires std::ranges::bidirectional_range<exposition_only_Base>
   {
     if (!buf_index_)
       read_reverse();
@@ -298,7 +298,7 @@ public:
   }
 
   constexpr exposition_only_iterator operator--(int)
-    requires std::bidirectional_iterator<exposition_only_iter>
+    requires std::ranges::bidirectional_range<exposition_only_Base>
   {
     auto retval = *this;
     --*this;
@@ -307,17 +307,17 @@ public:
 
   friend constexpr bool operator==(exposition_only_iterator const& lhs,
                                    exposition_only_iterator const& rhs)
-    requires std::forward_iterator<exposition_only_iter> ||
-      requires(exposition_only_iter i) { i != i; }
+    requires std::ranges::forward_range<exposition_only_Base> ||
+      requires(std::ranges::iterator_t<exposition_only_Base> i) { i != i; }
   {
     return lhs.base() == rhs.base() && lhs.buf_index_ == rhs.buf_index_;
   }
 
   friend constexpr bool operator==(exposition_only_iterator const& lhs,
                                    exposition_only_sent rhs)
-    requires std::copyable<exposition_only_iter>
+    requires std::copyable<std::ranges::iterator_t<exposition_only_Base>>
   {
-    if constexpr (std::forward_iterator<exposition_only_iter>) {
+    if constexpr (std::ranges::forward_range<exposition_only_Base>) {
       return lhs.base() == rhs;
     } else {
       return lhs.base() == rhs && lhs.buf_index_ == lhs.buf_.size();
@@ -326,7 +326,7 @@ public:
 
   friend constexpr bool operator==(exposition_only_iterator const& lhs,
                                    exposition_only_sent rhs)
-    requires(!std::copyable<exposition_only_iter>)
+    requires(!std::copyable<std::ranges::iterator_t<exposition_only_Base>>)
   {
     return lhs.base() == rhs && lhs.buf_index_ == lhs.buf_.size();
   }
@@ -342,7 +342,7 @@ private:
 
   template <class>
   struct guard {
-    constexpr guard(exposition_only_iter&, exposition_only_iter&) {
+    constexpr guard(std::ranges::iterator_t<exposition_only_Base>&, std::ranges::iterator_t<exposition_only_Base>&) {
     }
   };
 
@@ -358,8 +358,8 @@ private:
 
   /* PAPER */
 
-  constexpr exposition_only_iter begin() const // @*exposition only*@
-    requires std::bidirectional_iterator<exposition_only_iter>
+  constexpr std::ranges::iterator_t<exposition_only_Base> begin() const // @*exposition only*@
+    requires std::ranges::bidirectional_range<exposition_only_Base>
   {
     return std::ranges::begin(backptr_->base_);
   }
@@ -382,7 +382,7 @@ private:
   {
     ++buf_index_;
     if (buf_index_ == buf_.size()) {
-      if constexpr (std::forward_iterator<exposition_only_iter>) {
+      if constexpr (std::ranges::forward_range<exposition_only_Base>) {
         buf_index_ = 0;
         std::advance(base(), to_increment_);
       }
@@ -395,7 +395,7 @@ private:
   /* !PAPER */
 
   static constexpr decode_code_point_result decode_code_point_utf8_impl(
-      exposition_only_iter& it, exposition_only_sent const& last) {
+      std::ranges::iterator_t<exposition_only_Base>& it, exposition_only_sent const& last) {
     char32_t c{};
     std::uint8_t u = *it;
     ++it;
@@ -501,12 +501,12 @@ private:
   }
 
   constexpr decode_code_point_result decode_code_point_utf8() {
-    guard<exposition_only_iter> g{base(), base()};
+    guard<std::ranges::iterator_t<exposition_only_Base>> g{base(), base()};
     return decode_code_point_utf8_impl(base(), end());
   }
 
   static constexpr decode_code_point_result decode_code_point_utf16_impl(
-      exposition_only_iter& it, exposition_only_sent const& last) {
+      std::ranges::iterator_t<exposition_only_Base>& it, exposition_only_sent const& last) {
     char32_t c{};
     std::uint16_t u = *it;
     ++it;
@@ -542,12 +542,12 @@ private:
   }
 
   constexpr decode_code_point_result decode_code_point_utf16() {
-    guard<exposition_only_iter> g{base(), base()};
+    guard<std::ranges::iterator_t<exposition_only_Base>> g{base(), base()};
     return decode_code_point_utf16_impl(base(), end());
   }
 
   static constexpr decode_code_point_result decode_code_point_utf32_impl(
-      exposition_only_iter& it) {
+      std::ranges::iterator_t<exposition_only_Base>& it) {
     char32_t c = *it;
     std::expected<void, utf_transcoding_error> success{};
     ++it;
@@ -567,7 +567,7 @@ private:
   }
 
   constexpr decode_code_point_result decode_code_point_utf32() {
-    guard<exposition_only_iter> g{base(), base()};
+    guard<std::ranges::iterator_t<exposition_only_Base>> g{base(), base()};
     return decode_code_point_utf32_impl(base());
   }
 
@@ -632,7 +632,7 @@ private:
 
   struct read_reverse_impl_result {
     decode_code_point_result decode_result;
-    exposition_only_iter new_curr;
+    std::ranges::iterator_t<exposition_only_Base> new_curr;
   };
 
   constexpr read_reverse_impl_result read_reverse_utf8() const {
@@ -787,7 +787,7 @@ private:
 
   exposition_only_backptr_type backptr_;
 
-  exposition_only_iter base_;
+  std::ranges::iterator_t<exposition_only_Base> base_;
 
   std::uint8_t buf_index_ = 0; // @*exposition only*@
   std::uint8_t to_increment_ = 0; // @*exposition only*@
