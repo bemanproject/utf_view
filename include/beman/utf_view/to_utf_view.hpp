@@ -130,8 +130,11 @@ public:
   constexpr exposition_only_to_utf_view_impl()
     requires std::default_initializable<V>
   = default;
+  /* PAPER:     constexpr explicit exposition_only_to_utf_view_impl(V base); */
+  /* !PAPER */
   constexpr explicit exposition_only_to_utf_view_impl(V base)
       : base_(std::move(base)) { }
+  /* PAPER */
 
   constexpr V base() const&
     requires std::copy_constructible<V>
@@ -240,9 +243,6 @@ private:
 
   /* PAPER */
 
-  using exposition_only_sent =
-      std::ranges::sentinel_t<exposition_only_Base>;
-
   template <std::ranges::input_range V2, bool OrError2, exposition_only_code_unit ToType2>
     requires std::ranges::view<V2> && exposition_only_code_unit<std::ranges::range_value_t<V2>>
   friend class exposition_only_to_utf_view_impl; // @*exposition only*@
@@ -252,17 +252,14 @@ private:
 public:
 
   CONSTEXPR_UNLESS_MSVC exposition_only_iterator()
-    requires std::default_initializable<V>
+    requires std::default_initializable<std::ranges::iterator_t<V>>
   = default;
-
-public:
-  CONSTEXPR_UNLESS_MSVC exposition_only_iterator() = default;
   constexpr exposition_only_iterator(
       exposition_only_Parent* parent, std::ranges::iterator_t<exposition_only_Base> begin)
     : current_(std::move(begin)),
       parent_(parent)
   {
-    if (base() != end())
+    if (base() != exposition_only_end())
       read();
   }
 
@@ -372,13 +369,14 @@ private:
     It orig;
   };
 
-  /* PAPER */
-  constexpr std::ranges::iterator_t<exposition_only_Base> begin() const // @*exposition only*@
+  constexpr std::ranges::iterator_t<exposition_only_Base> begin() const
     requires std::ranges::bidirectional_range<exposition_only_Base>
   {
     return std::ranges::begin(parent_->base_);
   }
-  constexpr exposition_only_sent end() const { // @*exposition only*@
+
+  /* PAPER */
+  constexpr std::ranges::sentinel_t<exposition_only_Base> exposition_only_end() const { // @*exposition only*/
     return std::ranges::end(parent_->base_);
   }
 
@@ -401,7 +399,7 @@ private:
         buf_index_ = 0;
         std::advance(current_, to_increment_);
       }
-      if (base() != end()) {
+      if (base() != exposition_only_end()) {
         read();
       }
     }
@@ -410,7 +408,7 @@ private:
   /* !PAPER */
 
   static constexpr decode_code_point_result decode_code_point_utf8_impl(
-      std::ranges::iterator_t<exposition_only_Base>& it, exposition_only_sent const& last) {
+      std::ranges::iterator_t<exposition_only_Base>& it, std::ranges::sentinel_t<exposition_only_Base> const& last) {
     char32_t c{};
     std::uint8_t u = *it;
     ++it;
@@ -517,11 +515,11 @@ private:
 
   constexpr decode_code_point_result decode_code_point_utf8() {
     guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
-    return decode_code_point_utf8_impl(current_, end());
+    return decode_code_point_utf8_impl(current_, exposition_only_end());
   }
 
   static constexpr decode_code_point_result decode_code_point_utf16_impl(
-      std::ranges::iterator_t<exposition_only_Base>& it, exposition_only_sent const& last) {
+      std::ranges::iterator_t<exposition_only_Base>& it, std::ranges::sentinel_t<exposition_only_Base> const& last) {
     char32_t c{};
     std::uint16_t u = *it;
     ++it;
@@ -558,7 +556,7 @@ private:
 
   constexpr decode_code_point_result decode_code_point_utf16() {
     guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
-    return decode_code_point_utf16_impl(current_, end());
+    return decode_code_point_utf16_impl(current_, exposition_only_end());
   }
 
   static constexpr decode_code_point_result decode_code_point_utf32_impl(
@@ -683,7 +681,7 @@ private:
       } else {
         auto lead{it};
         decode_code_point_result const decode_result{
-            decode_code_point_utf8_impl(it, end())};
+            decode_code_point_utf8_impl(it, exposition_only_end())};
         if (decode_result.success ||
             decode_result.success ==
                 std::unexpected{utf_transcoding_error::truncated_utf8_sequence}) {
@@ -743,7 +741,7 @@ private:
         --it;
         if (detail::high_surrogate(*it)) {
           auto lead{it};
-          return {.decode_result{decode_code_point_utf16_impl(it, end())},
+          return {.decode_result{decode_code_point_utf16_impl(it, exposition_only_end())},
                   .new_curr{lead}};
         } else {
           auto new_curr{orig};
@@ -803,7 +801,7 @@ private:
 template <std::ranges::input_range V, bool OrError, exposition_only_code_unit ToType>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 template <bool Const>
-/* PAPER: class @*to_utf_view_impl*@<V, OrError, ToType>::@*iterator*@ { */
+/* PAPER: class @*to_utf_view_impl*@<V, OrError, ToType>::@*sentinel*@ { */
 /* !PAPER */
 struct exposition_only_to_utf_view_impl<V, OrError, ToType>::exposition_only_sentinel {
   /* PAPER */
@@ -844,15 +842,14 @@ public:
       return x.current_ == y.end_ && x.buf_index_ == x.buf_.size();
     }
   }
+  /* PAPER */
 };
 
 template <std::ranges::input_range V>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 class to_utf8_view : public std::ranges::view_interface<to_utf8_view<V>> {
 public:
-  constexpr to_utf8_view()
-    requires std::default_initializable<V>
-  = default;
+  constexpr to_utf8_view() requires std::default_initializable<V> = default;
   constexpr explicit to_utf8_view(V base)
       : impl_(std::move(base)) { }
 
@@ -1160,7 +1157,7 @@ namespace detail {
     template <class R>
     constexpr auto operator()(R&& r) const {
       using T = std::remove_cvref_t<R>;
-      if constexpr (exposition_only_is_empty_view<T>) {
+      if constexpr (detail::is_empty_view<T>) {
         return std::ranges::empty_view<ToType>{};
       } else if constexpr (std::is_bounded_array_v<T>) {
         constexpr auto n = std::extent_v<T>;

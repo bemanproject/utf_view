@@ -41,7 +41,7 @@ namespace detail {
       requires std::convertible_to<std::ranges::range_reference_t<R>, Char>
     constexpr auto operator()(R&& r) const {
       using T = std::remove_cvref_t<R>;
-      if constexpr (exposition_only_is_empty_view<T>) {
+      if constexpr (detail::is_empty_view<T>) {
         return std::ranges::empty_view<Char>{};
       } else if constexpr (std::is_bounded_array_v<T>) {
         constexpr auto n = std::extent_v<T>;
