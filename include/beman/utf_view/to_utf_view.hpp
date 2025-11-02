@@ -273,7 +273,7 @@ public:
   }
 
 
-  constexpr std::ranges::iterator_t<exposition_only_Base> const& base() const& noexcept {
+  constexpr const std::ranges::iterator_t<exposition_only_Base>& base() const& noexcept {
     return current_;
   }
 
@@ -342,8 +342,8 @@ public:
     return retval;
   }
 
-  friend constexpr bool operator==(exposition_only_iterator const& lhs,
-                                   exposition_only_iterator const& rhs)
+  friend constexpr bool operator==(const exposition_only_iterator& lhs,
+                                   const exposition_only_iterator& rhs)
     requires std::equality_comparable<std::ranges::iterator_t<exposition_only_Base>>
   {
     if constexpr (std::ranges::forward_range<exposition_only_Base>) {

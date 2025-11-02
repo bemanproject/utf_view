@@ -42,7 +42,7 @@ bool windows_path() {
   std::vector<int> path_as_ints = {U'C', U':', U'\x00010000'};
   std::filesystem::path path =
       path_as_ints | as_char32_t | std::ranges::to<std::u32string>();
-  auto const& native_path = path.native();
+  const auto& native_path = path.native();
   if (native_path != std::wstring{L'C', L':', L'\xD800', L'\xDC00'}) {
     return false;
   }
