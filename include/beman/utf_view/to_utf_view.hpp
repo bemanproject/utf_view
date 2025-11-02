@@ -186,14 +186,14 @@ public:
 
   /* !PAPER */
 #if defined(__cpp_lib_ranges_reserve_hint)
-  /* PAPER */
+  /* PAPER:   constexpr auto reserve_hint() requires approximately_sized_range<V>; */
   constexpr auto reserve_hint() requires std::ranges::approximately_sized_range<V> {
     return std::ranges::reserve_hint(base_);
   }
+  /* PAPER:   constexpr auto reserve_hint() const requires approximately_sized_range<const V>; */
   constexpr auto reserve_hint() const requires std::ranges::approximately_sized_range<const V>; {
     return std::ranges::reserve_hint(base_);
   }
-  /* !PAPER */
 #endif
   /* PAPER */
 };
