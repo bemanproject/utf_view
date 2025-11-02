@@ -183,6 +183,19 @@ public:
   constexpr bool empty() const {
     return std::ranges::empty(base_);
   }
+
+  /* !PAPER */
+#if defined(__cpp_lib_ranges_reserve_hint)
+  /* PAPER */
+  constexpr auto reserve_hint() requires std::ranges::approximately_sized_range<V> {
+    return std::ranges::reserve_hint(base_);
+  }
+  constexpr auto reserve_hint() const requires std::ranges::approximately_sized_range<const V>; {
+    return std::ranges::reserve_hint(base_);
+  }
+  /* !PAPER */
+#endif
+  /* PAPER */
 };
 
 template <std::ranges::input_range V, bool OrError, exposition_only_code_unit ToType>
@@ -879,6 +892,19 @@ public:
     return impl_.empty();
   }
 
+  /* !PAPER */
+#if defined(__cpp_lib_ranges_reserve_hint)
+  /* PAPER */
+  constexpr auto reserve_hint() requires std::ranges::approximately_sized_range<V> {
+    return std::ranges::reserve_hint(impl_);
+  }
+  constexpr auto reserve_hint() const requires std::ranges::approximately_sized_range<const V>; {
+    return std::ranges::reserve_hint(impl_);
+  }
+  /* !PAPER */
+#endif
+  /* PAPER */
+
 private:
   exposition_only_to_utf_view_impl<V, false, char8_t> impl_;
 };
@@ -928,6 +954,19 @@ public:
     return impl_.empty();
   }
 
+  /* !PAPER */
+#if defined(__cpp_lib_ranges_reserve_hint)
+  /* PAPER */
+  constexpr auto reserve_hint() requires std::ranges::approximately_sized_range<V> {
+    return std::ranges::reserve_hint(impl_);
+  }
+  constexpr auto reserve_hint() const requires std::ranges::approximately_sized_range<const V>; {
+    return std::ranges::reserve_hint(impl_);
+  }
+  /* !PAPER */
+#endif
+  /* PAPER */
+
 private:
   exposition_only_to_utf_view_impl<V, true, char8_t> impl_;
 };
@@ -975,6 +1014,19 @@ public:
   constexpr bool empty() const {
     return impl_.empty();
   }
+
+  /* !PAPER */
+#if defined(__cpp_lib_ranges_reserve_hint)
+  /* PAPER */
+  constexpr auto reserve_hint() requires std::ranges::approximately_sized_range<V> {
+    return std::ranges::reserve_hint(impl_);
+  }
+  constexpr auto reserve_hint() const requires std::ranges::approximately_sized_range<const V>; {
+    return std::ranges::reserve_hint(impl_);
+  }
+  /* !PAPER */
+#endif
+  /* PAPER */
 
 private:
   exposition_only_to_utf_view_impl<V, false, char16_t> impl_;
@@ -1025,6 +1077,19 @@ public:
     return impl_.empty();
   }
 
+  /* !PAPER */
+#if defined(__cpp_lib_ranges_reserve_hint)
+  /* PAPER */
+  constexpr auto reserve_hint() requires std::ranges::approximately_sized_range<V> {
+    return std::ranges::reserve_hint(impl_);
+  }
+  constexpr auto reserve_hint() const requires std::ranges::approximately_sized_range<const V>; {
+    return std::ranges::reserve_hint(impl_);
+  }
+  /* !PAPER */
+#endif
+  /* PAPER */
+
 private:
   exposition_only_to_utf_view_impl<V, true, char16_t> impl_;
 };
@@ -1072,6 +1137,19 @@ public:
   constexpr bool empty() const {
     return impl_.empty();
   }
+
+  /* !PAPER */
+#if defined(__cpp_lib_ranges_reserve_hint)
+  /* PAPER */
+  constexpr auto reserve_hint() requires std::ranges::approximately_sized_range<V> {
+    return std::ranges::reserve_hint(impl_);
+  }
+  constexpr auto reserve_hint() const requires std::ranges::approximately_sized_range<const V>; {
+    return std::ranges::reserve_hint(impl_);
+  }
+  /* !PAPER */
+#endif
+  /* PAPER */
 
 private:
   exposition_only_to_utf_view_impl<V, false, char32_t> impl_;
@@ -1121,6 +1199,19 @@ public:
   constexpr bool empty() const {
     return impl_.empty();
   }
+
+  /* !PAPER */
+#if defined(__cpp_lib_ranges_reserve_hint)
+  /* PAPER */
+  constexpr auto reserve_hint() requires std::ranges::approximately_sized_range<V> {
+    return std::ranges::reserve_hint(impl_);
+  }
+  constexpr auto reserve_hint() const requires std::ranges::approximately_sized_range<const V>; {
+    return std::ranges::reserve_hint(impl_);
+  }
+  /* !PAPER */
+#endif
+  /* PAPER */
 
 private:
   exposition_only_to_utf_view_impl<V, true, char32_t> impl_;
