@@ -159,7 +159,8 @@ public:
   /* PAPER */
   constexpr exposition_only_iterator<true> begin() const
     requires std::ranges::range<const V> &&
-             std::same_as<std::ranges::range_value_t<V>, char32_t> {
+             ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
+              (std::ranges::input_range<const V> && !std::ranges::forward_range<const V>)) {
     return exposition_only_iterator<true>(*this, std::ranges::begin(base_));
   }
 
@@ -876,7 +877,8 @@ public:
   }
   constexpr auto begin() const
     requires std::ranges::range<const V> &&
-             std::same_as<std::ranges::range_value_t<V>, char32_t> {
+             ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
+              (std::ranges::input_range<const V> && !std::ranges::forward_range<const V>)) {
     return impl_.begin();
   }
   constexpr auto end()
@@ -938,7 +940,8 @@ public:
   }
   constexpr auto begin() const
     requires std::ranges::range<const V> &&
-             std::same_as<std::ranges::range_value_t<V>, char32_t> {
+             ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
+              (std::ranges::input_range<const V> && !std::ranges::forward_range<const V>)) {
     return impl_.begin();
   }
   constexpr auto end()
@@ -999,7 +1002,8 @@ public:
   }
   constexpr auto begin() const
     requires std::ranges::range<const V> &&
-             std::same_as<std::ranges::range_value_t<V>, char32_t> {
+             ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
+              (std::ranges::input_range<const V> && !std::ranges::forward_range<const V>)) {
     return impl_.begin();
   }
   constexpr auto end()
@@ -1061,7 +1065,8 @@ public:
   }
   constexpr auto begin() const
     requires std::ranges::range<const V> &&
-             std::same_as<std::ranges::range_value_t<V>, char32_t> {
+             ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
+              (std::ranges::input_range<const V> && !std::ranges::forward_range<const V>)) {
     return impl_.begin();
   }
   constexpr auto end()
@@ -1122,7 +1127,8 @@ public:
   }
   constexpr auto begin() const
     requires std::ranges::range<const V> &&
-             std::same_as<std::ranges::range_value_t<V>, char32_t> {
+             ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
+              (std::ranges::input_range<const V> && !std::ranges::forward_range<const V>)) {
     return impl_.begin();
   }
   constexpr auto end()
@@ -1184,7 +1190,8 @@ public:
   }
   constexpr auto begin() const
     requires std::ranges::range<const V> &&
-             std::same_as<std::ranges::range_value_t<V>, char32_t> {
+             ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
+              (std::ranges::input_range<const V> && !std::ranges::forward_range<const V>)) {
     return impl_.begin();
   }
   constexpr auto end()
