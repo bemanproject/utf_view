@@ -6,6 +6,7 @@
 //          https://www.boost.org/LICENSE_1_0.txt)
 
 #include <beman/utf_view/code_unit_view.hpp>
+#include <beman/utf_view/detail/fake_inplace_vector.hpp>
 #include <beman/utf_view/null_term.hpp>
 #include <beman/utf_view/to_utf_view.hpp>
 #include <algorithm>
@@ -190,6 +191,30 @@ static_assert(
   std::unexpected{utf_transcoding_error::truncated_utf8_sequence});
 #endif
 
+#ifndef _MSC_VER
+bool basis_operation() {
+  std::u8string invalid_utf8{u8"\xf0\x9f\x99\x82\xf0\x9f\x99"};
+  auto to_utf8_1{invalid_utf8 | to_utf8 | std::ranges::to<std::u8string>()};
+  auto to_utf8_2{
+    invalid_utf8
+    | to_utf8_or_error
+    | std::views::transform(
+        [](std::expected<char8_t, utf_transcoding_error> c)
+          -> detail::fake_inplace_vector<char8_t, 3>
+        {
+          if (c.has_value()) {
+            return {c.value()};
+          } else {
+            // U+FFFD
+            return {u8'\xEF', u8'\xBF', u8'\xBD'};
+          }
+        })
+    | std::views::join
+    | std::ranges::to<std::u8string>()};
+  return to_utf8_1 == to_utf8_2;
+}
+#endif
+
 bool readme_examples() {
   using namespace std::string_view_literals;
 #ifndef _MSC_VER
@@ -224,6 +249,9 @@ bool readme_examples() {
     return false;
   }
   if (!change_playing_card_suit_test()) {
+    return false;
+  }
+  if (!basis_operation()) {
     return false;
   }
 #else

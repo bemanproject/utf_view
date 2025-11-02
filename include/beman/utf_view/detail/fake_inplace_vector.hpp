@@ -8,7 +8,9 @@
 #ifndef BEMAN_UTF_VIEW_FAKE_INPLACE_VECTOR_HPP
 #define BEMAN_UTF_VIEW_FAKE_INPLACE_VECTOR_HPP
 
+#include <algorithm>
 #include <cstddef>
+#include <initializer_list>
 
 namespace beman::utf_view::detail {
 
@@ -16,6 +18,10 @@ template <typename T, std::size_t N>
 class fake_inplace_vector {
 public:
   constexpr fake_inplace_vector() = default;
+  constexpr fake_inplace_vector(std::initializer_list<T> init)
+  {
+    std::ranges::copy(init, storage_);
+  }
 
   constexpr std::size_t size() const {
     return size_;
@@ -28,6 +34,12 @@ public:
   }
   constexpr T operator[](std::size_t n) const {
     return storage_[n];
+  }
+  T* begin() {
+    return &storage_[0];
+  }
+  T* end() {
+    return &storage_[size_];
   }
 
 private:
