@@ -213,6 +213,11 @@ bool basis_operation() {
     | std::ranges::to<std::u8string>()};
   return to_utf8_1 == to_utf8_2;
 }
+
+static_assert(
+  !std::ranges::equal(u8"foo" | to_utf32, std::array{U'f', U'o', U'o', U'\0'}));
+static_assert(
+  std::ranges::equal(u8"foo" | to_utf32, std::array{U'f', U'o', U'o'}));
 #endif
 
 bool readme_examples() {
