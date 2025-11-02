@@ -27,6 +27,7 @@ def process_file(file_path):
                 result_lines.append("\n")
                 continue
 
+            line = line.replace("std::ranges::", "")
             line = line.replace("std::", "")
             line = line.replace("detail::", "")
             line = line.replace("boost::stl_interfaces::", "")
