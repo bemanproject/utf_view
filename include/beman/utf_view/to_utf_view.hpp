@@ -821,29 +821,20 @@ private:
 
 public:
   exposition_only_sentinel() = default;
-  /* PAPER:   constexpr explicit @*sentinel*@(sentinel_t<@*Base*@> end); */
-  /* !PAPER */
   constexpr explicit exposition_only_sentinel(std::ranges::sentinel_t<exposition_only_Base> end)
   : end_{end}
   {}
-  /* PAPER */
   constexpr explicit exposition_only_sentinel(exposition_only_sentinel<!Const> i)
-  /* PAPER:   requires Const && convertible_to<sentinel_t<V>, sentinel_t<@*Base*@>>; */
-  /* !PAPER */
     requires Const && std::convertible_to<std::ranges::sentinel_t<V>, std::ranges::sentinel_t<exposition_only_Base>>
   : end_{i.end_}
   {}
 
-  /* PAPER: constexpr sentinel_t<@*Base*@> base() const; */
   constexpr std::ranges::sentinel_t<exposition_only_Base> base() const {
     return end_;
   }
 
-  /* PAPER */
   template<bool OtherConst>
     requires std::sentinel_for<std::ranges::sentinel_t<exposition_only_Base>, std::ranges::iterator_t<exposition_only_maybe_const<OtherConst, V>>>
-  /* PAPER:   friend constexpr bool operator==(const @*iterator*@<OtherConst>& x, const @*sentinel*@& y); */
-  /* !PAPER */
   friend constexpr bool operator==(const exposition_only_iterator<OtherConst>& x, const exposition_only_sentinel& y) {
     if constexpr (std::ranges::forward_range<exposition_only_Base>) {
       return x.current_ == y.end_;
@@ -851,7 +842,6 @@ public:
       return x.current_ == y.end_ && x.buf_index_ == x.buf_.size();
     }
   }
-  /* PAPER */
 };
 
 template <std::ranges::input_range V>
