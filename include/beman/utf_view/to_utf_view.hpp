@@ -99,8 +99,8 @@ class exposition_only_to_utf_view_impl {
 /* PAPER */
 /* PAPER: class @*to_utf_view_impl*@ */
 private:
-  template<bool> struct exposition_only_iterator;
-  template<bool> struct exposition_only_sentinel;
+  template<bool> struct exposition_only_iterator; // @*exposition only*@
+  template<bool> struct exposition_only_sentinel; // @*exposition only*@
 
   V base_ = V(); // @*exposition only*@
 
@@ -239,8 +239,8 @@ private:
 public: // MSVC has some bug with their implementation of friendship
 #endif
 /* PAPER */
-  std::ranges::iterator_t<exposition_only_Base> current_ = std::ranges::iterator_t<exposition_only_Base>();
-  exposition_only_Parent* parent_ = nullptr;
+  std::ranges::iterator_t<exposition_only_Base> current_ = std::ranges::iterator_t<exposition_only_Base>(); // @*exposition only*@
+  exposition_only_Parent* parent_ = nullptr; // @*exposition only*@
 
   detail::fake_inplace_vector<value_type, 4 / sizeof(ToType)> buf_{}; // @*exposition only*@
 
@@ -898,7 +898,7 @@ public:
   /* PAPER */
 
 private:
-  exposition_only_to_utf_view_impl<V, false, char8_t> impl_;
+  exposition_only_to_utf_view_impl<V, false, char8_t> impl_; // @*exposition only*@
 };
 
 template <class R>
@@ -961,7 +961,7 @@ public:
   /* PAPER */
 
 private:
-  exposition_only_to_utf_view_impl<V, true, char8_t> impl_;
+  exposition_only_to_utf_view_impl<V, true, char8_t> impl_; // @*exposition only*@
 };
 
 template <class R>
@@ -1023,7 +1023,7 @@ public:
   /* PAPER */
 
 private:
-  exposition_only_to_utf_view_impl<V, false, char16_t> impl_;
+  exposition_only_to_utf_view_impl<V, false, char16_t> impl_; // @*exposition only*@
 };
 
 template <class R>
@@ -1086,7 +1086,7 @@ public:
   /* PAPER */
 
 private:
-  exposition_only_to_utf_view_impl<V, true, char16_t> impl_;
+  exposition_only_to_utf_view_impl<V, true, char16_t> impl_; // @*exposition only*@
 };
 
 template <class R>
@@ -1148,7 +1148,7 @@ public:
   /* PAPER */
 
 private:
-  exposition_only_to_utf_view_impl<V, false, char32_t> impl_;
+  exposition_only_to_utf_view_impl<V, false, char32_t> impl_; // @*exposition only*@
 };
 
 template <class R>
@@ -1211,7 +1211,7 @@ public:
   /* PAPER */
 
 private:
-  exposition_only_to_utf_view_impl<V, true, char32_t> impl_;
+  exposition_only_to_utf_view_impl<V, true, char32_t> impl_; // @*exposition only*@
 };
 
 template <class R>
