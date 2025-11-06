@@ -244,7 +244,7 @@ public: // MSVC has some bug with their implementation of friendship
 
   detail::fake_inplace_vector<value_type, 4 / sizeof(ToType)> buf_{}; // @*exposition only*@
 
-  std::uint8_t buf_index_ = 0; // @*exposition only*@
+  std::int8_t buf_index_ = 0; // @*exposition only*@
   std::uint8_t to_increment_ = 0; // @*exposition only*@
 
   /* !PAPER */
@@ -270,6 +270,9 @@ public:
   {
     if (base() != exposition_only_end())
       exposition_only_read();
+    else if constexpr (!std::ranges::forward_range<exposition_only_Base>) {
+      buf_index_ = -1;
+    }
   }
 
 
@@ -346,11 +349,7 @@ public:
                                    const exposition_only_iterator& rhs)
     requires std::equality_comparable<std::ranges::iterator_t<exposition_only_Base>>
   {
-    if constexpr (std::ranges::forward_range<exposition_only_Base>) {
-      return lhs.base() == rhs.base() && lhs.buf_index_ == rhs.buf_index_;
-    } else {
-      return lhs.base() == rhs.base();
-    }
+    return lhs.base() == rhs.base() && lhs.buf_index_ == rhs.buf_index_;
   }
 
 private:
@@ -403,13 +402,18 @@ private:
   constexpr void exposition_only_advance_one() // @*exposition only*@
   {
     ++buf_index_;
-    if (buf_index_ == buf_.size()) {
+    /* !PAPER */
+    if (buf_index_ == static_cast<std::int8_t>(buf_.size())) {
+    /* PAPER */
+    /* PAPER:     if (buf_index_ == buf_.size()) { */
       if constexpr (std::ranges::forward_range<exposition_only_Base>) {
         buf_index_ = 0;
         std::advance(current_, to_increment_);
       }
       if (base() != exposition_only_end()) {
         exposition_only_read();
+      } else if constexpr (!std::ranges::forward_range<exposition_only_Base>) {
+        buf_index_ = -1;
       }
     }
   }
@@ -839,7 +843,7 @@ public:
     if constexpr (std::ranges::forward_range<exposition_only_Base>) {
       return x.current_ == y.end_;
     } else {
-      return x.current_ == y.end_ && x.buf_index_ == x.buf_.size();
+      return x.current_ == y.end_ && x.buf_index_ == -1;
     }
   }
 };
