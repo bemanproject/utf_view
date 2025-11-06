@@ -220,6 +220,11 @@ static_assert(
   std::ranges::equal(u8"foo" | to_utf32, std::array{U'f', U'o', U'o'}));
 #endif
 
+template <typename FromCharT, typename ToCharT>
+std::basic_string<ToCharT> transcode_to(std::basic_string<FromCharT> const& input) {
+  return input | to_utf<ToCharT> | std::ranges::to<std::basic_string<ToCharT>>();
+}
+
 bool readme_examples() {
   using namespace std::string_view_literals;
 #ifndef _MSC_VER
@@ -264,6 +269,9 @@ bool readme_examples() {
     return false;
   }
 #endif
+  if (transcode_to<char8_t, char32_t>(u8"foo") != U"foo") {
+    return false;
+  }
   return true;
 }
 
