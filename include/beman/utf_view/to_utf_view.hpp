@@ -202,7 +202,7 @@ public:
 template <std::ranges::input_range V, bool OrError, exposition_only_code_unit ToType>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 template <bool Const>
-/* PAPER:   class @*to_utf_view_impl*@<V, OrError, ToType>::@*iterator*@ { */
+/* PAPER:   class @*to-utf-view-impl*@<V, OrError, ToType>::@*iterator*@ { */
 /* !PAPER */
 struct exposition_only_to_utf_view_impl<V, OrError, ToType>::exposition_only_iterator : detail::iter_category_impl<V> {
 /* PAPER */
@@ -810,7 +810,7 @@ private:
 template <std::ranges::input_range V, bool OrError, exposition_only_code_unit ToType>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 template <bool Const>
-/* PAPER: class @*to_utf_view_impl*@<V, OrError, ToType>::@*sentinel*@ { */
+/* PAPER: class @*to-utf-view-impl*@<V, OrError, ToType>::@*sentinel*@ { */
 /* !PAPER */
 struct exposition_only_to_utf_view_impl<V, OrError, ToType>::exposition_only_sentinel {
   /* PAPER */
