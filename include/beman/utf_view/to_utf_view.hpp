@@ -97,7 +97,7 @@ requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_va
 /* !PAPER */
 class exposition_only_to_utf_view_impl {
 /* PAPER */
-/* PAPER: class @*to_utf_view_impl*@ */
+/* PAPER: class @*to-utf-view-impl*@ */
 private:
   template<bool> struct exposition_only_iterator; // @*exposition only*@
   template<bool> struct exposition_only_sentinel; // @*exposition only*@
