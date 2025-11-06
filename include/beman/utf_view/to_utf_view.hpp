@@ -185,6 +185,13 @@ public:
     return std::ranges::empty(base_);
   }
 
+  constexpr std::size_t size()
+    requires std::ranges::sized_range<V> &&
+             std::same_as<char32_t, std::ranges::range_value_t<V>> &&
+             std::same_as<char32_t, ToType> {
+    return std::ranges::size(base_);
+  }
+
   /* !PAPER */
 #if defined(__cpp_lib_ranges_reserve_hint)
   /* PAPER:   constexpr auto reserve_hint() requires approximately_sized_range<V>; */
@@ -211,6 +218,8 @@ private:
   using exposition_only_Base = exposition_only_maybe_const<Const, V>; // @*exposition only*@
 
 /* !PAPER */
+  using from_type = std::ranges::range_value_t<V>; // @*exposition only*@
+
   static consteval auto iter_concept_impl() {
     if constexpr (std::ranges::bidirectional_range<exposition_only_Base>) {
       return std::bidirectional_iterator_tag{};
@@ -255,8 +264,6 @@ public: // MSVC has some bug with their implementation of friendship
   template <std::ranges::input_range V2, bool OrError2, exposition_only_code_unit ToType2>
     requires std::ranges::view<V2> && exposition_only_code_unit<std::ranges::range_value_t<V2>>
   friend class exposition_only_to_utf_view_impl; // @*exposition only*@
-
-  using exposition_only_from_type = std::ranges::range_value_t<exposition_only_Base>; // @*exposition only*@
 
 public:
 
@@ -643,11 +650,11 @@ private:
   constexpr void exposition_only_read() { // @*exposition only*@
     success_.emplace();
     decode_code_point_result decode_result{};
-    if constexpr (std::is_same_v<exposition_only_from_type, char8_t>)
+    if constexpr (std::is_same_v<from_type, char8_t>)
       decode_result = decode_code_point_utf8();
-    else if constexpr (std::is_same_v<exposition_only_from_type, char16_t>)
+    else if constexpr (std::is_same_v<from_type, char16_t>)
       decode_result = decode_code_point_utf16();
-    else if constexpr (std::is_same_v<exposition_only_from_type, char32_t>) {
+    else if constexpr (std::is_same_v<from_type, char32_t>) {
       decode_result = decode_code_point_utf32();
     } else {
       static_assert(false);
@@ -787,11 +794,11 @@ private:
   constexpr void exposition_only_read_reverse() { // @*exposition only*@
     success_.emplace();
     auto const read_reverse_impl_result{[&] {
-      if constexpr (std::is_same_v<exposition_only_from_type, char8_t>) {
+      if constexpr (std::is_same_v<from_type, char8_t>) {
         return read_reverse_utf8();
-      } else if constexpr (std::is_same_v<exposition_only_from_type, char16_t>) {
+      } else if constexpr (std::is_same_v<from_type, char16_t>) {
         return read_reverse_utf16();
-      } else if constexpr (std::is_same_v<exposition_only_from_type, char32_t>) {
+      } else if constexpr (std::is_same_v<from_type, char32_t>) {
         return read_reverse_utf32();
       }
     }()};
@@ -1138,6 +1145,12 @@ public:
     return impl_.empty();
   }
 
+  constexpr std::size_t size()
+    requires std::ranges::sized_range<V> &&
+             std::same_as<char32_t, std::ranges::range_value_t<V>> {
+    return impl_.size();
+  }
+
   /* !PAPER */
 #if defined(__cpp_lib_ranges_reserve_hint)
   /* PAPER */
@@ -1199,6 +1212,12 @@ public:
 
   constexpr bool empty() const {
     return impl_.empty();
+  }
+
+  constexpr std::size_t size()
+    requires std::ranges::sized_range<V> &&
+             std::same_as<char32_t, std::ranges::range_value_t<V>> {
+    return impl_.size();
   }
 
   /* !PAPER */
