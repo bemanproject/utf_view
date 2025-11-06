@@ -356,7 +356,7 @@ public:
                                    const exposition_only_iterator& rhs)
     requires std::equality_comparable<std::ranges::iterator_t<exposition_only_Base>>
   {
-    return lhs.base() == rhs.base() && lhs.buf_index_ == rhs.buf_index_;
+    return lhs.current_ == rhs.current_ && lhs.buf_index_ == rhs.buf_index_;
   }
 
 private:
@@ -417,7 +417,7 @@ private:
         buf_index_ = 0;
         std::advance(current_, to_increment_);
       }
-      if (base() != exposition_only_end()) {
+      if (current_ != exposition_only_end()) {
         exposition_only_read();
       } else if constexpr (!std::ranges::forward_range<exposition_only_Base>) {
         buf_index_ = -1;
@@ -669,8 +669,8 @@ private:
   };
 
   constexpr read_reverse_impl_result read_reverse_utf8() const {
-    assert(base() != begin());
-    auto it{base()};
+    assert(current_ != begin());
+    auto it{current_};
     auto const orig{it};
     unsigned reversed{};
     do {
@@ -740,8 +740,8 @@ private:
   }
 
   constexpr read_reverse_impl_result read_reverse_utf16() const {
-    assert(base() != begin());
-    auto it{base()};
+    assert(current_ != begin());
+    auto it{current_};
     auto const orig{it};
     --it;
     if (detail::high_surrogate(*it)) {
@@ -780,8 +780,8 @@ private:
   }
 
   constexpr read_reverse_impl_result read_reverse_utf32() const {
-    assert(base() != begin());
-    auto it{base()};
+    assert(current_ != begin());
+    auto it{current_};
     auto const orig{it};
     --it;
     auto new_curr{orig};
