@@ -340,7 +340,7 @@ constexpr bool run_test_case_impl(test_case<CharTFrom, CharTTo> test_case) {
 
 template <exposition_only_code_unit CharTFrom, exposition_only_code_unit CharTTo>
 constexpr bool run_test_case(test_case<CharTFrom, CharTTo> test_case) {
-  return /* run_test_case_impl<test_input_iterator<CharTFrom>>(test_case) && */
+  return run_test_case_impl<test_input_iterator<CharTFrom>>(test_case) &&
       run_test_case_impl<test_copyable_input_iterator<CharTFrom>>(test_case) &&
       run_test_case_impl<test_forward_iterator<CharTFrom>>(test_case) &&
       run_test_case_impl<test_bidi_iterator<CharTFrom>>(test_case);
