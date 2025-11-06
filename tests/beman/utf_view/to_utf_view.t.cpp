@@ -1448,6 +1448,19 @@ bool decode_test() {
 }
 #endif
 
+constexpr bool input_range_equality_test() {
+  std::initializer_list<char16_t> arr{U'\u03D5'};
+  test_copyable_input_iterator input_it(arr);
+  to_utf8_view u8v{std::ranges::subrange{input_it, std::default_sentinel}};
+  auto it1{u8v.begin()};
+  auto it2{it1};
+  ++it2;
+  if (it1 == it2) {
+    return false;
+  }
+  return true;
+}
+
 CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
   if (!input_iterator_test(std::initializer_list<char8_t>{u8'x'})) {
     return false;
@@ -1594,6 +1607,9 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
     return false;
   }
   if (!rvalue_array_test()) {
+    return false;
+  }
+  if (!input_range_equality_test()) {
     return false;
   }
   return true;
