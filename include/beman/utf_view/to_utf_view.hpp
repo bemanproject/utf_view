@@ -92,8 +92,13 @@ enum class utf_transcoding_error {
   invalid_utf8_leading_byte
 };
 
-template <std::ranges::input_range V, bool OrError, exposition_only_code_unit ToType>
-requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
+enum class to_utf_view_error_kind : bool {
+  replacement,
+  expected
+};
+
+template <std::ranges::input_range V, to_utf_view_error_kind E, exposition_only_code_unit ToType>
+  requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 /* !PAPER */
 class exposition_only_to_utf_view_impl {
 /* PAPER */
@@ -206,12 +211,12 @@ public:
   /* PAPER */
 };
 
-template <std::ranges::input_range V, bool OrError, exposition_only_code_unit ToType>
+template <std::ranges::input_range V, to_utf_view_error_kind E, exposition_only_code_unit ToType>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 template <bool Const>
-/* PAPER:   class @*to-utf-view-impl*@<V, OrError, ToType>::@*iterator*@ { */
+/* PAPER:   class @*to-utf-view-impl*@<V, E, ToType>::@*iterator*@ { */
 /* !PAPER */
-struct exposition_only_to_utf_view_impl<V, OrError, ToType>::exposition_only_iterator : detail::iter_category_impl<V> {
+struct exposition_only_to_utf_view_impl<V, E, ToType>::exposition_only_iterator : detail::iter_category_impl<V> {
 /* PAPER */
 private:
   using exposition_only_Parent = exposition_only_maybe_const<Const, exposition_only_to_utf_view_impl>; // @*exposition only*@
@@ -238,7 +243,7 @@ public:
   using iterator_concept = decltype(iter_concept_impl());
   /* PAPER */
   using value_type =
-      std::conditional_t<OrError, std::expected<ToType, utf_transcoding_error>, ToType>;
+      std::conditional_t<E == to_utf_view_error_kind::expected, std::expected<ToType, utf_transcoding_error>, ToType>;
   using reference_type = value_type;
   using difference_type = ptrdiff_t;
 
@@ -261,7 +266,7 @@ public: // MSVC has some bug with their implementation of friendship
 
   /* PAPER */
 
-  template <std::ranges::input_range V2, bool OrError2, exposition_only_code_unit ToType2>
+  template <std::ranges::input_range V2, to_utf_view_error_kind E2, exposition_only_code_unit ToType2>
     requires std::ranges::view<V2> && exposition_only_code_unit<std::ranges::range_value_t<V2>>
   friend class exposition_only_to_utf_view_impl; // @*exposition only*@
 
@@ -294,7 +299,7 @@ public:
   /* PAPER:       constexpr value_type operator*() const; */
   /* !PAPER */
   constexpr value_type operator*() const {
-    if constexpr (OrError) {
+    if constexpr (E == to_utf_view_error_kind::expected) {
       if (!success_.has_value()) {
         return std::unexpected{success_.error()};
       }
@@ -303,7 +308,7 @@ public:
   }
   /* PAPER */
 
-  constexpr exposition_only_iterator& operator++() requires(OrError)
+  constexpr exposition_only_iterator& operator++() requires(E == to_utf_view_error_kind::expected)
   {
     if (!exposition_only_success()) {
       /* !PAPER */
@@ -318,7 +323,7 @@ public:
     return *this;
   }
 
-  constexpr exposition_only_iterator& operator++() requires(!OrError)
+  constexpr exposition_only_iterator& operator++() requires(E == to_utf_view_error_kind::replacement)
   {
     exposition_only_advance_one();
     return *this;
@@ -395,11 +400,11 @@ private:
     return std::ranges::end(parent_->base_);
   }
 
-  /* PAPER:       constexpr expected<void, utf_transcoding_error> @*success*@() const noexcept requires(OrError); // @*exposition only*@ */
+  /* PAPER:       constexpr expected<void, utf_transcoding_error> @*success*@() const noexcept requires(E == to_utf_view_error_kind::expected); // @*exposition only*@ */
   /* !PAPER */
 
   constexpr bool exposition_only_success() const noexcept // @*exposition only*@
-    requires(OrError)
+    requires(E == to_utf_view_error_kind::expected)
   {
     return !!success_;
   }
@@ -808,7 +813,7 @@ private:
     current_ = read_reverse_impl_result.new_curr;
     assert(buf_.size());
     buf_index_ = buf_.size() - 1;
-    if constexpr (OrError) {
+    if constexpr (E == to_utf_view_error_kind::expected) {
       if (!success_.has_value()) {
         buf_index_ = 0;
       }
@@ -818,12 +823,12 @@ private:
   /* PAPER */
 };
 
-template <std::ranges::input_range V, bool OrError, exposition_only_code_unit ToType>
+template <std::ranges::input_range V, to_utf_view_error_kind E, exposition_only_code_unit ToType>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 template <bool Const>
-/* PAPER: class @*to-utf-view-impl*@<V, OrError, ToType>::@*sentinel*@ { */
+/* PAPER: class @*to-utf-view-impl*@<V, E, ToType>::@*sentinel*@ { */
 /* !PAPER */
-struct exposition_only_to_utf_view_impl<V, OrError, ToType>::exposition_only_sentinel {
+struct exposition_only_to_utf_view_impl<V, E, ToType>::exposition_only_sentinel {
   /* PAPER */
 private:
   using exposition_only_Parent = exposition_only_maybe_const<Const, exposition_only_to_utf_view_impl>; // @*exposition only*@
@@ -909,7 +914,7 @@ public:
   /* PAPER */
 
 private:
-  exposition_only_to_utf_view_impl<V, false, char8_t> impl_; // @*exposition only*@
+  exposition_only_to_utf_view_impl<V, to_utf_view_error_kind::replacement, char8_t> impl_; // @*exposition only*@
 };
 
 template <class R>
@@ -972,7 +977,7 @@ public:
   /* PAPER */
 
 private:
-  exposition_only_to_utf_view_impl<V, true, char8_t> impl_; // @*exposition only*@
+  exposition_only_to_utf_view_impl<V, to_utf_view_error_kind::expected, char8_t> impl_; // @*exposition only*@
 };
 
 template <class R>
@@ -1034,7 +1039,7 @@ public:
   /* PAPER */
 
 private:
-  exposition_only_to_utf_view_impl<V, false, char16_t> impl_; // @*exposition only*@
+  exposition_only_to_utf_view_impl<V, to_utf_view_error_kind::replacement, char16_t> impl_; // @*exposition only*@
 };
 
 template <class R>
@@ -1097,7 +1102,7 @@ public:
   /* PAPER */
 
 private:
-  exposition_only_to_utf_view_impl<V, true, char16_t> impl_; // @*exposition only*@
+  exposition_only_to_utf_view_impl<V, to_utf_view_error_kind::expected, char16_t> impl_; // @*exposition only*@
 };
 
 template <class R>
@@ -1165,7 +1170,7 @@ public:
   /* PAPER */
 
 private:
-  exposition_only_to_utf_view_impl<V, false, char32_t> impl_; // @*exposition only*@
+  exposition_only_to_utf_view_impl<V, to_utf_view_error_kind::replacement, char32_t> impl_; // @*exposition only*@
 };
 
 template <class R>
@@ -1234,7 +1239,7 @@ public:
   /* PAPER */
 
 private:
-  exposition_only_to_utf_view_impl<V, true, char32_t> impl_; // @*exposition only*@
+  exposition_only_to_utf_view_impl<V, to_utf_view_error_kind::expected, char32_t> impl_; // @*exposition only*@
 };
 
 template <class R>
@@ -1244,9 +1249,9 @@ to_utf32_or_error_view(R&&) -> to_utf32_or_error_view<std::views::all_t<R>>;
 
 namespace detail {
 
-  template <class V, bool OrError, exposition_only_code_unit ToType>
+  template <class V, to_utf_view_error_kind E, exposition_only_code_unit ToType>
   using to_utf_view = std::conditional_t<
-      OrError,
+      E == to_utf_view_error_kind::expected,
       std::conditional_t<
           std::is_same_v<ToType, char8_t>, to_utf8_or_error_view<V>,
           std::conditional_t<std::is_same_v<ToType, char16_t>, to_utf16_or_error_view<V>,
@@ -1258,8 +1263,8 @@ namespace detail {
                              std::conditional_t<std::is_same_v<ToType, char32_t>,
                                                 to_utf32_view<V>, void>>>>;
 
-  template <bool OrError, exposition_only_code_unit ToType>
-  struct to_utf_impl : std::ranges::range_adaptor_closure<to_utf_impl<OrError, ToType>> {
+  template <to_utf_view_error_kind E, exposition_only_code_unit ToType>
+  struct to_utf_impl : std::ranges::range_adaptor_closure<to_utf_impl<E, ToType>> {
     template <class R>
     constexpr auto operator()(R&& r) const {
       using T = std::remove_cvref_t<R>;
@@ -1273,10 +1278,10 @@ namespace detail {
           --last;
         }
         std::ranges::subrange subrange(first, last);
-        return to_utf_view<decltype(subrange), OrError, ToType>(std::move(subrange));
+        return to_utf_view<decltype(subrange), E, ToType>(std::move(subrange));
       } else {
         auto view = std::views::all(std::forward<R>(r));
-        return to_utf_view<decltype(view), OrError, ToType>(std::move(view));
+        return to_utf_view<decltype(view), E, ToType>(std::move(view));
       }
     }
   };
@@ -1284,22 +1289,22 @@ namespace detail {
 } // namespace detail
 
 template <exposition_only_code_unit ToType>
-inline constexpr detail::to_utf_impl<false, ToType> to_utf;
+inline constexpr detail::to_utf_impl<to_utf_view_error_kind::replacement, ToType> to_utf;
 
-inline constexpr detail::to_utf_impl<false, char8_t> to_utf8;
+inline constexpr detail::to_utf_impl<to_utf_view_error_kind::replacement, char8_t> to_utf8;
 
-inline constexpr detail::to_utf_impl<false, char16_t> to_utf16;
+inline constexpr detail::to_utf_impl<to_utf_view_error_kind::replacement, char16_t> to_utf16;
 
-inline constexpr detail::to_utf_impl<false, char32_t> to_utf32;
+inline constexpr detail::to_utf_impl<to_utf_view_error_kind::replacement, char32_t> to_utf32;
 
 template <exposition_only_code_unit ToType>
-inline constexpr detail::to_utf_impl<true, ToType> to_utf_or_error;
+inline constexpr detail::to_utf_impl<to_utf_view_error_kind::expected, ToType> to_utf_or_error;
 
-inline constexpr detail::to_utf_impl<true, char8_t> to_utf8_or_error;
+inline constexpr detail::to_utf_impl<to_utf_view_error_kind::expected, char8_t> to_utf8_or_error;
 
-inline constexpr detail::to_utf_impl<true, char16_t> to_utf16_or_error;
+inline constexpr detail::to_utf_impl<to_utf_view_error_kind::expected, char16_t> to_utf16_or_error;
 
-inline constexpr detail::to_utf_impl<true, char32_t> to_utf32_or_error;
+inline constexpr detail::to_utf_impl<to_utf_view_error_kind::expected, char32_t> to_utf32_or_error;
 
 /* PAPER: namespace views {                                     */
 /* PAPER:                                                       */
