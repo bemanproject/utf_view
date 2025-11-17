@@ -16,7 +16,7 @@ IndentWidth: 2
 BreakBeforeBinaryOperators: None
 IndentAccessModifiers: False
 AccessModifierOffset: -2
-NamespaceIndentation: All
+NamespaceIndentation: None
 SpaceAfterTemplateKeyword: False
 PackConstructorInitializers: NextLine
 AlignTrailingComments: Leave
