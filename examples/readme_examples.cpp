@@ -110,7 +110,7 @@ transcode_result<I, O> transcode_to_utf32(I first, S last, O out) {
 
 bool transcode_to_utf32_test() {
   std::u8string_view char8_string{u8"\xf0\x9f\x95\xb4\xef\xbf\xbd"};
-  to_utf16_view<std::u8string_view> utf16_transcoding_view{char8_string};
+  auto utf16_transcoding_view{char8_string | to_utf16};
   std::u32string char32_string{};
   auto transcode_result{transcode_to_utf32(utf16_transcoding_view.begin(),
                                            utf16_transcoding_view.end(),
