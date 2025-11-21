@@ -23,52 +23,58 @@
 
 namespace beman::utf_view::tests {
 
-#if 0
 
 static_assert(
   std::input_iterator<
     std::ranges::iterator_t<
-      to_utf8_view<
-        std::ranges::subrange<test_input_iterator<char8_t>, std::default_sentinel_t>>>>);
+      to_utf_view<
+          std::ranges::subrange<test_input_iterator<char8_t>, std::default_sentinel_t>,
+          to_utf_view_error_kind::replacement, char8_t>>>);
 
 static_assert(
   std::input_iterator<
-    std::ranges::iterator_t<
-      to_utf8_view<
-        std::ranges::subrange<test_comparable_input_iterator<char8_t>,
-                              std::default_sentinel_t>>>>);
+      std::ranges::iterator_t<
+          to_utf_view<
+              std::ranges::subrange<
+                  test_comparable_input_iterator<char8_t>, std::default_sentinel_t>,
+              to_utf_view_error_kind::replacement, char8_t>>>);
 
 static_assert(
   std::input_iterator<
-    std::ranges::iterator_t<
-      to_utf8_view<
-        std::ranges::subrange<test_copyable_input_iterator<char8_t>,
-                              std::default_sentinel_t>>>>);
+      std::ranges::iterator_t<
+          to_utf_view<
+              std::ranges::subrange<
+                  test_copyable_input_iterator<char8_t>, std::default_sentinel_t>,
+              to_utf_view_error_kind::replacement, char8_t>>>);
 static_assert(
   !std::forward_iterator<
-    std::ranges::iterator_t<
-      to_utf8_view<
-        std::ranges::subrange<test_copyable_input_iterator<char8_t>,
-                              std::default_sentinel_t>>>>);
+      std::ranges::iterator_t<
+          to_utf_view<
+              std::ranges::subrange<
+                  test_copyable_input_iterator<char8_t>, std::default_sentinel_t>,
+              to_utf_view_error_kind::replacement, char8_t>>>);
 
 static_assert(
   std::forward_iterator<
-    std::ranges::sentinel_t<
-      to_utf8_view<
-        std::ranges::subrange<test_forward_iterator<char8_t>,
-                              test_forward_iterator<char8_t>>>>>);
+      std::ranges::sentinel_t<
+          to_utf_view<
+              std::ranges::subrange<
+                  test_forward_iterator<char8_t>, test_forward_iterator<char8_t>>,
+              to_utf_view_error_kind::replacement, char8_t>>>);
 static_assert(
   std::bidirectional_iterator<
-    std::ranges::iterator_t<
-      to_utf8_view<
-        std::ranges::subrange<test_bidi_iterator<char8_t>,
-                              std::default_sentinel_t>>>>);
+      std::ranges::iterator_t<
+          to_utf_view<
+              std::ranges::subrange<
+                  test_bidi_iterator<char8_t>, std::default_sentinel_t>,
+              to_utf_view_error_kind::replacement, char8_t>>>);
 static_assert(
   std::bidirectional_iterator<
-    std::ranges::sentinel_t<
-      to_utf8_view<
-        std::ranges::subrange<test_bidi_iterator<char8_t>,
-                              test_bidi_iterator<char8_t>>>>>);
+      std::ranges::sentinel_t<
+          to_utf_view<
+              std::ranges::subrange<
+                  test_bidi_iterator<char8_t>, test_bidi_iterator<char8_t>>,
+              to_utf_view_error_kind::replacement, char8_t>>>);
 
 template <exposition_only_code_unit CharT>
 using test_case_code_unit_result = std::expected<CharT, utf_transcoding_error>;
@@ -352,7 +358,7 @@ template <typename CharT>
 constexpr bool input_iterator_test(std::initializer_list<CharT> const single_arr) {
   test_input_iterator single_begin(single_arr);
   std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
-  auto single_view{to_utf32_view(std::move(subrange))};
+  auto single_view{std::move(subrange) | to_utf32};
   std::u32string single_u32{single_view | std::ranges::to<std::u32string>()};
   if (single_u32.size() != 1 || single_u32.at(0) != U'x') {
     return false;
@@ -364,7 +370,7 @@ template <typename CharT>
 constexpr bool forward_iterator_test(std::initializer_list<CharT> const single_arr) {
   test_forward_iterator single_begin(single_arr);
   std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
-  auto single_view{to_utf32_view(std::move(subrange))};
+  auto single_view{std::move(subrange) | to_utf32};
   std::u32string single_u32{single_view | std::ranges::to<std::u32string>()};
   if (single_u32.size() != 1 || single_u32.at(0) != U'x') {
     return false;
@@ -376,7 +382,7 @@ template <typename CharT>
 constexpr bool bidi_iterator_test(std::initializer_list<CharT> const single_arr) {
   test_bidi_iterator single_begin(single_arr);
   std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
-  auto single_view{to_utf32_view(std::move(subrange))};
+  auto single_view{std::move(subrange) | to_utf32};
   std::u32string single_u32{single_view | std::ranges::to<std::u32string>()};
   if (single_u32.size() != 1 || single_u32.at(0) != U'x') {
     return false;
@@ -388,8 +394,8 @@ template <typename CharT>
 constexpr bool double_encode_test(std::initializer_list<CharT> const single_arr) {
   test_forward_iterator single_begin(single_arr);
   std::ranges::subrange subrange{std::move(single_begin), std::default_sentinel};
-  auto single_view{to_utf32_view(std::move(subrange))};
-  auto double_encoded_view{to_utf8_view(std::move(single_view))};
+  auto single_view{std::move(subrange) | to_utf32};
+  auto double_encoded_view{std::move(single_view) | to_utf8};
   std::u8string single_u8{double_encoded_view | std::ranges::to<std::u8string>()};
   if (single_u8.size() != 1 || single_u8.at(0) != U'x') {
     return false;
@@ -862,12 +868,12 @@ CONSTEXPR_UNLESS_MSVC bool wrapped_view_custom_sentinel_test() {
   test_bidi_iterator<char8_t> end_it{nums};
   std::ranges::advance(end_it, std::ranges::size(nums));
   std::ranges::subrange u32_subrange{start_it, end_it};
-  to_utf16_view u16v{u32_subrange};
+  auto u16v{u32_subrange | to_utf16};
   std::ranges::subrange custom_u16_subrange{u16v.begin(), end_at_exclamation_mark_sentinel<char16_t>};
   if (std::ranges::distance(custom_u16_subrange) != 2) {
     return false;
   }
-  to_utf32_view custom_u32v{custom_u16_subrange};
+  auto custom_u32v{custom_u16_subrange | to_utf32};
   if (std::ranges::distance(custom_u32v) != 2) {
     return false;
   }
@@ -877,7 +883,7 @@ CONSTEXPR_UNLESS_MSVC bool wrapped_view_custom_sentinel_test() {
 constexpr bool empty_test() {
   static_assert(std::is_same_v<decltype(std::views::empty<char8_t> | to_utf8),
                                std::ranges::empty_view<char8_t>>);
-  auto empty_utf{to_utf8_view{std::views::empty<char8_t>}};
+  auto empty_utf{to_utf_view{std::views::empty<char8_t>, detail::nontype<to_utf_view_error_kind::replacement>, to_utf8_tag}};
   if (!empty_utf.empty()) {
     return false;
   }
@@ -1453,7 +1459,7 @@ bool decode_test() {
 constexpr bool input_range_equality_test() {
   std::initializer_list<char16_t> arr{U'\u03D5'};
   test_copyable_input_iterator input_it(arr);
-  to_utf8_view u8v{std::ranges::subrange{input_it, std::default_sentinel}};
+  auto u8v{std::ranges::subrange{input_it, std::default_sentinel} | to_utf8};
   auto it1{u8v.begin()};
   auto it2{it1};
   ++it2;
@@ -1463,10 +1469,7 @@ constexpr bool input_range_equality_test() {
   return true;
 }
 
-#endif
-
 CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
-#if 0
   if (!input_iterator_test(std::initializer_list<char8_t>{u8'x'})) {
     return false;
   }
@@ -1617,7 +1620,6 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
   if (!input_range_equality_test()) {
     return false;
   }
-#endif
   return true;
 }
 
