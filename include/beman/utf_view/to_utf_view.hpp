@@ -11,6 +11,7 @@
 #include <beman/utf_view/detail/concepts.hpp>
 #include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
 #include <beman/utf_view/detail/fake_inplace_vector.hpp>
+#include <beman/utf_view/detail/nontype_t_polyfill.hpp>
 #include <bit>
 #include <cassert>
 #include <concepts>
@@ -97,12 +98,29 @@ enum class to_utf_view_error_kind : bool {
   expected
 };
 
+template <exposition_only_code_unit ToType>
+struct to_utf_tag_t {
+  explicit to_utf_tag_t() = default;
+};
+
+template <exposition_only_code_unit ToType>
+constexpr to_utf_tag_t<ToType> to_utf_tag{};
+
+using to_utf8_tag_t = to_utf_tag_t<char8_t>;
+
+constexpr to_utf8_tag_t to_utf8_tag{};
+
+using to_utf16_tag_t = to_utf_tag_t<char16_t>;
+
+constexpr to_utf16_tag_t to_utf16_tag{};
+
+using to_utf32_tag_t = to_utf_tag_t<char32_t>;
+
+constexpr to_utf32_tag_t to_utf32_tag{};
+
 template <std::ranges::input_range V, to_utf_view_error_kind E, exposition_only_code_unit ToType>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
-/* !PAPER */
-class exposition_only_to_utf_view_impl {
-/* PAPER */
-/* PAPER: class @*to-utf-view-impl*@ */
+class to_utf_view {
 private:
   template<bool> struct exposition_only_iterator; // @*exposition only*@
   template<bool> struct exposition_only_sentinel; // @*exposition only*@
@@ -112,7 +130,7 @@ private:
 /* !PAPER */
   template <typename V2>
   struct maybe_cache_begin_impl {
-    constexpr auto begin_impl(exposition_only_to_utf_view_impl& self, auto base) noexcept {
+    constexpr auto begin_impl(to_utf_view& self, auto base) noexcept {
       return exposition_only_iterator<false>{self, std::move(base)};
     }
   };
@@ -120,7 +138,7 @@ private:
   template <typename V2>
   requires (!std::same_as<std::ranges::range_value_t<V2>, char32_t> && std::copy_constructible<V>)
   struct maybe_cache_begin_impl<V2> {
-    constexpr auto begin_impl(exposition_only_to_utf_view_impl& self, auto base) noexcept {
+    constexpr auto begin_impl(to_utf_view& self, auto base) noexcept {
       if (!cache_) {
         cache_.emplace(self, std::move(base));
       }
@@ -133,12 +151,12 @@ private:
 
 /* PAPER */
 public:
-  constexpr exposition_only_to_utf_view_impl()
+  constexpr to_utf_view()
     requires std::default_initializable<V>
   = default;
-  /* PAPER:     constexpr explicit exposition_only_to_utf_view_impl(V base); */
+  /* PAPER:     constexpr explicit to_utf_view(V base); */
   /* !PAPER */
-  constexpr explicit exposition_only_to_utf_view_impl(V base)
+  constexpr explicit to_utf_view(V base, detail::nontype_t<E> error, to_utf_tag_t<ToType>)
       : base_(std::move(base)) { }
   /* PAPER */
 
@@ -211,15 +229,18 @@ public:
   /* PAPER */
 };
 
+template <class R, to_utf_view_error_kind E, exposition_only_code_unit ToType>
+to_utf_view(R&&, detail::nontype_t<E>, to_utf_tag_t<ToType>) -> to_utf_view<std::views::all_t<R>, E, ToType>;
+
 template <std::ranges::input_range V, to_utf_view_error_kind E, exposition_only_code_unit ToType>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 template <bool Const>
-/* PAPER:   class @*to-utf-view-impl*@<V, E, ToType>::@*iterator*@ { */
+/* PAPER:   class to_utf_view<V, E, ToType>::@*iterator*@ { */
 /* !PAPER */
-struct exposition_only_to_utf_view_impl<V, E, ToType>::exposition_only_iterator : detail::iter_category_impl<V> {
+struct to_utf_view<V, E, ToType>::exposition_only_iterator : detail::iter_category_impl<V> {
 /* PAPER */
 private:
-  using exposition_only_Parent = exposition_only_maybe_const<Const, exposition_only_to_utf_view_impl>; // @*exposition only*@
+  using exposition_only_Parent = exposition_only_maybe_const<Const, to_utf_view>; // @*exposition only*@
   using exposition_only_Base = exposition_only_maybe_const<Const, V>; // @*exposition only*@
 
 /* !PAPER */
@@ -268,7 +289,7 @@ public: // MSVC has some bug with their implementation of friendship
 
   template <std::ranges::input_range V2, to_utf_view_error_kind E2, exposition_only_code_unit ToType2>
     requires std::ranges::view<V2> && exposition_only_code_unit<std::ranges::range_value_t<V2>>
-  friend class exposition_only_to_utf_view_impl; // @*exposition only*@
+  friend class to_utf_view; // @*exposition only*@
 
 public:
 
@@ -826,12 +847,9 @@ private:
 template <std::ranges::input_range V, to_utf_view_error_kind E, exposition_only_code_unit ToType>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 template <bool Const>
-/* PAPER: class @*to-utf-view-impl*@<V, E, ToType>::@*sentinel*@ { */
-/* !PAPER */
-struct exposition_only_to_utf_view_impl<V, E, ToType>::exposition_only_sentinel {
-  /* PAPER */
+struct to_utf_view<V, E, ToType>::exposition_only_sentinel {
 private:
-  using exposition_only_Parent = exposition_only_maybe_const<Const, exposition_only_to_utf_view_impl>; // @*exposition only*@
+  using exposition_only_Parent = exposition_only_maybe_const<Const, to_utf_view>; // @*exposition only*@
   using exposition_only_Base = exposition_only_maybe_const<Const, V>; // @*exposition only*@
   std::ranges::sentinel_t<exposition_only_Base> end_ = std::ranges::sentinel_t<exposition_only_Base>();
 
@@ -860,408 +878,9 @@ public:
   }
 };
 
-template <std::ranges::input_range V>
-  requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
-class to_utf8_view : public std::ranges::view_interface<to_utf8_view<V>> {
-public:
-  constexpr to_utf8_view() requires std::default_initializable<V> = default;
-  constexpr explicit to_utf8_view(V base)
-      : impl_(std::move(base)) { }
-
-  constexpr V base() const&
-    requires std::copy_constructible<V>
-  {
-    return impl_.base();
-  }
-  constexpr V base() && {
-    return std::move(impl_).base();
-  }
-
-  constexpr auto begin()
-  {
-    return impl_.begin();
-  }
-  constexpr auto begin() const
-    requires std::ranges::range<const V> &&
-             ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
-              (!std::ranges::forward_range<const V>)) {
-    return impl_.begin();
-  }
-  constexpr auto end()
-  {
-    return impl_.end();
-  }
-  constexpr auto end() const
-    requires std::ranges::range<const V> {
-    return impl_.end();
-  }
-
-  constexpr bool empty() const {
-    return impl_.empty();
-  }
-
-  /* !PAPER */
-#if defined(__cpp_lib_ranges_reserve_hint)
-  /* PAPER */
-  constexpr auto reserve_hint() requires std::ranges::approximately_sized_range<V> {
-    return std::ranges::reserve_hint(impl_);
-  }
-  constexpr auto reserve_hint() const requires std::ranges::approximately_sized_range<const V>; {
-    return std::ranges::reserve_hint(impl_);
-  }
-  /* !PAPER */
-#endif
-  /* PAPER */
-
-private:
-  exposition_only_to_utf_view_impl<V, to_utf_view_error_kind::replacement, char8_t> impl_; // @*exposition only*@
-};
-
-template <class R>
-to_utf8_view(R&&) -> to_utf8_view<std::views::all_t<R>>;
-
-template <std::ranges::input_range V>
-  requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
-class to_utf8_or_error_view
-    : public std::ranges::view_interface<to_utf8_or_error_view<V>> {
-public:
-  constexpr to_utf8_or_error_view()
-    requires std::default_initializable<V>
-  = default;
-  constexpr explicit to_utf8_or_error_view(V base)
-      : impl_(std::move(base)) { }
-
-  constexpr V base() const&
-    requires std::copy_constructible<V>
-  {
-    return impl_.base();
-  }
-  constexpr V base() && {
-    return std::move(impl_).base();
-  }
-
-  constexpr auto begin()
-  {
-    return impl_.begin();
-  }
-  constexpr auto begin() const
-    requires std::ranges::range<const V> &&
-             ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
-              (!std::ranges::forward_range<const V>)) {
-    return impl_.begin();
-  }
-  constexpr auto end()
-  {
-    return impl_.end();
-  }
-  constexpr auto end() const
-    requires std::ranges::range<const V> {
-    return impl_.end();
-  }
-
-  constexpr bool empty() const {
-    return impl_.empty();
-  }
-
-  /* !PAPER */
-#if defined(__cpp_lib_ranges_reserve_hint)
-  /* PAPER */
-  constexpr auto reserve_hint() requires std::ranges::approximately_sized_range<V> {
-    return std::ranges::reserve_hint(impl_);
-  }
-  constexpr auto reserve_hint() const requires std::ranges::approximately_sized_range<const V>; {
-    return std::ranges::reserve_hint(impl_);
-  }
-  /* !PAPER */
-#endif
-  /* PAPER */
-
-private:
-  exposition_only_to_utf_view_impl<V, to_utf_view_error_kind::expected, char8_t> impl_; // @*exposition only*@
-};
-
-template <class R>
-to_utf8_or_error_view(R&&) -> to_utf8_or_error_view<std::views::all_t<R>>;
-
-template <std::ranges::input_range V>
-  requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
-class to_utf16_view : public std::ranges::view_interface<to_utf16_view<V>> {
-public:
-  constexpr to_utf16_view()
-    requires std::default_initializable<V>
-  = default;
-  constexpr explicit to_utf16_view(V base)
-      : impl_(std::move(base)) { }
-
-  constexpr V base() const&
-    requires std::copy_constructible<V>
-  {
-    return impl_.base();
-  }
-  constexpr V base() && {
-    return std::move(impl_).base();
-  }
-
-  constexpr auto begin()
-  {
-    return impl_.begin();
-  }
-  constexpr auto begin() const
-    requires std::ranges::range<const V> &&
-             ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
-              (!std::ranges::forward_range<const V>)) {
-    return impl_.begin();
-  }
-  constexpr auto end()
-  {
-    return impl_.end();
-  }
-  constexpr auto end() const
-    requires std::ranges::range<const V> {
-    return impl_.end();
-  }
-
-  constexpr bool empty() const {
-    return impl_.empty();
-  }
-
-  /* !PAPER */
-#if defined(__cpp_lib_ranges_reserve_hint)
-  /* PAPER */
-  constexpr auto reserve_hint() requires std::ranges::approximately_sized_range<V> {
-    return std::ranges::reserve_hint(impl_);
-  }
-  constexpr auto reserve_hint() const requires std::ranges::approximately_sized_range<const V>; {
-    return std::ranges::reserve_hint(impl_);
-  }
-  /* !PAPER */
-#endif
-  /* PAPER */
-
-private:
-  exposition_only_to_utf_view_impl<V, to_utf_view_error_kind::replacement, char16_t> impl_; // @*exposition only*@
-};
-
-template <class R>
-to_utf16_view(R&&) -> to_utf16_view<std::views::all_t<R>>;
-
-template <std::ranges::input_range V>
-  requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
-class to_utf16_or_error_view
-    : public std::ranges::view_interface<to_utf16_or_error_view<V>> {
-public:
-  constexpr to_utf16_or_error_view()
-    requires std::default_initializable<V>
-  = default;
-  constexpr explicit to_utf16_or_error_view(V base)
-      : impl_(std::move(base)) { }
-
-  constexpr V base() const&
-    requires std::copy_constructible<V>
-  {
-    return impl_.base();
-  }
-  constexpr V base() && {
-    return std::move(impl_).base();
-  }
-
-  constexpr auto begin()
-  {
-    return impl_.begin();
-  }
-  constexpr auto begin() const
-    requires std::ranges::range<const V> &&
-             ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
-              (!std::ranges::forward_range<const V>)) {
-    return impl_.begin();
-  }
-  constexpr auto end()
-  {
-    return impl_.end();
-  }
-  constexpr auto end() const
-    requires std::ranges::range<const V> {
-    return impl_.end();
-  }
-
-  constexpr bool empty() const {
-    return impl_.empty();
-  }
-
-  /* !PAPER */
-#if defined(__cpp_lib_ranges_reserve_hint)
-  /* PAPER */
-  constexpr auto reserve_hint() requires std::ranges::approximately_sized_range<V> {
-    return std::ranges::reserve_hint(impl_);
-  }
-  constexpr auto reserve_hint() const requires std::ranges::approximately_sized_range<const V>; {
-    return std::ranges::reserve_hint(impl_);
-  }
-  /* !PAPER */
-#endif
-  /* PAPER */
-
-private:
-  exposition_only_to_utf_view_impl<V, to_utf_view_error_kind::expected, char16_t> impl_; // @*exposition only*@
-};
-
-template <class R>
-to_utf16_or_error_view(R&&) -> to_utf16_or_error_view<std::views::all_t<R>>;
-
-template <std::ranges::input_range V>
-  requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
-class to_utf32_view : public std::ranges::view_interface<to_utf32_view<V>> {
-public:
-  constexpr to_utf32_view()
-    requires std::default_initializable<V>
-  = default;
-  constexpr explicit to_utf32_view(V base)
-      : impl_(std::move(base)) { }
-
-  constexpr V base() const&
-    requires std::copy_constructible<V>
-  {
-    return impl_.base();
-  }
-  constexpr V base() && {
-    return std::move(impl_).base();
-  }
-
-  constexpr auto begin()
-  {
-    return impl_.begin();
-  }
-  constexpr auto begin() const
-    requires std::ranges::range<const V> &&
-             ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
-              (!std::ranges::forward_range<const V>)) {
-    return impl_.begin();
-  }
-  constexpr auto end()
-  {
-    return impl_.end();
-  }
-  constexpr auto end() const
-    requires std::ranges::range<const V> {
-    return impl_.end();
-  }
-
-  constexpr bool empty() const {
-    return impl_.empty();
-  }
-
-  constexpr std::size_t size()
-    requires std::ranges::sized_range<V> &&
-             std::same_as<char32_t, std::ranges::range_value_t<V>> {
-    return impl_.size();
-  }
-
-  /* !PAPER */
-#if defined(__cpp_lib_ranges_reserve_hint)
-  /* PAPER */
-  constexpr auto reserve_hint() requires std::ranges::approximately_sized_range<V> {
-    return std::ranges::reserve_hint(impl_);
-  }
-  constexpr auto reserve_hint() const requires std::ranges::approximately_sized_range<const V>; {
-    return std::ranges::reserve_hint(impl_);
-  }
-  /* !PAPER */
-#endif
-  /* PAPER */
-
-private:
-  exposition_only_to_utf_view_impl<V, to_utf_view_error_kind::replacement, char32_t> impl_; // @*exposition only*@
-};
-
-template <class R>
-to_utf32_view(R&&) -> to_utf32_view<std::views::all_t<R>>;
-
-template <std::ranges::input_range V>
-  requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
-class to_utf32_or_error_view
-    : public std::ranges::view_interface<to_utf32_or_error_view<V>> {
-public:
-  constexpr to_utf32_or_error_view()
-    requires std::default_initializable<V>
-  = default;
-  constexpr explicit to_utf32_or_error_view(V base)
-      : impl_(std::move(base)) { }
-
-  constexpr V base() const&
-    requires std::copy_constructible<V>
-  {
-    return impl_.base();
-  }
-  constexpr V base() && {
-    return std::move(impl_).base();
-  }
-
-  constexpr auto begin()
-  {
-    return impl_.begin();
-  }
-  constexpr auto begin() const
-    requires std::ranges::range<const V> &&
-             ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
-              (!std::ranges::forward_range<const V>)) {
-    return impl_.begin();
-  }
-  constexpr auto end()
-  {
-    return impl_.end();
-  }
-  constexpr auto end() const
-    requires std::ranges::range<const V> {
-    return impl_.end();
-  }
-
-  constexpr bool empty() const {
-    return impl_.empty();
-  }
-
-  constexpr std::size_t size()
-    requires std::ranges::sized_range<V> &&
-             std::same_as<char32_t, std::ranges::range_value_t<V>> {
-    return impl_.size();
-  }
-
-  /* !PAPER */
-#if defined(__cpp_lib_ranges_reserve_hint)
-  /* PAPER */
-  constexpr auto reserve_hint() requires std::ranges::approximately_sized_range<V> {
-    return std::ranges::reserve_hint(impl_);
-  }
-  constexpr auto reserve_hint() const requires std::ranges::approximately_sized_range<const V>; {
-    return std::ranges::reserve_hint(impl_);
-  }
-  /* !PAPER */
-#endif
-  /* PAPER */
-
-private:
-  exposition_only_to_utf_view_impl<V, to_utf_view_error_kind::expected, char32_t> impl_; // @*exposition only*@
-};
-
-template <class R>
-to_utf32_or_error_view(R&&) -> to_utf32_or_error_view<std::views::all_t<R>>;
-
 /* !PAPER */
 
 namespace detail {
-
-  template <class V, to_utf_view_error_kind E, exposition_only_code_unit ToType>
-  using to_utf_view = std::conditional_t<
-      E == to_utf_view_error_kind::expected,
-      std::conditional_t<
-          std::is_same_v<ToType, char8_t>, to_utf8_or_error_view<V>,
-          std::conditional_t<std::is_same_v<ToType, char16_t>, to_utf16_or_error_view<V>,
-                             std::conditional_t<std::is_same_v<ToType, char32_t>,
-                                                to_utf32_or_error_view<V>, void>>>,
-      std::conditional_t<
-          std::is_same_v<ToType, char8_t>, to_utf8_view<V>,
-          std::conditional_t<std::is_same_v<ToType, char16_t>, to_utf16_view<V>,
-                             std::conditional_t<std::is_same_v<ToType, char32_t>,
-                                                to_utf32_view<V>, void>>>>;
 
   template <to_utf_view_error_kind E, exposition_only_code_unit ToType>
   struct to_utf_impl : std::ranges::range_adaptor_closure<to_utf_impl<E, ToType>> {
@@ -1278,10 +897,9 @@ namespace detail {
           --last;
         }
         std::ranges::subrange subrange(first, last);
-        return to_utf_view<decltype(subrange), E, ToType>(std::move(subrange));
+        return to_utf_view(std::move(subrange), detail::nontype<E>, to_utf_tag<ToType>);
       } else {
-        auto view = std::views::all(std::forward<R>(r));
-        return to_utf_view<decltype(view), E, ToType>(std::move(view));
+        return to_utf_view(std::forward<R>(r), detail::nontype<E>, to_utf_tag<ToType>);
       }
     }
   };
