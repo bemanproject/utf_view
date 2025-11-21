@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-set(ALL_EXAMPLES
-  # readme_examples
-  null_term_argv_environ)
+set(ALL_EXAMPLES readme_examples null_term_argv_environ)
 
 message("Examples to be built: ${ALL_EXAMPLES}")
 

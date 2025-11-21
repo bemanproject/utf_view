@@ -23,7 +23,6 @@
 
 namespace beman::utf_view::tests {
 
-
 static_assert(
   std::input_iterator<
     std::ranges::iterator_t<
