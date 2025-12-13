@@ -26,7 +26,7 @@ Transcoding a UTF-8 string literal to a `std::u32string`:
 
 ```cpp
 std::u32string hello_world =
-  u8"こんにちは世界" | beman::utf_view::to_utf32 | std::ranges::to<std::u32string>();
+  u8"こんにちは世界"sv | beman::utf_view::to_utf32 | std::ranges::to<std::u32string>();
 ```
 
 Sanitizing potentially invalid Unicode C strings by replacing invalid code units with replacement characters:
