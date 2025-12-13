@@ -24,6 +24,8 @@
 
 namespace beman::utf_view::examples {
 
+using namespace std::string_view_literals;
+
 template <typename CharT>
 std::basic_string<CharT> sanitize(CharT const* str) {
   return null_term(str) | to_utf<CharT> | std::ranges::to<std::basic_string<CharT>>();
@@ -184,10 +186,10 @@ static_assert(take_five_c("Brubeck") == "Brube"sv); // passes
 #endif
 
 #ifndef _MSC_VER
-static_assert((u8"\xf0\x9f\x99\x82" | to_utf32 | std::ranges::to<std::u32string>()) == U"\x0001F642");
-static_assert((u8"\xf0\x9f\x99\x82" | std::views::take(3) | to_utf32 | std::ranges::to<std::u32string>()) == U"�");
+static_assert((u8"\xf0\x9f\x99\x82"sv | to_utf32 | std::ranges::to<std::u32string>()) == U"\x0001F642");
+static_assert((u8"\xf0\x9f\x99\x82"sv | std::views::take(3) | to_utf32 | std::ranges::to<std::u32string>()) == U"�");
 static_assert(
-  *(u8"\xf0\x9f\x99\x82" | std::views::take(3) | to_utf32_or_error).begin() ==
+  *(u8"\xf0\x9f\x99\x82"sv | std::views::take(3) | to_utf32_or_error).begin() ==
   std::unexpected{utf_transcoding_error::truncated_utf8_sequence});
 #endif
 
@@ -215,9 +217,9 @@ bool basis_operation() {
 }
 
 static_assert(
-  !std::ranges::equal(u8"foo" | to_utf32, std::array{U'f', U'o', U'o', U'\0'}));
+  !std::ranges::equal(u8"foo"sv | to_utf32, std::array{U'f', U'o', U'o', U'\0'}));
 static_assert(
-  std::ranges::equal(u8"foo" | to_utf32, std::array{U'f', U'o', U'o'}));
+  std::ranges::equal(u8"foo"sv | to_utf32, std::array{U'f', U'o', U'o'}));
 #endif
 
 template <typename FromCharT, typename ToCharT>
@@ -229,7 +231,7 @@ bool readme_examples() {
   using namespace std::string_view_literals;
 #ifndef _MSC_VER
   std::u32string hello_world =
-      u8"こんにちは世界" | to_utf32 | std::ranges::to<std::u32string>();
+      u8"こんにちは世界"sv | to_utf32 | std::ranges::to<std::u32string>();
   if (hello_world != U"こんにちは世界") {
     return false;
   }

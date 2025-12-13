@@ -857,7 +857,8 @@ namespace detail {
 
   template <to_utf_view_error_kind E, exposition_only_code_unit ToType>
   struct to_utf_impl : std::ranges::range_adaptor_closure<to_utf_impl<E, ToType>> {
-    template <class R>
+    template <std::ranges::range R>
+    requires is_not_array_of_char<R>
     constexpr auto operator()(R&& r) const {
       using T = std::remove_cvref_t<R>;
       if constexpr (detail::is_empty_view<T>) {
@@ -866,15 +867,6 @@ namespace detail {
         } else {
           return std::ranges::empty_view<std::expected<ToType, utf_transcoding_error>>{};
         }
-      } else if constexpr (std::is_bounded_array_v<T>) {
-        constexpr auto n = std::extent_v<T>;
-        auto first{std::ranges::begin(r)};
-        auto last{std::ranges::end(r)};
-        if (n && !r[n - 1]) {
-          --last;
-        }
-        std::ranges::subrange subrange(first, last);
-        return to_utf_view(std::move(subrange), detail::nontype<E>, to_utf_tag<ToType>);
       } else {
         return to_utf_view(std::forward<R>(r), detail::nontype<E>, to_utf_tag<ToType>);
       }

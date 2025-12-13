@@ -19,9 +19,12 @@
 #include <ranges>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <utility>
 
 namespace beman::utf_view::tests {
+
+using namespace std::string_view_literals;
 
 static_assert(
   std::input_iterator<
@@ -490,7 +493,7 @@ constexpr bool to_utf_test() {
   auto empty_utf_view{empty_view | to_utf8};
   static_assert(
       std::is_same_v<decltype(empty_utf_view), std::ranges::empty_view<char8_t>>);
-  auto u8_string_literal_utf_view{u8"foo" | to_utf32};
+  auto u8_string_literal_utf_view{u8"foo"sv | to_utf32};
   auto u8_string_literal_utf_view_it{u8_string_literal_utf_view.begin()};
   if (*u8_string_literal_utf_view_it != U'f') {
     return false;
@@ -505,24 +508,6 @@ constexpr bool to_utf_test() {
   }
   ++u8_string_literal_utf_view_it;
   if (u8_string_literal_utf_view_it != u8_string_literal_utf_view.end()) {
-    return false;
-  }
-  char8_t const non_null_terminated_array[3]{u8'a', u8'b', u8'c'};
-  auto non_null_terminated_array_utf_view{non_null_terminated_array | to_utf32};
-  auto non_null_terminated_array_utf_view_it{non_null_terminated_array_utf_view.begin()};
-  if (*non_null_terminated_array_utf_view_it != U'a') {
-    return false;
-  }
-  ++non_null_terminated_array_utf_view_it;
-  if (*non_null_terminated_array_utf_view_it != U'b') {
-    return false;
-  }
-  ++non_null_terminated_array_utf_view_it;
-  if (*non_null_terminated_array_utf_view_it != U'c') {
-    return false;
-  }
-  ++non_null_terminated_array_utf_view_it;
-  if (non_null_terminated_array_utf_view_it != non_null_terminated_array_utf_view.end()) {
     return false;
   }
   std::initializer_list<char8_t> arr{u8'b', u8'a', u8'r'};

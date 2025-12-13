@@ -15,21 +15,6 @@
 
 namespace beman::utf_view {
 
-namespace detail {
-
-  template <class T>
-  constexpr bool is_empty_view = false;
-  template <class T>
-  constexpr bool is_empty_view<std::ranges::empty_view<T>> = true;
-
-} // namespace detail
-
-/* PAPER: namespace std::ranges { */
-
-template <bool Const, class T>
-using exposition_only_maybe_const =
-    std::conditional_t<Const, const T, T>; // exposition only
-
 /* PAPER */
 
 template <class T>
@@ -38,6 +23,26 @@ concept exposition_only_code_unit = std::same_as<std::remove_cv_t<T>, char8_t> |
     std::same_as<std::remove_cv_t<T>, char32_t>;
 
 /* !PAPER */
+
+namespace detail {
+
+  template <class T>
+  constexpr bool is_empty_view = false;
+  template <class T>
+  constexpr bool is_empty_view<std::ranges::empty_view<T>> = true;
+
+  template <typename T>
+  concept is_not_array_of_char =
+    !(std::is_array_v<std::remove_cvref_t<T>> &&
+      exposition_only_code_unit<std::remove_extent_t<std::remove_cvref_t<T>>>);
+
+} // namespace detail
+
+/* PAPER: namespace std::ranges { */
+
+template <bool Const, class T>
+using exposition_only_maybe_const =
+    std::conditional_t<Const, const T, T>; // exposition only
 
 } // namespace beman::utf_view
 

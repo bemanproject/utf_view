@@ -38,7 +38,8 @@ namespace detail {
   struct as_code_unit_impl
       : std::ranges::range_adaptor_closure<as_code_unit_impl<Char>> {
     template <std::ranges::range R>
-      requires std::convertible_to<std::ranges::range_reference_t<R>, Char>
+      requires std::convertible_to<std::ranges::range_reference_t<R>, Char> &&
+               is_not_array_of_char<R>
     constexpr auto operator()(R&& r) const {
       using T = std::remove_cvref_t<R>;
       if constexpr (detail::is_empty_view<T>) {
