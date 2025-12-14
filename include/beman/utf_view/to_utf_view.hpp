@@ -127,29 +127,6 @@ private:
 
   V base_ = V(); // @*exposition only*@
 
-/* !PAPER */
-  template <typename V2>
-  struct maybe_cache_begin_impl {
-    constexpr auto begin_impl(to_utf_view& self, auto base) noexcept {
-      return exposition_only_iterator<false>{self, std::move(base)};
-    }
-  };
-
-  template <typename V2>
-  requires (!std::same_as<std::ranges::range_value_t<V2>, char32_t> && std::copy_constructible<V>)
-  struct maybe_cache_begin_impl<V2> {
-    constexpr auto begin_impl(to_utf_view& self, auto base) noexcept {
-      if (!cache_) {
-        cache_.emplace(self, std::move(base));
-      }
-      return *cache_;
-    }
-    std::optional<exposition_only_iterator<false>> cache_;
-  };
-
-  [[no_unique_address]] maybe_cache_begin_impl<V> cache_;
-
-/* PAPER */
 public:
   constexpr to_utf_view()
     requires std::default_initializable<V>
@@ -173,11 +150,7 @@ public:
   /* PAPER:     constexpr @*iterator*@<false> begin(); */
   constexpr exposition_only_iterator<false> begin()
   {
-    if (!std::copy_constructible<V>) {
-      return exposition_only_iterator<false>(*this, std::ranges::begin(base_));
-    } else {
-      return cache_.begin_impl(*this, std::ranges::begin(base_));
-    }
+    return exposition_only_iterator<false>(*this, std::ranges::begin(base_));
   }
   /* PAPER */
   constexpr exposition_only_iterator<true> begin() const
