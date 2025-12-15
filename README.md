@@ -16,7 +16,7 @@ Distributed under the Boost Software License, Version 1.0.
 - `null_sentinel` sentinel and `null_term` CPO for creating views of null-terminated strings
 - Casting views for creating views of `charN_t`, which are `as_char8`, `as_char16`, `as_char32`
 
-**Implements**: [Unicode in the Library, Part 1: UTF Transcoding (P2728R9)](https://isocpp.org/files/papers/P2728R9.html) and [A Sentinel for Null-Terminated Strings (P3705R2)](https://isocpp.org/files/papers/P3705R2.html)
+**Implements**: [Unicode in the Library, Part 1: UTF Transcoding (P2728R10)](https://isocpp.org/files/papers/P2728R10.html) and [A Sentinel for Null-Terminated Strings (P3705R2)](https://isocpp.org/files/papers/P3705R2.html)
 
 **Status**: [Under development and not yet ready for production use.](https://github.com/bemanproject/beman/blob/main/docs/beman_library_maturity_model.md#under-development-and-not-yet-ready-for-production-use)
 
