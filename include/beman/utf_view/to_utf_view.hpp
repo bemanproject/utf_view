@@ -234,6 +234,9 @@ public:
   /* PAPER:   using iterator_concept = @*see below*@; */
   /* PAPER:   using iterator_category = @*see below*@;  // @*not always present*@ */
   /* !PAPER */
+
+  using is_to_utf_view_iterator = void;
+
   using iterator_concept = decltype(iter_concept_impl());
   /* PAPER */
   using value_type =
@@ -855,6 +858,19 @@ public:
 
 namespace detail {
 
+  template <class T>
+  inline constexpr bool is_to_utf_view_v = false;
+
+  template <class R, auto E, class Tag>
+  inline constexpr bool is_to_utf_view_v<to_utf_view<R, E, Tag>> = true;
+
+  template <class T>
+  inline constexpr bool is_to_utf_subrange_v = false;
+
+  template <class I>
+  inline constexpr bool is_to_utf_subrange_v<std::ranges::subrange<I, I, std::ranges::subrange_kind::unsized>> =
+    requires { typename I::is_to_utf_view_iterator; };
+
   template <to_utf_view_error_kind E, exposition_only_code_unit ToType>
   struct to_utf_impl : std::ranges::range_adaptor_closure<to_utf_impl<E, ToType>> {
     template <std::ranges::range R>
@@ -867,7 +883,14 @@ namespace detail {
         } else {
           return std::ranges::empty_view<std::expected<ToType, utf_transcoding_error>>{};
         }
-      } else {
+      } else if constexpr (detail::is_to_utf_view_v<T>) {
+        return to_utf_view(std::forward<R>(r).base(), detail::nontype<E>, to_utf_tag<ToType>);
+      } else if constexpr (detail::is_to_utf_subrange_v<T>) {
+        return to_utf_view(
+            std::ranges::subrange(r.begin().base(), r.end().base()),
+            detail::nontype<E>,
+            to_utf_tag<ToType>);
+      }  else {
         return to_utf_view(std::forward<R>(r), detail::nontype<E>, to_utf_tag<ToType>);
       }
     }
