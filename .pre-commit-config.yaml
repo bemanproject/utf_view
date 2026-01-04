@@ -21,4 +21,4 @@ repos:
     hooks:
       - id: codespell
 
-exclude: 'paper/'
+exclude: 'papers/'
