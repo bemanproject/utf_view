@@ -14,10 +14,10 @@ on:
 
 jobs:
   beman-submodule-check:
-    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-submodule-check.yml@1.0.0
+    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-submodule-check.yml@1.2.1
 
   preset-test:
-    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-preset-test.yml@1.0.0
+    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-preset-test.yml@1.2.1
     with:
       matrix_config: >
         [
@@ -28,7 +28,7 @@ jobs:
         ]
 
   build-and-test:
-    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-build-and-test.yml@1.0.0
+    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-build-and-test.yml@1.2.1
     with:
       matrix_config: >
         {
@@ -102,11 +102,13 @@ jobs:
           ]
         }
 
+  install-test:
+    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-install-test.yml@1.2.1
+    with:
+      image: ghcr.io/bemanproject/infra-containers-gcc:latest
+      cxx_standard: 26
+
   create-issue-when-fault:
     needs: [preset-test, build-and-test]
     if: failure() && github.event.schedule == '20 19 * * *'
-    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-create-issue-when-fault.yml@1.0.0
-
-  auto-update-pre-commit:
-    if: github.event.schedule == '00 16 * * 0'
-    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-update-pre-commit.yml@1.0.0
+    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-create-issue-when-fault.yml@1.2.1
