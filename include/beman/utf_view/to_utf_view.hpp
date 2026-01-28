@@ -8,10 +8,91 @@
 #ifndef BEMAN_UTF_VIEW_TO_UTF_VIEW_HPP
 #define BEMAN_UTF_VIEW_TO_UTF_VIEW_HPP
 
-#include <beman/utf_view/detail/concepts.hpp>
-#include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
-#include <beman/utf_view/detail/fake_inplace_vector.hpp>
-#include <beman/utf_view/detail/nontype_t_polyfill.hpp>
+#include <iterator>
+#include <ranges>
+#include <type_traits>
+
+namespace beman::utf_view {
+
+/* PAPER */
+
+template <class T>
+concept exposition_only_code_unit = std::same_as<std::remove_cv_t<T>, char8_t> ||
+    std::same_as<std::remove_cv_t<T>, char16_t> ||
+    std::same_as<std::remove_cv_t<T>, char32_t>;
+
+/* !PAPER */
+
+namespace detail {
+
+  template <class T>
+  constexpr bool is_empty_view = false;
+  template <class T>
+  constexpr bool is_empty_view<std::ranges::empty_view<T>> = true;
+
+  template <typename T>
+  concept is_not_array_of_char =
+    !(std::is_array_v<std::remove_cvref_t<T>> &&
+      exposition_only_code_unit<std::remove_extent_t<std::remove_cvref_t<T>>>);
+
+} // namespace detail
+
+/* PAPER: namespace std::ranges { */
+
+template <bool Const, class T>
+using exposition_only_maybe_const =
+    std::conditional_t<Const, const T, T>; // exposition only
+
+} // namespace beman::utf_view
+
+/* PAPER: } */
+
+#define CONSTEXPR_UNLESS_MSVC constexpr
+
+namespace beman::utf_view::detail {
+
+template <typename T, std::size_t N>
+class fake_inplace_vector {
+public:
+  constexpr fake_inplace_vector() = default;
+  constexpr fake_inplace_vector(std::initializer_list<T> init)
+  {
+    std::ranges::copy(init, storage_);
+  }
+
+  constexpr std::size_t size() const {
+    return size_;
+  }
+  constexpr void clear() {
+    size_ = 0;
+  }
+  constexpr void push_back(T t) {
+    storage_[size_++] = t;
+  }
+  constexpr T operator[](std::size_t n) const {
+    return storage_[n];
+  }
+  T* begin() {
+    return &storage_[0];
+  }
+  T* end() {
+    return &storage_[size_];
+  }
+
+private:
+  T storage_[N];
+  size_t size_{};
+};
+
+template<auto V>
+struct nontype_t {
+  explicit nontype_t() = default;
+};
+
+template<auto V> constexpr nontype_t<V> nontype{};
+
+} // namespace beman::utf_view::detail
+
 #include <bit>
 #include <cassert>
 #include <concepts>
