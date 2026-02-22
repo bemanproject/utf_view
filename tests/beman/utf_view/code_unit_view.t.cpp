@@ -112,23 +112,6 @@ constexpr bool special_case_test() {
   auto empty_char8_view{empty_int_view | as_char8_t};
   static_assert(
       std::is_same_v<decltype(empty_char8_view), std::ranges::empty_view<char8_t>>);
-  auto char_string_literal_as_char8_view{"foo" | as_char8_t};
-  auto char_string_literal_as_char8_view_it{char_string_literal_as_char8_view.begin()};
-  if (*char_string_literal_as_char8_view_it != u8'f') {
-    return false;
-  }
-  ++char_string_literal_as_char8_view_it;
-  if (*char_string_literal_as_char8_view_it != u8'o') {
-    return false;
-  }
-  ++char_string_literal_as_char8_view_it;
-  if (*char_string_literal_as_char8_view_it != u8'o') {
-    return false;
-  }
-  ++char_string_literal_as_char8_view_it;
-  if (char_string_literal_as_char8_view_it != char_string_literal_as_char8_view.end()) {
-    return false;
-  }
   return true;
 }
 

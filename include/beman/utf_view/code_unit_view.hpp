@@ -39,21 +39,11 @@ namespace detail {
       : std::ranges::range_adaptor_closure<as_code_unit_impl<Char>> {
     template <std::ranges::range R>
       requires std::convertible_to<std::ranges::range_reference_t<R>, Char> &&
-               is_not_array_of_char<R>
+               (!std::is_array_v<std::remove_cvref_t<R>>)
     constexpr auto operator()(R&& r) const {
       using T = std::remove_cvref_t<R>;
       if constexpr (detail::is_empty_view<T>) {
         return std::ranges::empty_view<Char>{};
-      } else if constexpr (std::is_bounded_array_v<T>) {
-        constexpr auto n = std::extent_v<T>;
-        auto first{std::ranges::begin(r)};
-        auto last{std::ranges::end(r)};
-        if (n && !r[n - 1]) {
-          --last;
-        }
-        std::ranges::subrange subrange(first, last);
-        return beman::transform_view::transform_view(
-            std::move(subrange), exposition_only_implicit_cast_to<Char>{});
       } else {
         return beman::transform_view::transform_view(
             std::move(r), exposition_only_implicit_cast_to<Char>{});
