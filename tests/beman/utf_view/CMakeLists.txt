@@ -12,6 +12,7 @@ add_library(
     STATIC
     code_unit_view.t.cpp
     detail/concepts.t.cpp
+    endian_view.t.cpp
     framework.cpp
     null_term.t.cpp
     std_archetypes/exposition_only.t.cpp
