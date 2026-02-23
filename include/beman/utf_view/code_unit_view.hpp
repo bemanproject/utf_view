@@ -46,7 +46,7 @@ namespace detail {
         return std::ranges::empty_view<Char>{};
       } else {
         return beman::transform_view::transform_view(
-            std::move(r), exposition_only_implicit_cast_to<Char>{});
+            std::forward<R>(r), exposition_only_implicit_cast_to<Char>{});
       }
     }
   };

@@ -115,11 +115,23 @@ constexpr bool special_case_test() {
   return true;
 }
 
+constexpr bool value_category_test() {
+  std::string foo{"foo"};
+  (void)(foo | as_char8_t);
+  if (foo.empty()) {
+    return false;
+  }
+  return true;
+}
+
 CONSTEXPR_UNLESS_MSVC bool code_unit_view_test() {
   if (!smoke_test()) {
     return false;
   }
   if (!special_case_test()) {
+    return false;
+  }
+  if (!value_category_test()) {
     return false;
   }
   return true;
