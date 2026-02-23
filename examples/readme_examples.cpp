@@ -289,7 +289,5 @@ void foo(std::ranges::view auto v) {
 
 int main(int, char const* argv[]) {
   foo(beman::utf_view::null_term(argv[1]) | beman::utf_view::as_char8_t | beman::utf_view::to_utf32);
-  beman::utf_view::examples::transcode_or_throw<char8_t, char16_t>(
-      u8"hi🙂" | std::views::take(5) | std::ranges::to<std::u8string>());
   return beman::utf_view::examples::readme_examples() ? EXIT_SUCCESS : EXIT_FAILURE;
 }

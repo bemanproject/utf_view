@@ -19,6 +19,7 @@ class fake_inplace_vector {
 public:
   constexpr fake_inplace_vector() = default;
   constexpr fake_inplace_vector(std::initializer_list<T> init)
+  : size_{init.size()}
   {
     std::ranges::copy(init, storage_);
   }

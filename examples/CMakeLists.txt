@@ -11,4 +11,8 @@ foreach(example ${ALL_EXAMPLES})
         beman.utf_view.examples.${example}
         PRIVATE beman::utf_view
     )
+    add_test(
+        NAME beman_utf_view_example_${example}
+        COMMAND beman.utf_view.examples.${example}
+    )
 endforeach()
