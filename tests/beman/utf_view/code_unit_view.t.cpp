@@ -99,7 +99,7 @@ static_assert(
 constexpr bool smoke_test() {
   std::string_view foo{"foo"};
   auto bar{foo | as_char8_t};
-  static_assert(std::ranges::borrowed_range<decltype(foo)>);
+  static_assert(std::ranges::borrowed_range<decltype(bar)>);
   auto baz{bar | std::ranges::to<std::u8string>()};
   if (baz != std::u8string_view{u8"foo"}) {
     return false;
