@@ -7,6 +7,7 @@
 
 #include <beman/utf_view/code_unit_view.hpp>
 #include <beman/utf_view/detail/fake_inplace_vector.hpp>
+#include <beman/utf_view/endian_view.hpp>
 #include <beman/utf_view/null_term.hpp>
 #include <beman/utf_view/to_utf_view.hpp>
 #include <algorithm>
@@ -230,6 +231,24 @@ std::basic_string<ToCharT> transcode_to(std::basic_string<FromCharT> const& inpu
   return input | to_utf<ToCharT> | std::ranges::to<std::basic_string<ToCharT>>();
 }
 
+#if __cpp_lib_ranges_chunk >= 202202L
+std::u8string parse_message_subset(
+    std::span<std::byte> message, std::size_t offset, std::size_t length) {
+  return std::span{message.begin() + offset, message.begin() + offset + length}
+         | std::views::chunk(2)
+         | std::views::transform(
+             [](const auto chunk) {
+               std::array<std::byte, 2> a{};
+               std::ranges::copy(chunk, a.begin());
+               return std::bit_cast<std::uint16_t>(a);
+             })
+         | from_big_endian
+         | as_char16_t
+         | to_utf8
+         | std::ranges::to<std::u8string>();
+}
+#endif
+
 bool readme_examples() {
   using namespace std::string_view_literals;
 #ifndef _MSC_VER
@@ -274,6 +293,16 @@ bool readme_examples() {
   if (transcode_to<char8_t, char32_t>(u8"foo") != U"foo") {
     return false;
   }
+#ifndef _MSC_VER // TODO: figure out why this test fails on MSVC
+#if __cpp_lib_ranges_chunk >= 202202L
+  std::array<std::byte, 6> message{
+    std::byte{0x12}, std::byte{0xD8}, std::byte{0x3D}, std::byte{0xDE}, std::byte{0x42},
+    std::byte{0x34}};
+  if (!std::ranges::equal(u8"\xf0\x9f\x99\x82"sv, parse_message_subset(message, 1, 4))) {
+    return false;
+  }
+#endif
+#endif
   return true;
 }
 
