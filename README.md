@@ -20,6 +20,10 @@ Distributed under the Boost Software License, Version 1.0.
 
 **Status**: [Under development and not yet ready for production use.](https://github.com/bemanproject/beman/blob/main/docs/beman_library_maturity_model.md#under-development-and-not-yet-ready-for-production-use)
 
+## License
+
+beman.utf_view is licensed under BSL 1.0.
+
 ## Examples
 
 Transcoding a UTF-8 string literal to a `std::u32string`:
@@ -144,44 +148,70 @@ Note: Building with Clang and libstdc++ is not currently supported due to variou
 This project supports [GitHub Codespace](https://github.com/features/codespaces)
 via [Development Containers](https://containers.dev/),
 which allows rapid development and instant hacking in your browser.
-We recommend you using GitHub codespace to explore this project as this
+We recommend using GitHub codespace to explore this project as it
 requires minimal setup.
 
-You can create a codespace for this project by clicking this badge:
+Click the following badge to create a codespace:
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/bemanproject/utf_view)
 
-For more detailed documentation regarding creating and developing inside of
-GitHub codespaces, please reference [this doc](https://docs.github.com/en/codespaces/).
+For more documentation on GitHub codespaces, please see
+[this doc](https://docs.github.com/en/codespaces/).
 
 > [!NOTE]
 >
-> The codespace container may take up to 5 minutes to build and spin-up,
-> this is normal as we need to build a custom docker container to setup
-> an environment appropriate for beman projects.
+> The codespace container may take up to 5 minutes to build and spin-up; this is normal.
 
 ### Develop locally on your machines
 
 <details>
-<summary> For Linux based systems </summary>
+<summary> For Linux </summary>
 
 Beman libraries require [recent versions of CMake](#build-environment),
-we advise you to download CMake directly from [CMake's website](https://cmake.org/download/)
-or install it via the [Kitware apt library](https://apt.kitware.com/).
+we recommend downloading CMake directly from [CMake's website](https://cmake.org/download/)
+or installing it with the [Kitware apt library](https://apt.kitware.com/).
 
 A [supported compiler](#supported-platforms) should be available from your package manager.
-Alternatively you could use an install script from official compiler vendors.
 
-Here is an example of how to install the latest stable version of clang
-as per [the official LLVM install guide](https://apt.llvm.org/).
+</details>
+
+<details>
+<summary> For MacOS </summary>
+
+Beman libraries require [recent versions of CMake](#build-environment).
+Use [`Homebrew`](https://brew.sh/) to install the latest version of CMake.
 
 ```bash
-bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+brew install cmake
 ```
 
-The precise command and package name will vary depending on the Linux OS you are
-using. Be sure to consult documentation and the package repository for the system
-you are using.
+A [supported compiler](#supported-platforms) is also available from brew.
+
+For example, you can install the latest major release of Clang as:
+
+```bash
+brew install llvm
+```
+
+</details>
+
+<details>
+<summary> For Windows </summary>
+
+To build Beman libraries, you will need the MSVC compiler. MSVC can be obtained
+by installing Visual Studio; the free Visual Studio 2022 Community Edition can
+be downloaded from
+[Microsoft](https://visualstudio.microsoft.com/vs/community/).
+
+After Visual Studio has been installed, you can launch "Developer PowerShell for
+VS 2022" by typing it into Windows search bar. This shell environment will
+provide CMake, Ninja, and MSVC, allowing you to build the library and run the
+tests.
+
+Note that you will need to use FetchContent to build GoogleTest. To do so,
+please see the instructions in the "Build GoogleTest dependency from github.com"
+dropdown in the [Project specific configure
+arguments](#project-specific-configure-arguments) section.
 
 </details>
 
@@ -201,28 +231,31 @@ cmake --workflow --preset gcc-debug
 Generally, there are two kinds of presets, `debug` and `release`.
 
 The `debug` presets are designed to aid development, so it has debugging
-instrumentation enabled and as many sanitizers turned on as possible.
+instrumentation enabled and many sanitizers enabled.
 
 > [!NOTE]
 >
-> The set of sanitizer supports are different across compilers.
-> You can checkout the exact set of compiler arguments by looking at the toolchain
-> files under the [`cmake`](cmake/) directory.
+> The sanitizers that are enabled vary from compiler to compiler.
+> See the toolchain files under ([`cmake`](cmake/)) to determine the exact configuration used for each preset.
 
-The `release` presets are designed for use in production environments,
-thus they have the highest optimization turned on (e.g. `O3`).
+The `release` presets are designed for production use, and
+consequently have the highest optimization turned on (e.g. `O3`).
 
 ### Configure and Build Manually
 
-While [CMake Presets](#configure-and-build-the-project-using-cmake-presets) are
-convenient, you might want to set different configuration or compiler arguments
-than any provided preset supports.
+If the presets are not suitable for your use-case, a traditional CMake
+invocation will provide more configurability.
 
 To configure, build and test the project with extra arguments,
 you can run this set of commands.
 
 ```bash
-cmake -B build -S . -DCMAKE_CXX_STANDARD=23 # Your extra arguments here.
+cmake \
+  -B build \
+  -S . \
+  -DCMAKE_CXX_STANDARD=20 \
+  -DCMAKE_PREFIX_PATH=$PWD/infra/cmake \
+  # Your extra arguments here.
 cmake --build build
 ctest --test-dir build
 ```
@@ -237,14 +270,11 @@ ctest --test-dir build
 
 ### Project specific configure arguments
 
-When configuring the project manually,
-you can pass an array of project specific CMake configs to customize your build.
-
-Project specific options are prefixed with `BEMAN_UTF_VIEW`.
+Project-specific options are prefixed with `BEMAN_UTF_VIEW`.
 You can see the list of available options with:
 
 ```bash
-cmake -LH | grep "BEMAN_UTF_VIEW" -C 2
+cmake -LH -S . -B build | grep "BEMAN_UTF_VIEW" -C 2
 ```
 
 <details>
@@ -254,7 +284,7 @@ cmake -LH | grep "BEMAN_UTF_VIEW" -C 2
 #### `BEMAN_UTF_VIEW_BUILD_TESTS`
 
 Enable building tests and test infrastructure. Default: ON.
-Values: { ON, OFF }.
+Values: `{ ON, OFF }`.
 
 You can configure the project to have this option turned off via:
 
@@ -265,6 +295,14 @@ cmake -B build -S . -DCMAKE_CXX_STANDARD=20 -DBEMAN_UTF_VIEW_BUILD_TESTS=OFF
 #### `BEMAN_UTF_VIEW_BUILD_EXAMPLES`
 
 Enable building examples. Default: ON. Values: { ON, OFF }.
+
+#### `BEMAN_UTF_VIEW_INSTALL_CONFIG_FILE_PACKAGE`
+
+Enable installing the CMake config file package. Default: ON.
+Values: { ON, OFF }.
+
+This is required so that users of `beman.utf_view` can use
+`find_package(beman.utf_view)` to locate the library.
 
 #### `BEMAN_UTF_VIEW_BUILD_PAPER`
 
@@ -283,14 +321,14 @@ include an appropriate `beman.utf_view` header from your source code.
 
 > [!NOTE]
 >
-> `beman.utf_view` headers are to be included with the `beman/utf_view/` directories prefixed.
-> It is not supported to alter include search paths to spell the include target another way. For instance,
-> `#include <utf_view.hpp>` is not a supported interface.
+> `beman.utf_view` headers are to be included with the `beman/utf_view/` prefix.
+> Altering include search paths to spell the include target another way (e.g.
+> `#include <utf_view.hpp>`) is unsupported.
 
-How you will link your project against `beman.utf_view` will depend on your build system.
-CMake instructions are provided in following sections.
+The process for incorporating `beman.utf_view` into your project depends on the
+build system being used. Instructions for CMake are provided in following sections.
 
-### Linking your project to beman.utf_view with CMake
+### Incorporating `beman.utf_view` into your project with CMake
 
 For CMake based projects,
 you will need to use the `beman.utf_view` CMake module
@@ -301,33 +339,36 @@ find_package(beman.utf_view REQUIRED)
 ```
 
 You will also need to add `beman::utf_view` to the link libraries of
-any libraries or executables that include beman.utf_view's header file.
+any libraries or executables that include `beman.utf_view` headers.
 
 ```cmake
 target_link_libraries(yourlib PUBLIC beman::utf_view)
 ```
 
-### Produce beman.utf_view static library locally
+### Produce beman.utf_view interface library
 
-You can include utf_view's headers locally
-by producing a static `libbeman.utf_view.a` library.
+You can produce utf_view's interface library locally by:
 
 ```bash
 cmake --workflow --preset gcc-release
-cmake --install build/gcc-release --prefix /opt/beman.utf_view
+cmake --install build/gcc-release --prefix /opt/beman
 ```
 
-This will generate such directory structure at `/opt/beman.utf_view`.
+This will generate the following directory structure at `/opt/beman`.
 
 ```txt
-/opt/beman.utf_view
+/opt/beman
 ├── include
 │   └── beman
 │       └── utf_view
 │           ├── // ...
 │           └── utf_view.hpp
 └── lib
-    └── libbeman.utf_view.a
+    └── cmake
+        └── beman.utf_view
+            ├── beman.utf_view-config-version.cmake
+            ├── beman.utf_view-config.cmake
+            └── beman.utf_view-targets.cmake
 ```
 
 ## Paper
@@ -344,7 +385,3 @@ beman.utf_view is based on P2728 and P3705.
 ## Authors
 
 The implementation of P2728 is a fork by Eddie Nolan of the implementation of P2728R6 in libstdc++ by Jonathan Wakely at [`gcc/libstdc++-v3/include/bits/unicode.h`](https://gcc.gnu.org/git/?p=gcc.git;a=blob;f=libstdc%2B%2B-v3/include/bits/unicode.h;h=66f8399fdfb05d85fcdb37fa9ec7c4089feb7a7d;hb=37a4c5c23a27).
-
-## License
-
-beman.utf_view is licensed under BSL 1.0.
