@@ -8,10 +8,12 @@
 #ifndef BEMAN_UTF_VIEW_DETAIL_CONCEPTS_HPP
 #define BEMAN_UTF_VIEW_DETAIL_CONCEPTS_HPP
 
+#ifndef BEMAN_HAS_MODULES
 #include <concepts>
 #include <iterator>
 #include <ranges>
 #include <type_traits>
+#endif
 
 namespace beman::utf_view {
 

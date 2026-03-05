@@ -6,6 +6,14 @@
 #          https://www.boost.org/LICENSE_1_0.txt)
 
 cmake_minimum_required(VERSION 3.28...4.2)
+
+# TODO: Set BEMAN_USE_MODULES if one of a particular set of compiler versions is being used
+
+if (BEMAN_USE_MODULES)
+  set(CMAKE_CXX_SCAN_FOR_MODULES ON)
+  set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444")
+endif()
+
 project(
     beman.utf_view
     DESCRIPTION "C++29 UTF Transcoding Views"
@@ -47,6 +55,9 @@ target_sources(
 set_target_properties(beman.utf_view PROPERTIES VERIFY_INTERFACE_HEADER_SETS ON)
 
 add_subdirectory(include/beman/utf_view)
+if (BEMAN_USE_MODULES)
+    add_subdirectory(src/beman/utf_view)
+endif()
 
 include(CTest)
 

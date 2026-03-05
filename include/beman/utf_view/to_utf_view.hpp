@@ -12,6 +12,7 @@
 #include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
 #include <beman/utf_view/detail/fake_inplace_vector.hpp>
 #include <beman/utf_view/detail/nontype_t_polyfill.hpp>
+#ifndef BEMAN_HAS_MODULES
 #include <bit>
 #include <cassert>
 #include <concepts>
@@ -22,6 +23,7 @@
 #include <optional>
 #include <type_traits>
 #include <utility>
+#endif
 
 namespace beman::utf_view {
 
@@ -108,15 +110,15 @@ constexpr to_utf_tag_t<ToType> to_utf_tag{};
 
 using to_utf8_tag_t = to_utf_tag_t<char8_t>;
 
-constexpr to_utf8_tag_t to_utf8_tag{};
+inline constexpr to_utf8_tag_t to_utf8_tag{};
 
 using to_utf16_tag_t = to_utf_tag_t<char16_t>;
 
-constexpr to_utf16_tag_t to_utf16_tag{};
+inline constexpr to_utf16_tag_t to_utf16_tag{};
 
 using to_utf32_tag_t = to_utf_tag_t<char32_t>;
 
-constexpr to_utf32_tag_t to_utf32_tag{};
+inline constexpr to_utf32_tag_t to_utf32_tag{};
 
 template <std::ranges::input_range V, to_utf_view_error_kind E, exposition_only_code_unit ToType>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
@@ -242,7 +244,7 @@ public:
   using value_type =
       std::conditional_t<E == to_utf_view_error_kind::expected, std::expected<ToType, utf_transcoding_error>, ToType>;
   using reference_type = value_type;
-  using difference_type = ptrdiff_t;
+  using difference_type = std::ptrdiff_t;
 
 private:
 /* !PAPER */

@@ -8,8 +8,10 @@
 #ifndef BEMAN_UTF_VIEW_NONTYPE_T_POLYFILL_HPP
 #define BEMAN_UTF_VIEW_NONTYPE_T_POLYFILL_HPP
 
+#ifndef BEMAN_HAS_MODULES
 #include <utility>
 #include <version>
+#endif
 
 namespace beman::utf_view::detail {
 

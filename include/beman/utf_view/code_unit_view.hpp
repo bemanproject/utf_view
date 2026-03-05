@@ -9,9 +9,11 @@
 #define BEMAN_UTF_VIEW_CODE_UNIT_VIEW_HPP
 
 #include <beman/utf_view/detail/concepts.hpp>
+#ifndef BEMAN_HAS_MODULES
 #include <beman/transform_view/transform_view.hpp>
 #include <ranges>
 #include <type_traits>
+#endif
 
 namespace beman::utf_view {
 

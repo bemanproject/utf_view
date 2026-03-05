@@ -8,9 +8,11 @@
 #ifndef BEMAN_UTF_VIEW_NULL_TERM_HPP
 #define BEMAN_UTF_VIEW_NULL_TERM_HPP
 
+#ifndef BEMAN_HAS_MODULES
 #include <concepts>
 #include <ranges>
 #include <utility>
+#endif
 
 namespace beman::utf_view {
 

@@ -30,3 +30,13 @@ target_link_libraries(
 )
 
 add_test(NAME beman_utf_view_test COMMAND beman_utf_view_test)
+
+add_executable(beman.utf_view.tests.module_smoke_test)
+target_sources(
+    beman.utf_view.tests.module_smoke_test
+    PRIVATE module_smoke_test.test.cpp
+)
+target_link_libraries(
+    beman.utf_view.tests.module_smoke_test
+    PRIVATE beman::utf_view.module
+)
