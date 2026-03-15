@@ -126,16 +126,13 @@ when configuring the project.
 
 ### Supported Platforms
 
-This project officially supports:
-
-- GCC 14
-- GCC 15
-- Clang 19/libc++
-- Clang 20/libc++
-- Clang 21/libc++
-- MSVC 19.41
-
-Note: Building with Clang and libstdc++ is not currently supported due to various bugs.
+| Compiler | Version | C++ Standards | Standard Library |
+|----------|---------|---------------|------------------|
+| GCC      | 15-14   | C++26, C++23  | libstdc++        |
+| GCC      | trunk   | C++26, C++23  | libstdc++        |
+| Clang    | 22-19   | C++26, C++23  | libc++           |
+| Clang    | trunk   | C++26, C++23  | libc++           |
+| MSVC     | latest  | C++23         | MSVC STL         |
 
 ## Development
 
