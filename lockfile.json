@@ -2,7 +2,7 @@
   "dependencies": [
     {
       "name": "transform_view",
-      "package_name": "beman::transform_view",
+      "package_name": "beman.transform_view",
       "git_repository": "https://github.com/bemanproject/transform_view.git",
       "git_tag": "82e982882c79004ce748b32c3bd6481def185bb5"
     }
