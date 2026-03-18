@@ -39,7 +39,7 @@ option(
     ${PROJECT_IS_TOP_LEVEL}
 )
 
-find_package(beman::transform_view REQUIRED)
+find_package(beman.transform_view REQUIRED)
 
 add_subdirectory(src/beman/utf_view)
 
