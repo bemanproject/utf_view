@@ -11,13 +11,13 @@ repos:
 
     # CMake linting and formatting
   - repo: https://github.com/BlankSpruce/gersemi
-    rev: 0.22.3
+    rev: 0.26.1
     hooks:
     - id: gersemi
       name: CMake linting
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.1
+    rev: v2.4.2
     hooks:
       - id: codespell
 
