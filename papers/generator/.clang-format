@@ -4,7 +4,7 @@ AlwaysBreakTemplateDeclarations: Yes
 AlignAfterOpenBracket: Align
 AllowShortFunctionsOnASingleLine: All
 BreakConstructorInitializers: AfterColon
-Cpp11BracedListStyle: True
+Cpp11BracedListStyle: FunctionCall
 SpaceBeforeCpp11BracedList: False
 BreakBeforeBraces: Attach
 AllowShortEnumsOnASingleLine: False
