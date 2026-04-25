@@ -5,6 +5,7 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+#include <beman/utf_view/detail/constant_wrapper_polyfill.hpp>
 #include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
 #include <beman/utf_view/null_term.hpp>
 #include <beman/utf_view/to_utf_view.hpp>
@@ -871,7 +872,7 @@ constexpr bool empty_test() {
     std::is_same_v<
         decltype(std::views::empty<char8_t> | to_utf8_or_error),
         std::ranges::empty_view<std::expected<char8_t, utf_transcoding_error>>>);
-  auto empty_utf{to_utf_view{std::views::empty<char8_t>, detail::nontype<to_utf_view_error_kind::replacement>, to_utf8_tag}};
+  auto empty_utf{to_utf_view{std::views::empty<char8_t>, detail::cw<to_utf_view_error_kind::replacement>, to_utf8_tag}};
   if (!empty_utf.empty()) {
     return false;
   }
