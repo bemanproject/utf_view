@@ -22,9 +22,9 @@ target_sources(
             FILES
                 ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/beman/utf_view/code_unit_view.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/beman/utf_view/detail/concepts.hpp
+                ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/beman/utf_view/detail/constant_wrapper_polyfill.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/beman/utf_view/detail/constexpr_unless_msvc.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/beman/utf_view/detail/fake_inplace_vector.hpp
-                ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/beman/utf_view/detail/nontype_t_polyfill.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/beman/utf_view/endian_view.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/beman/utf_view/null_term.hpp
                 ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/beman/utf_view/to_utf_view.hpp

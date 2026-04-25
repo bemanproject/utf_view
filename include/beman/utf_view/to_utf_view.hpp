@@ -11,7 +11,7 @@
 #include <beman/utf_view/detail/concepts.hpp>
 #include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
 #include <beman/utf_view/detail/fake_inplace_vector.hpp>
-#include <beman/utf_view/detail/nontype_t_polyfill.hpp>
+#include <beman/utf_view/detail/constant_wrapper_polyfill.hpp>
 #include <bit>
 #include <cassert>
 #include <concepts>
@@ -131,9 +131,13 @@ public:
   constexpr to_utf_view()
     requires std::default_initializable<V>
   = default;
-  /* PAPER:   constexpr explicit to_utf_view(V base, nontype_t<E>, to_utf_tag_t<ToType>); */
+  /* PAPER:   template <auto E2> */
+  /* PAPER:     constexpr explicit to_utf_view(V base, constant_wrapper<E2, to_utf_view_error_kind>, to_utf_tag_t<ToType>) */
+  /* PAPER:       requires (constant_wrapper<E2, to_utf_view_error_kind>::value == E); */
   /* !PAPER */
-  constexpr explicit to_utf_view(V base, detail::nontype_t<E>, to_utf_tag_t<ToType>)
+  template <auto E2>
+  constexpr explicit to_utf_view(V base, detail::constant_wrapper<E2, to_utf_view_error_kind>, to_utf_tag_t<ToType>)
+    requires (detail::constant_wrapper<E2, to_utf_view_error_kind>::value == E)
       : base_(std::move(base)) { }
   /* PAPER */
 
@@ -202,8 +206,8 @@ public:
   /* PAPER */
 };
 
-template <class R, to_utf_view_error_kind E, exposition_only_code_unit ToType>
-to_utf_view(R&&, detail::nontype_t<E>, to_utf_tag_t<ToType>) -> to_utf_view<std::views::all_t<R>, E, ToType>;
+template <class R, auto E2, exposition_only_code_unit ToType>
+to_utf_view(R&&, detail::constant_wrapper<E2, to_utf_view_error_kind>, to_utf_tag_t<ToType>) -> to_utf_view<std::views::all_t<R>, detail::constant_wrapper<E2, to_utf_view_error_kind>::value, ToType>;
 
 template <std::ranges::input_range V, to_utf_view_error_kind E, exposition_only_code_unit ToType>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
@@ -884,14 +888,14 @@ namespace detail {
           return std::ranges::empty_view<std::expected<ToType, utf_transcoding_error>>{};
         }
       } else if constexpr (detail::is_to_utf_view_v<T>) {
-        return to_utf_view(std::forward<R>(r).base(), detail::nontype<E>, to_utf_tag<ToType>);
+        return to_utf_view(std::forward<R>(r).base(), detail::cw<E>, to_utf_tag<ToType>);
       } else if constexpr (detail::is_to_utf_subrange_v<T>) {
         return to_utf_view(
             std::ranges::subrange(r.begin().base(), r.end().base()),
-            detail::nontype<E>,
+            detail::cw<E>,
             to_utf_tag<ToType>);
-      }  else {
-        return to_utf_view(std::forward<R>(r), detail::nontype<E>, to_utf_tag<ToType>);
+      } else {
+        return to_utf_view(std::forward<R>(r), detail::cw<E>, to_utf_tag<ToType>);
       }
     }
   };
