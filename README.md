@@ -11,6 +11,11 @@ Distributed under the Boost Software License, Version 1.0.
 
 ![Library Status](https://raw.githubusercontent.com/bemanproject/beman/refs/heads/main/images/badges/beman_badge-beman_library_under_development.svg) ![Continuous Integration Tests](https://github.com/bemanproject/utf_view/actions/workflows/ci_tests.yml/badge.svg) ![Lint Check (pre-commit)](https://github.com/bemanproject/utf_view/actions/workflows/pre-commit.yml/badge.svg) [![Coverage](https://coveralls.io/repos/github/bemanproject/utf_view/badge.svg?branch=main)](https://coveralls.io/github/bemanproject/utf_view?branch=main) ![Standard Target](https://github.com/bemanproject/beman/blob/main/images/badges/cpp29.svg)
 
+
+## License
+
+beman.exemplar is licensed under the Boost Software License 1.0.
+
  C++29 UTF transcoding features:
 - Transcoding UTF views `to_utf8`, `to_utf16`, and `to_utf32`
 - `null_sentinel` sentinel and `null_term` CPO for creating views of null-terminated strings
