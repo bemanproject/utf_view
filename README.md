@@ -14,7 +14,7 @@ Distributed under the Boost Software License, Version 1.0.
 
 ## License
 
-beman.exemplar is licensed under the Boost Software License 1.0.
+beman.utf_view is licensed under the Boost Software License 1.0.
 
  C++29 UTF transcoding features:
 - Transcoding UTF views `to_utf8`, `to_utf16`, and `to_utf32`
