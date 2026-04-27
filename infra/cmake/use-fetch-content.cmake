@@ -15,8 +15,7 @@ message(TRACE "BemanExemplar_projectDir=\"${BemanExemplar_projectDir}\"")
 
 message(TRACE "BEMAN_EXEMPLAR_LOCKFILE=\"${BEMAN_EXEMPLAR_LOCKFILE}\"")
 file(
-    REAL_PATH
-    "${BEMAN_EXEMPLAR_LOCKFILE}"
+    REAL_PATH "${BEMAN_EXEMPLAR_LOCKFILE}"
     BemanExemplar_lockfile
     BASE_DIRECTORY "${BemanExemplar_projectDir}"
     EXPAND_TILDE
@@ -38,8 +37,7 @@ function(BemanExemplar_provideDependency method package_name)
 
     # Get the "dependencies" field and store it in BemanExemplar_dependenciesObj
     string(
-        JSON
-        BemanExemplar_dependenciesObj
+        JSON BemanExemplar_dependenciesObj
         ERROR_VARIABLE BemanExemplar_error
         GET "${BemanExemplar_rootObj}"
         "dependencies"
@@ -50,8 +48,7 @@ function(BemanExemplar_provideDependency method package_name)
 
     # Get the length of the libraries array and store it in BemanExemplar_dependenciesObj
     string(
-        JSON
-        BemanExemplar_numDependencies
+        JSON BemanExemplar_numDependencies
         ERROR_VARIABLE BemanExemplar_error
         LENGTH "${BemanExemplar_dependenciesObj}"
     )
@@ -73,8 +70,7 @@ function(BemanExemplar_provideDependency method package_name)
         # Get the dependency object at BemanExemplar_index
         # and store it in BemanExemplar_depObj
         string(
-            JSON
-            BemanExemplar_depObj
+            JSON BemanExemplar_depObj
             ERROR_VARIABLE BemanExemplar_error
             GET "${BemanExemplar_dependenciesObj}"
             "${BemanExemplar_index}"
@@ -88,8 +84,7 @@ function(BemanExemplar_provideDependency method package_name)
 
         # Get the "name" field and store it in BemanExemplar_name
         string(
-            JSON
-            BemanExemplar_name
+            JSON BemanExemplar_name
             ERROR_VARIABLE BemanExemplar_error
             GET "${BemanExemplar_depObj}"
             "name"
@@ -103,8 +98,7 @@ function(BemanExemplar_provideDependency method package_name)
 
         # Get the "package_name" field and store it in BemanExemplar_pkgName
         string(
-            JSON
-            BemanExemplar_pkgName
+            JSON BemanExemplar_pkgName
             ERROR_VARIABLE BemanExemplar_error
             GET "${BemanExemplar_depObj}"
             "package_name"
@@ -118,8 +112,7 @@ function(BemanExemplar_provideDependency method package_name)
 
         # Get the "git_repository" field and store it in BemanExemplar_repo
         string(
-            JSON
-            BemanExemplar_repo
+            JSON BemanExemplar_repo
             ERROR_VARIABLE BemanExemplar_error
             GET "${BemanExemplar_depObj}"
             "git_repository"
@@ -133,8 +126,7 @@ function(BemanExemplar_provideDependency method package_name)
 
         # Get the "git_tag" field and store it in BemanExemplar_tag
         string(
-            JSON
-            BemanExemplar_tag
+            JSON BemanExemplar_tag
             ERROR_VARIABLE BemanExemplar_error
             GET "${BemanExemplar_depObj}"
             "git_tag"
@@ -149,14 +141,12 @@ function(BemanExemplar_provideDependency method package_name)
         if(method STREQUAL "FIND_PACKAGE")
             if(package_name STREQUAL BemanExemplar_pkgName)
                 string(
-                    APPEND
-                    BemanExemplar_debug
+                    APPEND BemanExemplar_debug
                     "Redirecting find_package calls for ${BemanExemplar_pkgName} "
                     "to FetchContent logic.\n"
                 )
                 string(
-                    APPEND
-                    BemanExemplar_debug
+                    APPEND BemanExemplar_debug
                     "Fetching ${BemanExemplar_repo} at "
                     "${BemanExemplar_tag} according to ${BemanExemplar_lockfile}."
                 )
@@ -167,8 +157,62 @@ function(BemanExemplar_provideDependency method package_name)
                     GIT_TAG "${BemanExemplar_tag}"
                     EXCLUDE_FROM_ALL
                 )
-                set(INSTALL_GTEST OFF) # Disable GoogleTest installation
+
+                # Apply per-dependency cmake_args from the lockfile
+                string(
+                    JSON BemanExemplar_cmakeArgs
+                    ERROR_VARIABLE BemanExemplar_cmakeArgsError
+                    GET "${BemanExemplar_depObj}"
+                    "cmake_args"
+                )
+                if(NOT BemanExemplar_cmakeArgsError)
+                    string(
+                        JSON BemanExemplar_numCmakeArgs
+                        LENGTH "${BemanExemplar_cmakeArgs}"
+                    )
+                    if(BemanExemplar_numCmakeArgs GREATER 0)
+                        math(
+                            EXPR
+                            BemanExemplar_maxArgIndex
+                            "${BemanExemplar_numCmakeArgs} - 1"
+                        )
+                        foreach(
+                            BemanExemplar_argIndex
+                            RANGE "${BemanExemplar_maxArgIndex}"
+                        )
+                            string(
+                                JSON BemanExemplar_argKey
+                                MEMBER "${BemanExemplar_cmakeArgs}"
+                                "${BemanExemplar_argIndex}"
+                            )
+                            string(
+                                JSON BemanExemplar_argValue
+                                GET "${BemanExemplar_cmakeArgs}"
+                                "${BemanExemplar_argKey}"
+                            )
+                            message(
+                                DEBUG
+                                "Setting ${BemanExemplar_argKey}=${BemanExemplar_argValue} for ${BemanExemplar_name}"
+                            )
+                            set("${BemanExemplar_argKey}"
+                                "${BemanExemplar_argValue}"
+                            )
+                        endforeach()
+                    endif()
+                endif()
+
                 FetchContent_MakeAvailable("${BemanExemplar_name}")
+
+                # Catch2's CTest integration module isn't on CMAKE_MODULE_PATH
+                # when brought in via FetchContent. Add it so that
+                # `include(Catch)` works.
+                if(BemanExemplar_pkgName STREQUAL "Catch2")
+                    list(
+                        APPEND CMAKE_MODULE_PATH
+                        "${${BemanExemplar_name}_SOURCE_DIR}/extras"
+                    )
+                    set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" PARENT_SCOPE)
+                endif()
 
                 # Important! <PackageName>_FOUND tells CMake that `find_package` is
                 # not needed for this package anymore
