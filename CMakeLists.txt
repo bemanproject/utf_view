@@ -53,8 +53,18 @@ target_link_libraries(beman.utf_view INTERFACE beman::transform_view)
 
 add_subdirectory(include/beman/utf_view)
 
-# TODO: Replace with beman_install_library once install with FetchContent deps is sorted out
-install(TARGETS beman.utf_view FILE_SET HEADERS)
+if(BEMAN_USE_FETCH_CONTENT_ENABLED)
+    beman_install_library(
+        beman.utf_view
+        TARGETS beman.utf_view beman.transform_view
+    )
+else()
+    beman_install_library(
+        beman.utf_view
+        TARGETS beman.utf_view
+        DEPENDENCIES "[===[beman.transform_view]===]"
+    )
+endif()
 configure_build_telemetry()
 
 if(BEMAN_UTF_VIEW_BUILD_TESTS)

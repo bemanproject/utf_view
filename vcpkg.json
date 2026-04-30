@@ -1,0 +1,7 @@
+{
+  "name": "beman-utf-view",
+  "version-semver": "0.1.0",
+  "dependencies": [
+    "beman-transform-view"
+  ]
+}
