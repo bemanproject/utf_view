@@ -166,6 +166,17 @@ For details on building beman.utf_view without using a CMake preset, refer to th
 
 ### Installation
 
+#### Vcpkg
+
+The preferred way to install utf_view is via vcpkg. To do so, after installing vcpkg
+itself, you need to add support for the Beman project's [vcpkg
+registry](https://github.com/bemanproject/vcpkg-registry) by configuring a
+`vcpkg-configuration.json` file (which utf_view [provides](vcpkg-configuration.json)).
+
+Then, simply run `vcpkg install beman-utf-view`.
+
+#### Manual
+
 To install beman.utf_view globally after building with the `gcc-release` preset, you can
 run:
 
