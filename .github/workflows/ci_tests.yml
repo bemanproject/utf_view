@@ -50,7 +50,7 @@ jobs:
                 }
               ]
             },
-            { "versions": ["15", "14"],
+            { "versions": ["16", "15", "14"],
               "tests": [
                 { "cxxversions": ["c++26", "c++23"],
                   "tests": [{ "stdlibs": ["libstdc++"], "tests": ["Release.Default"]}]
