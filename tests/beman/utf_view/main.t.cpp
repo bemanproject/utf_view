@@ -5,15 +5,19 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+#include <beman/utf_view/config.hpp>
 #include <framework.hpp>
-#include <cstdlib>
+#if BEMAN_UTF_VIEW_USE_MODULES()
+import std;
+#else
 #include <iostream>
+#endif
 
 int main() {
   for (auto& [test_name, test] : beman::utf_view::tests::framework::tests()) {
     if (!test()) {
       std::cerr << test_name << " failed";
-      return EXIT_FAILURE;
+      return 1;
     }
   }
 }

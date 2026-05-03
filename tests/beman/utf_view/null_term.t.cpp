@@ -5,14 +5,19 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+#include <beman/utf_view/config.hpp>
 #include <beman/utf_view/null_term.hpp>
 #include <std_archetypes/iterator.hpp>
+#if BEMAN_UTF_VIEW_USE_MODULES()
+import std;
+#else
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <ranges>
 #include <utility>
+#endif
 
 namespace beman::utf_view::tests {
 

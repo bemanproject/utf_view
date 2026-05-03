@@ -8,11 +8,16 @@
 #ifndef BEMAN_UTF_VIEW_TESTS_STD_ARCHETYPES_ITERATOR_HPP
 #define BEMAN_UTF_VIEW_TESTS_STD_ARCHETYPES_ITERATOR_HPP
 
+#include <beman/utf_view/config.hpp>
 #include <std_archetypes/exposition_only.hpp>
+#if BEMAN_UTF_VIEW_USE_MODULES()
+import std;
+#else
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
+#endif
 
 namespace beman::utf_view::tests::std_archetypes {
 

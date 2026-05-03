@@ -5,11 +5,15 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+#include <beman/utf_view/config.hpp>
 #include <beman/utf_view/code_unit_view.hpp>
 #include <beman/utf_view/detail/fake_inplace_vector.hpp>
 #include <beman/utf_view/endian_view.hpp>
 #include <beman/utf_view/null_term.hpp>
 #include <beman/utf_view/to_utf_view.hpp>
+#if BEMAN_UTF_VIEW_USE_MODULES()
+import std;
+#else
 #include <algorithm>
 #include <array>
 #include <cstdlib>
@@ -22,6 +26,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#endif
 
 namespace beman::utf_view::examples {
 
@@ -318,5 +323,5 @@ void foo(std::ranges::view auto v) {
 
 int main(int, char const* argv[]) {
   foo(beman::utf_view::null_term(argv[1]) | beman::utf_view::as_char8_t | beman::utf_view::to_utf32);
-  return beman::utf_view::examples::readme_examples() ? EXIT_SUCCESS : EXIT_FAILURE;
+  return beman::utf_view::examples::readme_examples() ? 0 : 1;
 }

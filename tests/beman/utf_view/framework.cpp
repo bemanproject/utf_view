@@ -5,9 +5,14 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+#include <beman/utf_view/config.hpp>
+#if BEMAN_UTF_VIEW_USE_MODULES()
+import std;
+#else
 #include <functional>
 #include <map>
 #include <string>
+#endif
 
 namespace beman::utf_view::tests {
 

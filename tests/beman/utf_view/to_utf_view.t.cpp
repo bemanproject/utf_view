@@ -5,12 +5,16 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+#include <beman/utf_view/config.hpp>
 #include <beman/utf_view/detail/constant_wrapper_polyfill.hpp>
 #include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
 #include <beman/utf_view/null_term.hpp>
 #include <beman/utf_view/to_utf_view.hpp>
 #include <framework.hpp>
 #include <test_iterators.hpp>
+#if BEMAN_UTF_VIEW_USE_MODULES()
+import std;
+#else
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
@@ -22,6 +26,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#endif
 
 namespace beman::utf_view::tests {
 

@@ -5,12 +5,16 @@
 //    (See accompanying file LICENSE.txt or copy at
 //          https://www.boost.org/LICENSE_1_0.txt)
 
+#include <beman/utf_view/config.hpp>
 #include <beman/utf_view/endian_view.hpp>
 #include <beman/utf_view/code_unit_view.hpp>
 #include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
 #include <beman/utf_view/to_utf_view.hpp>
 #include <framework.hpp>
 #include <test_iterators.hpp>
+#if BEMAN_UTF_VIEW_USE_MODULES()
+import std;
+#else
 #include <array>
 #include <bit>
 #include <cstdint>
@@ -18,6 +22,7 @@
 #include <ranges>
 #include <string_view>
 #include <vector>
+#endif
 
 namespace beman::utf_view::tests {
 
@@ -134,7 +139,7 @@ constexpr std::vector<std::uint32_t> utf16be_to_utf32be_before(
     const std::vector<std::uint16_t>& utf16be_data) {
   return utf16be_data
     | std::views::transform(
-        [](const uint16_t x) {
+        [](const std::uint16_t x) {
           if constexpr (std::endian::native == std::endian::little) {
             return std::byteswap(x);
           } else {
@@ -145,7 +150,7 @@ constexpr std::vector<std::uint32_t> utf16be_to_utf32be_before(
     | to_utf32
     | std::views::transform(
         [](const char32_t c) {
-          const auto x = static_cast<uint32_t>(c);
+          const auto x = static_cast<std::uint32_t>(c);
           if constexpr (std::endian::native == std::endian::little) {
             return std::byteswap(x);
           } else {
@@ -156,7 +161,7 @@ constexpr std::vector<std::uint32_t> utf16be_to_utf32be_before(
 }
 
 constexpr std::vector<std::uint32_t> utf16be_to_utf32be_after(
-    const std::vector<uint16_t>& utf16be_data) {
+    const std::vector<std::uint16_t>& utf16be_data) {
   return utf16be_data
     | from_big_endian
     | as_char16_t

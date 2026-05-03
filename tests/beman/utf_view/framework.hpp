@@ -8,9 +8,14 @@
 #ifndef BEMAN_UTF_VIEW_TESTS_FRAMEWORK_HPP
 #define BEMAN_UTF_VIEW_TESTS_FRAMEWORK_HPP
 
+#include <beman/utf_view/config.hpp>
+#if BEMAN_UTF_VIEW_USE_MODULES()
+import std;
+#else
 #include <functional>
 #include <map>
 #include <string>
+#endif
 
 namespace beman::utf_view::tests {
 

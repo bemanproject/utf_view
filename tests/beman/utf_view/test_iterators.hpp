@@ -8,6 +8,15 @@
 #ifndef BEMAN_UTF_VIEW_TESTS_TEST_ITERATORS_HPP
 #define BEMAN_UTF_VIEW_TESTS_TEST_ITERATORS_HPP
 
+#include <beman/utf_view/config.hpp>
+#if BEMAN_UTF_VIEW_USE_MODULES()
+import std;
+#else
+#include <cstddef>
+#include <initializer_list>
+#include <iterator>
+#endif
+
 namespace beman::utf_view::tests {
 
 template <class CharT>
