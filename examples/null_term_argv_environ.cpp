@@ -1,5 +1,10 @@
+#include <beman/utf_view/config.hpp>
 #include <beman/utf_view/null_term.hpp>
+#if BEMAN_UTF_VIEW_USE_MODULES()
+import std;
+#else
 #include <print>
+#endif
 
 extern char** environ;
 

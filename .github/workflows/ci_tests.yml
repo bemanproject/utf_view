@@ -13,10 +13,10 @@ on:
 
 jobs:
   beman-submodule-check:
-    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-submodule-check.yml@1.6.0
+    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-submodule-check.yml@1.7.1
 
   preset-test:
-    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-preset-test.yml@1.6.0
+    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-preset-test.yml@1.7.1
     with:
       matrix_config: >
         [
@@ -27,7 +27,7 @@ jobs:
         ]
 
   build-and-test:
-    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-build-and-test.yml@1.6.0
+    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-build-and-test.yml@1.7.1
     with:
       matrix_config: >
         {
@@ -40,7 +40,8 @@ jobs:
                       "tests": [
                         "Debug.Default", "Release.Default", "Release.MaxSan",
                         "Debug.Werror", "Debug.Dynamic", "Debug.Coverage",
-                        "Debug.-DBEMAN_UTF_VIEW_BUILD_PAPER=ON"
+                        "Debug.-DBEMAN_UTF_VIEW_BUILD_PAPER=ON",
+                        "Debug.-DBEMAN_UTF_VIEW_USE_MODULES=True"
                       ]
                     }
                   ]
@@ -50,7 +51,21 @@ jobs:
                 }
               ]
             },
-            { "versions": ["16", "15", "14"],
+            { "versions": ["16", "15"],
+              "tests": [
+                { "cxxversions": ["c++26", "c++23"],
+                  "tests": [
+                    {
+                      "stdlibs": ["libstdc++"],
+                      "tests": [
+                        "Release.Default", "Debug.-DBEMAN_UTF_VIEW_USE_MODULES=True"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            { "versions": ["14"],
               "tests": [
                 { "cxxversions": ["c++26", "c++23"],
                   "tests": [{ "stdlibs": ["libstdc++"], "tests": ["Release.Default"]}]
@@ -66,7 +81,8 @@ jobs:
                     { "stdlibs": ["libc++"],
                       "tests": [
                         "Debug.Default", "Release.Default", "Release.MaxSan",
-                        "Debug.Werror", "Debug.Dynamic"
+                        "Debug.Werror", "Debug.Dynamic",
+                        "Debug.-DBEMAN_UTF_VIEW_USE_MODULES=True"
                       ]
                     }
                   ]
@@ -76,7 +92,20 @@ jobs:
                 }
               ]
             },
-            { "versions": ["22", "21", "20", "19"],
+            { "versions": ["22"],
+              "tests": [
+                { "cxxversions": ["c++26", "c++23"],
+                  "tests": [
+                    { "stdlibs": ["libc++"],
+                      "tests": [
+                        "Release.Default", "Debug.-DBEMAN_UTF_VIEW_USE_MODULES=True"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            { "versions": ["21", "20", "19"],
               "tests": [
                 { "cxxversions": ["c++26", "c++23"],
                   "tests": [
@@ -92,7 +121,10 @@ jobs:
                 { "cxxversions": ["c++23"],
                   "tests": [
                     { "stdlibs": ["stl"],
-                      "tests": ["Debug.Default", "Release.Default", "Release.MaxSan"]
+                      "tests": [
+                        "Debug.Default", "Release.Default", "Release.MaxSan",
+                        "Debug.-DBEMAN_UTF_VIEW_USE_MODULES=True"
+                      ]
                     }
                   ]
                 }
@@ -102,11 +134,16 @@ jobs:
         }
 
   vcpkg-ci:
-    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-vcpkg-ci.yml@1.6.0
+    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-vcpkg-ci.yml@1.7.1
     with:
       port_name: beman-utf-view
+      feature_combinations: |
+        [
+          {"features": {}},
+          {"features": {"modules": true}}
+        ]
 
   create-issue-when-fault:
     needs: [preset-test, build-and-test]
     if: failure() && github.event_name == 'schedule'
-    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-create-issue-when-fault.yml@1.6.0
+    uses: bemanproject/infra-workflows/.github/workflows/reusable-beman-create-issue-when-fault.yml@1.7.1

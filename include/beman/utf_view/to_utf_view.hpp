@@ -8,10 +8,20 @@
 #ifndef BEMAN_UTF_VIEW_TO_UTF_VIEW_HPP
 #define BEMAN_UTF_VIEW_TO_UTF_VIEW_HPP
 
+#include <beman/utf_view/config.hpp>
+
+#if BEMAN_UTF_VIEW_USE_MODULES() && \
+    !defined(BEMAN_UTF_VIEW_INCLUDED_FROM_INTERFACE_UNIT)
+
+import beman.utf_view;
+
+#else
+
 #include <beman/utf_view/detail/concepts.hpp>
 #include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
 #include <beman/utf_view/detail/fake_inplace_vector.hpp>
 #include <beman/utf_view/detail/constant_wrapper_polyfill.hpp>
+#if !BEMAN_UTF_VIEW_USE_MODULES()
 #include <bit>
 #include <cassert>
 #include <concepts>
@@ -22,6 +32,7 @@
 #include <optional>
 #include <type_traits>
 #include <utility>
+#endif
 
 namespace beman::utf_view {
 
@@ -246,7 +257,7 @@ public:
   using value_type =
       std::conditional_t<E == to_utf_view_error_kind::expected, std::expected<ToType, utf_transcoding_error>, ToType>;
   using reference_type = value_type;
-  using difference_type = ptrdiff_t;
+  using difference_type = std::ptrdiff_t;
 
 private:
 /* !PAPER */
@@ -945,5 +956,8 @@ inline constexpr detail::to_utf_impl<to_utf_view_error_kind::expected, char32_t>
 /* PAPER: }                                                     */
 
 } // namespace beman::utf_view
+
+#endif // BEMAN_UTF_VIEW_USE_MODULES() &&
+       // !defined(BEMAN_UTF_VIEW_INCLUDED_FROM_INTERFACE_UNIT)
 
 #endif // BEMAN_UTF_VIEW_TO_UTF_VIEW_HPP

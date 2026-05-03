@@ -25,3 +25,8 @@ target_link_libraries(
 )
 
 add_test(NAME beman_utf_view_test COMMAND beman_utf_view_test)
+
+if(BEMAN_UTF_VIEW_USE_MODULES)
+    set_target_properties(beman_utf_view_test_lib PROPERTIES CXX_MODULE_STD ON)
+    set_target_properties(beman_utf_view_test PROPERTIES CXX_MODULE_STD ON)
+endif()

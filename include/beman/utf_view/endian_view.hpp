@@ -8,11 +8,22 @@
 #ifndef BEMAN_UTF_VIEW_ENDIAN_VIEW_HPP
 #define BEMAN_UTF_VIEW_ENDIAN_VIEW_HPP
 
+#include <beman/utf_view/config.hpp>
+
+#if BEMAN_UTF_VIEW_USE_MODULES() && \
+    !defined(BEMAN_UTF_VIEW_INCLUDED_FROM_INTERFACE_UNIT)
+
+import beman.utf_view;
+
+#else
+
 #include <beman/utf_view/detail/concepts.hpp>
+#if !BEMAN_UTF_VIEW_USE_MODULES()
 #include <beman/transform_view/transform_view.hpp>
 #include <bit>
 #include <ranges>
 #include <type_traits>
+#endif
 
 namespace beman::utf_view {
 
@@ -90,5 +101,8 @@ inline constexpr detail::from_to_endian_impl<false> to_big_endian;
 /* PAPER: } */
 
 } // namespace beman::utf_view
+
+#endif // BEMAN_UTF_VIEW_USE_MODULES() &&
+       // !defined(BEMAN_UTF_VIEW_INCLUDED_FROM_INTERFACE_UNIT)
 
 #endif // BEMAN_UTF_VIEW_ENDIAN_VIEW_HPP

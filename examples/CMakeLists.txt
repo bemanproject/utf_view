@@ -15,4 +15,10 @@ foreach(example ${ALL_EXAMPLES})
         NAME beman_utf_view_example_${example}
         COMMAND beman.utf_view.examples.${example}
     )
+    if(BEMAN_UTF_VIEW_USE_MODULES)
+        set_target_properties(
+            beman.utf_view.examples.${example}
+            PROPERTIES CXX_MODULE_STD ON
+        )
+    endif()
 endforeach()

@@ -14,5 +14,16 @@
       "host": true
     },
     "beman-transform-view"
-  ]
+  ],
+  "features": {
+    "modules": {
+      "description": "Provide beman.utf_view as a C++ module",
+      "dependencies": [
+        {
+          "name": "beman-transform-view",
+          "features": [ "modules" ]
+        }
+      ]
+    }
+  }
 }
