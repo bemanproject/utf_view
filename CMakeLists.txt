@@ -9,7 +9,7 @@ project(
     # targets (e.g., library, executable, etc.).
     DESCRIPTION "C++29 UTF Transcoding Views"
     LANGUAGES CXX
-    VERSION 0.2.0
+    VERSION 0.3.0
 )
 
 # [CMAKE.SKIP_TESTS]
