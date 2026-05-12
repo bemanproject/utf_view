@@ -163,33 +163,52 @@ public:
 
   /* !PAPER */
   /* PAPER:     constexpr @*iterator*@<false> begin(); */
-  constexpr exposition_only_iterator<false> begin()
-  {
-    return exposition_only_iterator<false>(*this, std::ranges::begin(base_));
+  constexpr exposition_only_iterator<false> begin() {
+    if constexpr (std::ranges::bidirectional_range<V>) {
+      return exposition_only_iterator<false>(
+          std::ranges::begin(base_), std::ranges::begin(base_), std::ranges::end(base_));
+    } else {
+      return exposition_only_iterator<false>(
+          std::ranges::begin(base_), std::ranges::end(base_));
+    }
   }
   /* PAPER */
   constexpr exposition_only_iterator<true> begin() const
-    requires std::ranges::range<const V> &&
-             ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
-              (!std::ranges::forward_range<const V>)) {
-    return exposition_only_iterator<true>(*this, std::ranges::begin(base_));
+      requires std::ranges::range<const V> &&
+               ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
+                (!std::ranges::forward_range<const V>)) {
+    if constexpr (std::ranges::bidirectional_range<const V>) {
+      return exposition_only_iterator<true>(
+          std::ranges::begin(base_), std::ranges::begin(base_), std::ranges::end(base_));
+    } else {
+      return exposition_only_iterator<true>(
+          std::ranges::begin(base_), std::ranges::end(base_));
+    }
   }
 
-  constexpr exposition_only_sentinel<false> end()
-  {
+  constexpr exposition_only_sentinel<false> end() {
     return exposition_only_sentinel<false>(std::ranges::end(base_));
   }
-  constexpr exposition_only_iterator<false> end() requires std::ranges::common_range<V>
-  {
-    return exposition_only_iterator<false>(*this, std::ranges::end(base_));
+  constexpr exposition_only_iterator<false> end() requires std::ranges::common_range<V> {
+    if constexpr (std::ranges::bidirectional_range<V>) {
+      return exposition_only_iterator<false>(
+          std::ranges::begin(base_), std::ranges::end(base_), std::ranges::end(base_));
+    } else {
+      return exposition_only_iterator<false>(std::ranges::end(base_), std::ranges::end(base_));
+    }
   }
   constexpr exposition_only_sentinel<true> end() const
-    requires std::ranges::range<const V> {
+      requires std::ranges::range<const V> {
     return exposition_only_sentinel<true>(std::ranges::end(base_));
   }
   constexpr exposition_only_iterator<true> end() const
     requires std::ranges::common_range<const V> {
-    return exposition_only_iterator<true>(*this, std::ranges::end(base_));
+    if constexpr (std::ranges::bidirectional_range<const V>) {
+      return exposition_only_iterator<true>(
+          std::ranges::begin(base_), std::ranges::end(base_), std::ranges::end(base_));
+    } else {
+      return exposition_only_iterator<true>(std::ranges::end(base_), std::ranges::end(base_));
+    }
   }
 
   constexpr bool empty() const {
@@ -228,7 +247,6 @@ template <bool Const>
 struct to_utf_view<V, E, ToType>::exposition_only_iterator : detail::iter_category_impl<V> {
 /* PAPER */
 private:
-  using exposition_only_Parent = exposition_only_maybe_const<Const, to_utf_view>; // @*exposition only*@
   using exposition_only_Base = exposition_only_maybe_const<Const, V>; // @*exposition only*@
 
 /* !PAPER */
@@ -264,14 +282,22 @@ private:
 #ifdef _MSC_VER
 public: // MSVC has some bug with their implementation of friendship
 #endif
+/* !PAPER */
+  [[no_unique_address]] std::conditional_t<std::ranges::bidirectional_range<exposition_only_Base>, std::ranges::iterator_t<exposition_only_Base>, std::monostate> begin_{};
+/* PAPER:   iterator_t<exposition_only_Base> begin_{}; // @*exposition only*@, present only if */
+/* PAPER:                                              //   bidirectional_range<exposition_only_Base> is true */
 /* PAPER */
-  std::ranges::iterator_t<exposition_only_Base> current_ = std::ranges::iterator_t<exposition_only_Base>(); // @*exposition only*@
-  exposition_only_Parent* parent_ = nullptr; // @*exposition only*@
+  std::ranges::iterator_t<exposition_only_Base> current_{}; // @*exposition only*@
+/* !PAPER */
+  [[no_unique_address]] std::ranges::sentinel_t<exposition_only_Base> end_{}; // @*exposition only*@
+/* PAPER:   sentinel_t<exposition_only_Base> end_; // @*exposition only*@ */
 
   detail::fake_inplace_vector<value_type, 4 / sizeof(ToType)> buf_{}; // @*exposition only*@
+/* PAPER:   inplace_vector<value_type, 4 / sizeof(ToType)> buf_{}; // @*exposition only*@ */
+/* PAPER */
 
-  std::int8_t buf_index_ = 0; // @*exposition only*@
-  std::uint8_t to_increment_ = 0; // @*exposition only*@
+  std::int8_t buf_index_{}; // @*exposition only*@
+  std::uint8_t to_increment_{}; // @*exposition only*@
 
   /* !PAPER */
   std::expected<void, utf_transcoding_error> success_{};
@@ -283,14 +309,37 @@ public: // MSVC has some bug with their implementation of friendship
   friend class to_utf_view; // @*exposition only*@
 
 public:
+  constexpr exposition_only_iterator()
+    requires std::default_initializable<std::ranges::iterator_t<exposition_only_Base>> = default;
 
-  CONSTEXPR_UNLESS_MSVC exposition_only_iterator()
-    requires std::default_initializable<std::ranges::iterator_t<V>>
-  = default;
+  constexpr exposition_only_iterator(exposition_only_iterator const&)
+    requires std::copyable<std::ranges::iterator_t<exposition_only_Base>> = default;
+  constexpr exposition_only_iterator& operator=(
+      exposition_only_iterator const&)
+    requires std::copyable<std::ranges::iterator_t<exposition_only_Base>> = default;
+  constexpr exposition_only_iterator(exposition_only_iterator&&) = default;
+  constexpr exposition_only_iterator& operator=(exposition_only_iterator&&) = default;
+
+private:
   constexpr exposition_only_iterator(
-      exposition_only_Parent& parent, std::ranges::iterator_t<exposition_only_Base> begin)
-    : current_(std::move(begin)),
-      parent_(std::addressof(parent))
+      std::ranges::iterator_t<exposition_only_Base> begin,
+      std::ranges::iterator_t<exposition_only_Base> current,
+      std::ranges::sentinel_t<exposition_only_Base> end) // @*exposition only*@
+    requires std::ranges::bidirectional_range<exposition_only_Base>
+  : begin_(std::move(begin)),
+    current_(std::move(current)),
+    end_(end)
+  {
+    if (base() != exposition_only_end())
+      exposition_only_read();
+  }
+
+  constexpr exposition_only_iterator(
+      std::ranges::iterator_t<exposition_only_Base> current,
+      std::ranges::sentinel_t<exposition_only_Base> end) // @*exposition only*@
+    requires (!std::ranges::bidirectional_range<exposition_only_Base>)
+  : current_(std::move(current)),
+    end_(end)
   {
     if (base() != exposition_only_end())
       exposition_only_read();
@@ -299,6 +348,7 @@ public:
     }
   }
 
+public:
 
   constexpr const std::ranges::iterator_t<exposition_only_Base>& base() const& noexcept {
     return current_;
@@ -404,12 +454,12 @@ private:
   constexpr std::ranges::iterator_t<exposition_only_Base> begin() const
     requires std::ranges::bidirectional_range<exposition_only_Base>
   {
-    return std::ranges::begin(parent_->base_);
+    return begin_;
   }
 
   /* PAPER */
-  constexpr std::ranges::sentinel_t<exposition_only_Base> exposition_only_end() const { // @*exposition only*/
-    return std::ranges::end(parent_->base_);
+  constexpr std::ranges::sentinel_t<exposition_only_Base> exposition_only_end() const { // @*exposition only*@
+    return end_;
   }
 
   /* PAPER:       constexpr expected<void, utf_transcoding_error> @*success*@() const noexcept requires(E == to_utf_view_error_kind::expected); // @*exposition only*@ */
@@ -840,7 +890,6 @@ template <std::ranges::input_range V, to_utf_view_error_kind E, exposition_only_
 template <bool Const>
 struct to_utf_view<V, E, ToType>::exposition_only_sentinel {
 private:
-  using exposition_only_Parent = exposition_only_maybe_const<Const, to_utf_view>; // @*exposition only*@
   using exposition_only_Base = exposition_only_maybe_const<Const, V>; // @*exposition only*@
   std::ranges::sentinel_t<exposition_only_Base> end_ = std::ranges::sentinel_t<exposition_only_Base>();
 
@@ -956,6 +1005,17 @@ inline constexpr detail::to_utf_impl<to_utf_view_error_kind::expected, char32_t>
 /* PAPER: }                                                     */
 
 } // namespace beman::utf_view
+
+template <class V, beman::utf_view::to_utf_view_error_kind E, class ToType>
+inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf_view<V, E, ToType>> =
+    std::ranges::enable_borrowed_range<V>;
+
+/* PAPER: namespace std::ranges {                                                                              */
+/* PAPER:                                                                                                      */
+/* PAPER:   template <class V, to_utf_view_error_kind E, class ToType>                                         */
+/* PAPER:   inline constexpr bool enable_borrowed_range<to_utf_view<V, E, ToType>> = enable_borrowed_range<V>; */
+/* PAPER:                                                                                                      */
+/* PAPER: }                                                                                                    */
 
 #endif // BEMAN_UTF_VIEW_USE_MODULES() &&
        // !defined(BEMAN_UTF_VIEW_INCLUDED_FROM_INTERFACE_UNIT)
