@@ -1,3 +1,7 @@
+<!--
+SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+-->
+
 # Development
 
 ## Configure and Build the Project Using CMake Presets
@@ -65,7 +69,7 @@ the project's dependencies, including beman.transform_view.
 
 Example commands:
 
-```
+```shell
 cmake \
   -B build \
   -S . \
