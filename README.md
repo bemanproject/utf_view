@@ -9,8 +9,14 @@ Distributed under the Boost Software License, Version 1.0.
          https://www.boost.org/LICENSE_1_0.txt)
 -->
 
-<!-- markdownlint-disable-next-line line-length -->
-![Library Status](https://raw.githubusercontent.com/bemanproject/beman/refs/heads/main/images/badges/beman_badge-beman_library_under_development.svg) ![Continuous Integration Tests](https://github.com/bemanproject/utf_view/actions/workflows/ci_tests.yml/badge.svg) ![Lint Check (pre-commit)](https://github.com/bemanproject/utf_view/actions/workflows/pre-commit-check.yml/badge.svg) [![Coverage](https://coveralls.io/repos/github/bemanproject/utf_view/badge.svg?branch=main)](https://coveralls.io/github/bemanproject/utf_view?branch=main) ![Standard Target](https://github.com/bemanproject/beman/blob/main/images/badges/cpp29.svg) [![Compiler Explorer Example](https://img.shields.io/badge/Try%20it%20on%20Compiler%20Explorer-grey?logo=compilerexplorer&logoColor=67c52a)](https://godbolt.org/z/36dsMWGde)
+<!-- markdownlint-disable line-length -->
+[![Library Status](https://raw.githubusercontent.com/bemanproject/beman/refs/heads/main/images/badges/beman_badge-beman_library_under_development.svg)](https://github.com/bemanproject/beman/blob/main/docs/beman_library_maturity_model.md#the-beman-library-maturity-model)
+[![Continuous Integration Tests](https://github.com/bemanproject/utf_view/actions/workflows/ci_tests.yml/badge.svg)](https://github.com/bemanproject/utf_view/actions/workflows/ci_tests.yml)
+[![Lint Check (pre-commit)](https://github.com/bemanproject/utf_view/actions/workflows/pre-commit-check.yml/badge.svg)](https://github.com/bemanproject/utf_view/actions/workflows/pre-commit-check.yml)
+[![Coverage](https://coveralls.io/repos/github/bemanproject/utf_view/badge.svg?branch=main)](https://coveralls.io/github/bemanproject/utf_view?branch=main)
+![Standard Target](https://github.com/bemanproject/beman/blob/main/images/badges/cpp29.svg)
+[![Compiler Explorer Example](https://img.shields.io/badge/Try%20it%20on%20Compiler%20Explorer-grey?logo=compilerexplorer&logoColor=67c52a)](https://godbolt.org/z/36dsMWGde)
+<!-- markdownlint-restore -->
 
  C++29 UTF transcoding features:
 
@@ -234,12 +240,6 @@ include an appropriate `beman.utf_view` header from your source code.
 ```c++
 #include <beman/utf_view/utf_view.hpp>
 ```
-
-> [!NOTE]
->
-> `beman.utf_view` headers are to be included with the `beman/utf_view/` prefix.
-> Altering include search paths to spell the include target another way (e.g.
-> `#include <utf_view.hpp>`) is unsupported.
 
 ## Paper
 

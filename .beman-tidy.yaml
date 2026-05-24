@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+
+# This is the config file for beman-tidy, which checks compliance with the Beman Standard (https://github.com/bemanproject/beman/blob/main/docs/beman_standard.md)
+# Check documentation for beman-tidy here:
+# https://github.com/bemanproject/beman-tidy/blob/main/README.md
+
+disabled_rules:
+    - license.apache_llvm # The repository contains contributions from Jonathan Wakely, who has not agreed to the Apache license
+    - file.copyright # The copyright notices were specifically requested by Jonathan Wakely
+    - readme.implements # The repository currently implementes 3 papers. TODO: Split them into separate repos.
+ignored_paths:
+    - tests/beman/utf_view/framework.cpp
