@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSL-1.0
+
 #include <beman/utf_view/config.hpp>
 #include <beman/utf_view/null_term.hpp>
 #if BEMAN_UTF_VIEW_USE_MODULES()

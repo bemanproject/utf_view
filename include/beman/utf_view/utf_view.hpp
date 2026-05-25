@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSL-1.0
+
 #ifndef BEMAN_UTF_VIEW_UTF_VIEW_HPP
 #define BEMAN_UTF_VIEW_UTF_VIEW_HPP
 
