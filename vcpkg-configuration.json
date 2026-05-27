@@ -8,7 +8,7 @@
     {
       "kind": "git",
       "repository": "https://github.com/bemanproject/vcpkg-registry.git",
-      "baseline": "e1aa5c3c2a46486cc1384d70beab939d76bfe128",
+      "baseline": "29e1ecce19fb756a381161829f36346310b8e7ac",
       "packages": ["beman-*"]
     }
   ]
