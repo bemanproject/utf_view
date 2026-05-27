@@ -243,14 +243,18 @@ include an appropriate `beman.utf_view` header from your source code.
 
 ## Paper
 
-beman.utf_view is based on P2728 and P3705.
+beman.utf_view is based on P2728, P3705, and P4030..
 
 - The latest official revision of P2728 can be found at https://wg21.link/p2728
 - The latest official revision of P3705 can be found at https://wg21.link/p3705
+- The latest official revision of P4030 can be found at https://wg21.link/p4030
 - The unofficial latest draft Markdown source for each paper can be found in this repository:
   - At [papers/P2828.md](https://github.com/bemanproject/utf_view/blob/main/papers/P2728.md)
   - At [papers/P3705.md](https://github.com/bemanproject/utf_view/blob/main/papers/P3705.md)
+  - At [papers/P4030.md](https://github.com/bemanproject/utf_view/blob/main/papers/P4030.md)
 - P2728's committee status page can be found at https://github.com/cplusplus/papers/issues/1422
+- P3705's committee status page can be found at https://github.com/cplusplus/papers/issues/2334
+- P4030's committee status page can be found at https://github.com/cplusplus/papers/issues/2662
 
 ## Authors
 
