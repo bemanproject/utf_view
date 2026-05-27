@@ -615,11 +615,7 @@ CONSTEXPR_UNLESS_MSVC bool wrapped_view_mid_code_point_test_impl() {
     //   return false;
     // }
     if (base_testing == base_test::iterator_mid_code_point) {
-      if constexpr (!std::forward_iterator<TestIterator<char32_t>>) {
-        if (std::move(u8_begin).base() != ++make_u16_subrange().value().begin()) {
-          return false;
-        }
-      } else {
+      if constexpr (std::forward_iterator<TestIterator<char32_t>>) {
         if (std::move(u8_begin).base() != make_u16_subrange().value().begin()) {
           return false;
         }
@@ -643,14 +639,12 @@ CONSTEXPR_UNLESS_MSVC bool wrapped_view_mid_code_point_test_impl() {
     //   return false;
     // }
     if (base_testing == base_test::iterator_full_code_point) {
-      auto expected_base{make_u16_subrange().value().begin()};
-      if constexpr (!std::forward_iterator<TestIterator<char32_t>>) {
-        std::ranges::advance(expected_base, 3);
-      } else {
+      if constexpr (std::forward_iterator<TestIterator<char32_t>>) {
+        auto expected_base{make_u16_subrange().value().begin()};
         std::ranges::advance(expected_base, 1);
-      }
-      if (std::move(u8_begin).base() != expected_base) {
-        return false;
+        if (std::move(u8_begin).base() != expected_base) {
+          return false;
+        }
       }
       return true;
     }
