@@ -30,12 +30,15 @@ std::u32string get_player_name() {
   std::ranges::subrange input_view(
       std::istreambuf_iterator<char>(std::cin),
       std::istreambuf_iterator<char>{});
-  // get 5 code points of input
-  return input_view
-         | beman::utf_view::as_char8_t
-         | beman::utf_view::to_utf32
-         | std::views::take(5)
-         | std::ranges::to<std::u32string>();
+  auto utf32_view = input_view
+                    | beman::utf_view::as_char8_t
+                    | beman::utf_view::to_utf32;
+  std::u32string result;
+  auto it = utf32_view.begin();
+  result.push_back(*it);
+  for (int i = 1; i < 5; ++i)
+    result.push_back(*++it);
+  return result;
 }
 
 int main() {
