@@ -254,6 +254,34 @@ std::u8string parse_message_subset(
 }
 #endif
 
+#if __cpp_lib_ranges_chunk_by >= 202202L
+template <typename T>
+constexpr bool is_continuation(T c) {
+  if constexpr (std::is_same_v<decltype(c), char8_t>) {
+    return (c & 0xC0) == 0x80;
+  } else if constexpr (std::is_same_v<decltype(c), char16_t>) {
+    return c >= 0xDC00 && c <= 0xDFFF;
+  } else {
+    return false;
+  }
+}
+
+template <typename FromType, typename ToType, std::size_t N>
+constexpr detail::fake_inplace_vector<ToType, N> transcode_trucating_correctly(
+    std::basic_string_view<FromType> input) {
+  detail::fake_inplace_vector<ToType, N> output;
+  for (auto code_point_view : input
+       | to_utf<ToType>
+       | std::views::chunk_by([](auto, auto b) { return is_continuation(b); })) {
+    if (static_cast<std::size_t>(std::ranges::distance(code_point_view))
+        > output.max_size() - output.size())
+      break;
+    std::ranges::copy(code_point_view, std::back_insert_iterator{output});
+  }
+  return output;
+}
+#endif
+
 bool readme_examples() {
   using namespace std::string_view_literals;
 #ifndef _MSC_VER
@@ -305,6 +333,24 @@ bool readme_examples() {
     std::byte{0x34}};
   if (!std::ranges::equal(u8"\xf0\x9f\x99\x82"sv, parse_message_subset(message, 1, 4))) {
     return false;
+  }
+  {
+    auto result = transcode_trucating_correctly<char8_t, char16_t, 5>(u8"😀abc"sv);
+    if (result.size() != 5) {
+      return false;
+    }
+    auto result2 = transcode_trucating_correctly<char8_t, char16_t, 4>(u8"😀abc"sv);
+    if (result2.size() != 4) {
+      return false;
+    }
+    auto result3 = transcode_trucating_correctly<char8_t, char16_t, 2>(u8"😀abc"sv);
+    if (result3.size() != 2) {
+      return false;
+    }
+    auto result4 = transcode_trucating_correctly<char8_t, char16_t, 1>(u8"😀abc"sv);
+    if (result4.size() != 0) {
+      return false;
+    }
   }
 #endif
 #endif
