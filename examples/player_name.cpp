@@ -3,6 +3,7 @@
 #include <beman/utf_view/to_utf_view.hpp>
 #include <termios.h>
 #include <unistd.h>
+#include <cassert>
 #if BEMAN_UTF_VIEW_USE_MODULES()
 import std;
 #else
@@ -39,8 +40,16 @@ std::u32string get_player_name() {
 
 int main() {
   std::print("Enter your 5-character player name:");
-  raw_mode rm;
+  std::u32string const player_name{
+    []{
+      raw_mode rm;
+      return get_player_name();
+    }()};
+  assert(player_name.size() == 5);
   std::print(
-      "\nWelcome, {}",
-      get_player_name() | beman::utf_view::to_utf8 | beman::utf_view::as_char);
+      "\nWelcome, {}\n",
+      player_name
+      | beman::utf_view::to_utf8
+      | beman::utf_view::as_char
+      | std::ranges::to<std::string>());
 }
