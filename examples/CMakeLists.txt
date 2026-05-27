@@ -1,8 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-set(ALL_EXAMPLES readme_examples null_term_argv_environ player_name)
+set(ALL_EXAMPLES readme_examples null_term_argv_environ)
 
 message("Examples to be built: ${ALL_EXAMPLES}")
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  list(APPEND ALL_EXAMPLES player_name)
+endif()
 
 foreach(example ${ALL_EXAMPLES})
     add_executable(beman.utf_view.examples.${example})

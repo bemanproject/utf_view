@@ -7,6 +7,7 @@
 import std;
 #else
 #include <iostream>
+#include <print>
 #include <ranges>
 #include <string>
 #endif
@@ -37,6 +38,9 @@ std::u32string get_player_name() {
 }
 
 int main() {
+  std::print("Enter your 5-character player name:");
   raw_mode rm;
-  get_player_name();
+  std::print(
+      "\nWelcome, {}",
+      get_player_name() | beman::utf_view::to_utf8 | beman::utf_view::as_char);
 }
