@@ -28,6 +28,8 @@ namespace beman::utf_view::detail {
 template <typename T, std::size_t N>
 class fake_inplace_vector {
 public:
+  using value_type = T;
+
   constexpr fake_inplace_vector() = default;
   constexpr fake_inplace_vector(std::initializer_list<T> init)
   : size_{init.size()}
@@ -38,6 +40,9 @@ public:
   constexpr std::size_t size() const {
     return size_;
   }
+  static constexpr std::size_t max_size() {
+    return N;
+  }
   constexpr void clear() {
     size_ = 0;
   }
@@ -47,10 +52,10 @@ public:
   constexpr T operator[](std::size_t n) const {
     return storage_[n];
   }
-  T* begin() {
+  constexpr T* begin() {
     return &storage_[0];
   }
-  T* end() {
+  constexpr T* end() {
     return &storage_[size_];
   }
 
