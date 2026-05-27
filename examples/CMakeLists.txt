@@ -4,7 +4,7 @@ set(ALL_EXAMPLES readme_examples null_term_argv_environ)
 
 message("Examples to be built: ${ALL_EXAMPLES}")
 
-list(APPEND ALL_EXAMPLES player_name)
+list(APPEND ALL_EXAMPLES read_until_invalid)
 
 foreach(example ${ALL_EXAMPLES})
     add_executable(beman.utf_view.examples.${example})
