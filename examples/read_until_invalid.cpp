@@ -23,14 +23,14 @@ import std;
 // from the istreambuf_iterator to fill a vector register, consuming
 // bytes past the error before take_while can stop the pipeline.
 
-std::string read_until_invalid(std::ranges::input_range auto&& input) {
+std::u8string read_until_invalid(std::ranges::input_range auto&& input) {
   return input
       | beman::utf_view::as_char8_t
       | beman::utf_view::to_utf8_or_error
       | std::views::take_while(&std::expected<char8_t,
             beman::utf_view::utf_transcoding_error>::has_value)
-      | std::views::transform([](auto c) { return static_cast<char>(c.value()); })
-      | std::ranges::to<std::string>();
+      | std::views::transform([](auto c) { return c.value(); })
+      | std::ranges::to<std::u8string>();
 }
 
 int main() {
@@ -45,5 +45,7 @@ int main() {
       std::istreambuf_iterator<char>{})
       | std::ranges::to<std::string>();
 
-  std::print("Valid: {}\nRest:  {}\n", valid_prefix, rest);
+  std::print("Valid: {}\nRest:  {}\n",
+      valid_prefix | beman::utf_view::as_char | std::ranges::to<std::string>(),
+      rest);
 }
