@@ -353,6 +353,19 @@ bool readme_examples() {
     }
   }
 #endif
+  {
+    std::u16string zamin = u"𒀭𒎏𒄈𒋢𒍠𒊩";
+    auto view = zamin | to_utf32;
+    auto begin = view.begin();
+    ++begin;
+    auto ningirsuBegin = begin.base();
+    std::ranges::advance(begin, 3);
+    auto ningirsuEnd = begin.base();
+    zamin.replace(ningirsuBegin, ningirsuEnd, u"𒊺𒉀");
+    if (!std::ranges::equal(zamin, u"𒀭𒊺𒉀𒍠𒊩"sv)) {
+      return false;
+    }
+  }
 #endif
   return true;
 }
