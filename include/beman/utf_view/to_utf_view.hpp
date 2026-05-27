@@ -330,7 +330,7 @@ private:
     current_(std::move(current)),
     end_(end)
   {
-    if (base() != exposition_only_end())
+    if (current_ != exposition_only_end())
       exposition_only_read();
   }
 
@@ -341,7 +341,7 @@ private:
   : current_(std::move(current)),
     end_(end)
   {
-    if (base() != exposition_only_end())
+    if (current_ != exposition_only_end())
       exposition_only_read();
     else if constexpr (!std::ranges::forward_range<exposition_only_Base>) {
       buf_index_ = -1;
@@ -350,11 +350,15 @@ private:
 
 public:
 
-  constexpr const std::ranges::iterator_t<exposition_only_Base>& base() const& noexcept {
+  constexpr const std::ranges::iterator_t<exposition_only_Base>& base() const& noexcept
+    requires std::ranges::forward_range<exposition_only_Base>
+  {
     return current_;
   }
 
-  constexpr std::ranges::iterator_t<exposition_only_Base> base() && {
+  constexpr std::ranges::iterator_t<exposition_only_Base> base() &&
+    requires std::ranges::forward_range<exposition_only_Base>
+  {
     return std::move(current_);
   }
 
