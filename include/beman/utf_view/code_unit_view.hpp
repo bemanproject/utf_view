@@ -45,7 +45,7 @@ struct exposition_only_implicit_cast_to {
 
 namespace detail {
 
-  template <exposition_only_code_unit Char>
+  template <typename Char>
   struct as_code_unit_impl
       : std::ranges::range_adaptor_closure<as_code_unit_impl<Char>> {
     template <std::ranges::range R>
@@ -64,12 +64,20 @@ namespace detail {
 
 } // namespace detail
 
+inline constexpr detail::as_code_unit_impl<char> as_char;
+
+inline constexpr detail::as_code_unit_impl<wchar_t> as_wchar_t;
+
 inline constexpr detail::as_code_unit_impl<char8_t> as_char8_t;
 
 inline constexpr detail::as_code_unit_impl<char16_t> as_char16_t;
 
 inline constexpr detail::as_code_unit_impl<char32_t> as_char32_t;
 
+/* PAPER:   inline constexpr @*unspecified*@ as_char;     */
+/* PAPER:                                                 */
+/* PAPER:   inline constexpr @*unspecified*@ as_wchar_t;  */
+/* PAPER:                                                 */
 /* PAPER:   inline constexpr @*unspecified*@ as_char8_t;  */
 /* PAPER:                                                 */
 /* PAPER:   inline constexpr @*unspecified*@ as_char16_t; */
