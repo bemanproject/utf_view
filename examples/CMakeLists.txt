@@ -4,9 +4,7 @@ set(ALL_EXAMPLES readme_examples null_term_argv_environ)
 
 message("Examples to be built: ${ALL_EXAMPLES}")
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  list(APPEND ALL_EXAMPLES player_name)
-endif()
+list(APPEND ALL_EXAMPLES player_name)
 
 foreach(example ${ALL_EXAMPLES})
     add_executable(beman.utf_view.examples.${example})
