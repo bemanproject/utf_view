@@ -77,9 +77,14 @@ namespace detail {
   struct iter_category_impl<R> {
     static consteval auto impl() {
       using category = typename std::iterator_traits<std::ranges::iterator_t<R>>::iterator_category;
+#if 0
+      // Reverse iteration disabled for SIMD bring-up: cap the legacy
+      // iterator_category at forward to match iter_concept_impl.
       if constexpr (std::derived_from<category, std::bidirectional_iterator_tag>) {
         return std::bidirectional_iterator_tag{};
-      } else if constexpr (std::derived_from<category, std::forward_iterator_tag>) {
+      } else
+#endif
+      if constexpr (std::derived_from<category, std::forward_iterator_tag>) {
         return std::forward_iterator_tag{};
       } else {
         return category{};
@@ -165,38 +170,27 @@ public:
   /* !PAPER */
   /* PAPER:     constexpr @*iterator*@<false> begin(); */
   constexpr exposition_only_iterator<false> begin() {
-    if constexpr (std::ranges::bidirectional_range<V>) {
-      return exposition_only_iterator<false>(
-          std::ranges::begin(base_), std::ranges::begin(base_), std::ranges::end(base_));
-    } else {
-      return exposition_only_iterator<false>(
-          std::ranges::begin(base_), std::ranges::end(base_));
-    }
+    // Reverse iteration disabled for SIMD bring-up: the bidirectional branch
+    // captured begin_ for reverse traversal; the 2-arg constructor now serves
+    // every range category.
+    return exposition_only_iterator<false>(
+        std::ranges::begin(base_), std::ranges::end(base_));
   }
   /* PAPER */
   constexpr exposition_only_iterator<true> begin() const
       requires std::ranges::range<const V> &&
                ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
                 (!std::ranges::forward_range<const V>)) {
-    if constexpr (std::ranges::bidirectional_range<const V>) {
-      return exposition_only_iterator<true>(
-          std::ranges::begin(base_), std::ranges::begin(base_), std::ranges::end(base_));
-    } else {
-      return exposition_only_iterator<true>(
-          std::ranges::begin(base_), std::ranges::end(base_));
-    }
+    return exposition_only_iterator<true>(
+        std::ranges::begin(base_), std::ranges::end(base_));
   }
 
   constexpr exposition_only_sentinel<false> end() {
     return exposition_only_sentinel<false>(std::ranges::end(base_));
   }
   constexpr exposition_only_iterator<false> end() requires std::ranges::common_range<V> {
-    if constexpr (std::ranges::bidirectional_range<V>) {
-      return exposition_only_iterator<false>(
-          std::ranges::begin(base_), std::ranges::end(base_), std::ranges::end(base_));
-    } else {
-      return exposition_only_iterator<false>(std::ranges::end(base_), std::ranges::end(base_));
-    }
+    // Reverse iteration disabled for SIMD bring-up: see begin() above.
+    return exposition_only_iterator<false>(std::ranges::end(base_), std::ranges::end(base_));
   }
   constexpr exposition_only_sentinel<true> end() const
       requires std::ranges::range<const V> {
@@ -204,12 +198,8 @@ public:
   }
   constexpr exposition_only_iterator<true> end() const
     requires std::ranges::common_range<const V> {
-    if constexpr (std::ranges::bidirectional_range<const V>) {
-      return exposition_only_iterator<true>(
-          std::ranges::begin(base_), std::ranges::end(base_), std::ranges::end(base_));
-    } else {
-      return exposition_only_iterator<true>(std::ranges::end(base_), std::ranges::end(base_));
-    }
+    // Reverse iteration disabled for SIMD bring-up: see begin() above.
+    return exposition_only_iterator<true>(std::ranges::end(base_), std::ranges::end(base_));
   }
 
   constexpr bool empty() const {
@@ -254,9 +244,16 @@ private:
   using from_type = std::ranges::range_value_t<V>; // @*exposition only*@
 
   static consteval auto iter_concept_impl() {
+#if 0
+    // Reverse iteration disabled for SIMD bring-up: cap the iterator at
+    // forward. A SIMD-backed iterator buffers a chunk of decoded code units
+    // and reverse traversal would need to re-scan the chunk from its boundary,
+    // a complication deferred along with base() and the _or_error views.
     if constexpr (std::ranges::bidirectional_range<exposition_only_Base>) {
       return std::bidirectional_iterator_tag{};
-    } else if constexpr (std::ranges::forward_range<exposition_only_Base>) {
+    } else
+#endif
+    if constexpr (std::ranges::forward_range<exposition_only_Base>) {
       return std::forward_iterator_tag{};
     } else if constexpr (std::ranges::input_range<exposition_only_Base>) {
       return std::input_iterator_tag{};
@@ -284,7 +281,11 @@ private:
 public: // MSVC has some bug with their implementation of friendship
 #endif
 /* !PAPER */
+#if 0
+  // Reverse iteration disabled for SIMD bring-up: begin_ exists only to anchor
+  // reverse traversal, which is removed for now.
   [[no_unique_address]] std::conditional_t<std::ranges::bidirectional_range<exposition_only_Base>, std::ranges::iterator_t<exposition_only_Base>, std::monostate> begin_{};
+#endif
 /* PAPER:   iterator_t<exposition_only_Base> begin_{}; // @*exposition only*@, present only if */
 /* PAPER:                                              //   bidirectional_range<exposition_only_Base> is true */
 /* PAPER */
@@ -322,6 +323,10 @@ public:
   constexpr exposition_only_iterator& operator=(exposition_only_iterator&&) = default;
 
 private:
+#if 0
+  // Reverse iteration disabled for SIMD bring-up: this 3-arg constructor only
+  // exists to capture begin_ for bidirectional ranges. The 2-arg constructor
+  // below now serves every range category.
   constexpr exposition_only_iterator(
       std::ranges::iterator_t<exposition_only_Base> begin,
       std::ranges::iterator_t<exposition_only_Base> current,
@@ -334,11 +339,11 @@ private:
     if (current_ != exposition_only_end())
       exposition_only_read();
   }
+#endif
 
   constexpr exposition_only_iterator(
       std::ranges::iterator_t<exposition_only_Base> current,
       std::ranges::sentinel_t<exposition_only_Base> end) // @*exposition only*@
-    requires (!std::ranges::bidirectional_range<exposition_only_Base>)
   : current_(std::move(current)),
     end_(end)
   {
@@ -412,6 +417,8 @@ public:
     }
   }
 
+#if 0
+  // Reverse iteration disabled for SIMD bring-up.
   constexpr exposition_only_iterator& operator--()
     requires std::ranges::bidirectional_range<exposition_only_Base>
   {
@@ -429,6 +436,7 @@ public:
     --*this;
     return retval;
   }
+#endif
 
   friend constexpr bool operator==(const exposition_only_iterator& lhs,
                                    const exposition_only_iterator& rhs)
@@ -462,11 +470,15 @@ private:
     It orig;
   };
 
+#if 0
+  // Reverse iteration disabled for SIMD bring-up: only the reverse readers
+  // consulted begin_.
   constexpr std::ranges::iterator_t<exposition_only_Base> begin() const
     requires std::ranges::bidirectional_range<exposition_only_Base>
   {
     return begin_;
   }
+#endif
 
   /* PAPER */
   constexpr std::ranges::sentinel_t<exposition_only_Base> exposition_only_end() const { // @*exposition only*@
@@ -741,6 +753,10 @@ private:
     success_ = decode_result.success;
   }
 
+#if 0
+  // Reverse iteration disabled for SIMD bring-up: all of the reverse readers
+  // (read_reverse_utf8/utf16/utf32 and exposition_only_read_reverse) are
+  // removed along with operator--.
   struct read_reverse_impl_result {
     decode_code_point_result decode_result;
     std::ranges::iterator_t<exposition_only_Base> new_curr;
@@ -892,6 +908,7 @@ private:
       }
     }
   }
+#endif
 
   /* PAPER */
 };

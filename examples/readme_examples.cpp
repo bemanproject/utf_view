@@ -39,6 +39,9 @@ std::basic_string<CharT> sanitize(CharT const* str) {
   return null_term(str) | to_utf<CharT> | std::ranges::to<std::basic_string<CharT>>();
 }
 
+#if 0
+// Disabled while reverse iteration is removed for SIMD bring-up: std::views::reverse
+// requires the transcoding iterator to be bidirectional.
 std::optional<char32_t> last_nonascii(std::ranges::view auto str) {
   for (auto c : str | as_char8_t | to_utf32 | std::views::reverse |
            std::views::filter([](char32_t c) { return c > 0x7f; })) {
@@ -46,6 +49,7 @@ std::optional<char32_t> last_nonascii(std::ranges::view auto str) {
   }
   return std::nullopt;
 }
+#endif
 
 #ifdef _MSC_VER
 bool windows_path() {
@@ -350,9 +354,12 @@ bool readme_examples() {
   if (sanitize(u8"\xc2") != u8"\xef\xbf\xbd") {
     return false;
   }
+#if 0
+  // Disabled while reverse iteration is removed for SIMD bring-up.
   if (last_nonascii("hôtel"sv).value() != U'ô') {
     return false;
   }
+#endif
   if (as_char32_t_example() != u8"\xf0\x9f\x95\xb4\xef\xbf\xbd") {
     return false;
   }
