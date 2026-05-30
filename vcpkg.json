@@ -13,6 +13,12 @@
           "features": [ "modules" ]
         }
       ]
+    },
+    "benchmarks": {
+      "description": "Build benchmarks (requires Google Benchmark)",
+      "dependencies": [
+        "benchmark"
+      ]
     }
   }
 }

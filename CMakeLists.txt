@@ -26,6 +26,12 @@ option(
 )
 
 option(
+    BEMAN_UTF_VIEW_BUILD_BENCHMARKS
+    "Enable building benchmarks (requires Google Benchmark; fetches unicode_lipsum). Default: OFF. Values: { ON, OFF }."
+    ${PROJECT_IS_TOP_LEVEL}
+)
+
+option(
     BEMAN_UTF_VIEW_USE_MODULES
     "Provide beman.transform_view as a C++ module"
     OFF
@@ -112,7 +118,7 @@ else()
 endif()
 configure_build_telemetry()
 
-if(BEMAN_UTF_VIEW_BUILD_TESTS)
+if(BEMAN_UTF_VIEW_BUILD_TESTS OR BEMAN_UTF_VIEW_BUILD_BENCHMARKS)
     enable_testing()
     add_subdirectory(tests/beman/utf_view)
 endif()

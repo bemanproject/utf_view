@@ -5,6 +5,15 @@
       "package_name": "beman.transform_view",
       "git_repository": "https://github.com/bemanproject/transform_view.git",
       "git_tag": "225fd3d2987548c10c2cfabd279119b1e68950e2"
+    },
+    {
+      "name": "benchmark",
+      "package_name": "benchmark",
+      "git_repository": "https://github.com/google/benchmark.git",
+      "git_tag": "v1.9.5",
+      "cmake_args": {
+        "BENCHMARK_ENABLE_WERROR": "OFF"
+      }
     }
   ]
 }
