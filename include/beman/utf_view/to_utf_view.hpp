@@ -982,6 +982,14 @@ inline constexpr detail::to_utf_impl<to_utf_view_error_kind::replacement, char16
 
 inline constexpr detail::to_utf_impl<to_utf_view_error_kind::replacement, char32_t> to_utf32;
 
+#if 0
+// Temporarily disabled: the _or_error views surface a per-code-point
+// expected<ToType, utf_transcoding_error>, which a SIMD-backed iterator can't
+// produce on its fast path -- simdutf emits raw code units, and its inline
+// error recovery does not match Unicode 3.9.6 Substitution of Maximal Subparts.
+// The expected error kind requires synthesizing unexpected values at precise
+// per-code-point boundaries via the scalar path. Removed while bringing up the
+// SIMD path; see also the disabled base() above.
 template <exposition_only_code_unit ToType>
 inline constexpr detail::to_utf_impl<to_utf_view_error_kind::expected, ToType> to_utf_or_error;
 
@@ -990,6 +998,7 @@ inline constexpr detail::to_utf_impl<to_utf_view_error_kind::expected, char8_t> 
 inline constexpr detail::to_utf_impl<to_utf_view_error_kind::expected, char16_t> to_utf16_or_error;
 
 inline constexpr detail::to_utf_impl<to_utf_view_error_kind::expected, char32_t> to_utf32_or_error;
+#endif
 
 /* PAPER: namespace views {                                     */
 /* PAPER:                                                       */
