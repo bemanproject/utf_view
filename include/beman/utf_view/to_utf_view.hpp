@@ -350,6 +350,11 @@ private:
 
 public:
 
+#if 0
+  // Temporarily disabled: base() on the transcoding iterator is difficult to
+  // implement for a SIMD-backed iterator, which buffers a register's worth of
+  // decoded code units and would need to re-scan from the chunk boundary to
+  // recover the underlying position. Removed while bringing up the SIMD path.
   constexpr const std::ranges::iterator_t<exposition_only_Base>& base() const& noexcept
     requires std::ranges::forward_range<exposition_only_Base>
   {
@@ -361,6 +366,7 @@ public:
   {
     return std::move(current_);
   }
+#endif
 
   /* PAPER:       constexpr value_type operator*() const; */
   /* !PAPER */
