@@ -333,6 +333,9 @@ constexpr bool run_test_case_impl(test_case<CharTFrom, CharTTo> test_case) {
       ++view_it;
     } while (view_it != end);
   }
+#if 0
+  // Disabled while base() is removed from the transcoding iterator: this block
+  // reconstructs a subrange from the underlying iterators via end().base().
   if constexpr (std::bidirectional_iterator<WrappingIterator>) {
     auto it2{WrappingIterator(test_case.input)};
     auto end2{view.end().base()};
@@ -351,6 +354,7 @@ constexpr bool run_test_case_impl(test_case<CharTFrom, CharTTo> test_case) {
       } while (view_it != end);
     }
   }
+#endif
   return true;
 }
 
@@ -411,6 +415,9 @@ constexpr bool double_encode_test(std::initializer_list<CharT> const single_arr)
   return true;
 }
 
+#if 0
+// Disabled while base() is removed from the transcoding iterator: this entire
+// test exercises iterator base().
 constexpr bool utf_iterator_base_test() {
   std::initializer_list<char8_t> arr{u8'b', u8'a', u8'r'};
   {
@@ -451,6 +458,7 @@ constexpr bool utf_iterator_base_test() {
   }
   return true;
 }
+#endif
 
 constexpr bool post_increment_decrement_test() {
   std::initializer_list<char8_t> arr{u8'x'};
@@ -1584,9 +1592,12 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
   if (!run_test_case(example_with_rare_chinese_character)) {
     return false;
   }
+#if 0
+  // Disabled while base() is removed from the transcoding iterator.
   if (!utf_iterator_base_test()) {
     return false;
   }
+#endif
   if (!post_increment_decrement_test()) {
     return false;
   }
