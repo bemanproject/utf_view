@@ -704,6 +704,10 @@ private:
     to_increment_ = to_incr;
     buf_index_ = 0;
     buf_.clear();
+    encode_one(c);
+  }
+
+  constexpr void encode_one(char32_t const c) {
     if constexpr (std::is_same_v<ToType, char32_t>) {
       buf_.push_back(c);
     } else if constexpr (std::is_same_v<ToType, char16_t>) {
