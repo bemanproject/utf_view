@@ -260,6 +260,11 @@ private:
     }
   }
 
+  static constexpr std::uint16_t chunk_capacity{256};
+  static constexpr std::size_t buffer_capacity{
+    std::ranges::forward_range<exposition_only_Base>
+    ? chunk_capacity : 4 / sizeof(ToType)};
+
 /* PAPER */
 public:
   /* PAPER:   using iterator_concept = @*see below*@; */
@@ -294,12 +299,12 @@ public: // MSVC has some bug with their implementation of friendship
   [[no_unique_address]] std::ranges::sentinel_t<exposition_only_Base> end_{}; // @*exposition only*@
 /* PAPER:   sentinel_t<exposition_only_Base> end_; // @*exposition only*@ */
 
-  detail::fake_inplace_vector<value_type, 4 / sizeof(ToType)> buf_{}; // @*exposition only*@
+  detail::fake_inplace_vector<value_type, buffer_capacity> buf_{}; // @*exposition only*@
 /* PAPER:   inplace_vector<value_type, 4 / sizeof(ToType)> buf_{}; // @*exposition only*@ */
 /* PAPER */
 
-  std::int8_t buf_index_{}; // @*exposition only*@
-  std::uint8_t to_increment_{}; // @*exposition only*@
+  std::int16_t buf_index_{}; // @*exposition only*@
+  std::uint16_t to_increment_{}; // @*exposition only*@
 
   /* !PAPER */
   std::expected<void, utf_transcoding_error> success_{};
