@@ -1,6 +1,7 @@
 module;
 
 #include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
+#include <simdutf.h>
 #include <cassert>
 
 export module beman.utf_view;

@@ -22,6 +22,7 @@ import beman.utf_view;
 #include <beman/utf_view/detail/fake_inplace_vector.hpp>
 #include <beman/utf_view/detail/constant_wrapper_polyfill.hpp>
 #if !BEMAN_UTF_VIEW_USE_MODULES()
+#include <simdutf.h>
 #include <bit>
 #include <cassert>
 #include <concepts>

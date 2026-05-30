@@ -1,6 +1,12 @@
 {
   "dependencies": [
     {
+      "name": "simdutf",
+      "package_name": "simdutf",
+      "git_repository": "https://github.com/simdutf/simdutf.git",
+      "git_tag": "ca7acbcea967b5dcbab490066e99e3a6e6925539"
+    },
+    {
       "name": "transform_view",
       "package_name": "beman.transform_view",
       "git_repository": "https://github.com/bemanproject/transform_view.git",

@@ -60,6 +60,7 @@ include(infra/cmake/BuildTelemetryConfig.cmake)
 if(BEMAN_UTF_VIEW_USE_MODULES)
     set(BEMAN_TRANSFORM_VIEW_USE_MODULES ON)
 endif()
+find_package(simdutf REQUIRED)
 find_package(beman.transform_view REQUIRED)
 
 if(BEMAN_UTF_VIEW_USE_MODULES)
