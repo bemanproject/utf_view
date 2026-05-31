@@ -261,7 +261,10 @@ private:
     }
   }
 
-  static constexpr std::uint16_t chunk_capacity{256};
+#ifndef BEMAN_UTF_VIEW_CHUNK_CAPACITY
+#define BEMAN_UTF_VIEW_CHUNK_CAPACITY 8192
+#endif
+  static constexpr std::uint16_t chunk_capacity{BEMAN_UTF_VIEW_CHUNK_CAPACITY};
   static constexpr std::size_t buffer_capacity{
     std::ranges::forward_range<exposition_only_Base>
     ? chunk_capacity : 4 / sizeof(ToType)};

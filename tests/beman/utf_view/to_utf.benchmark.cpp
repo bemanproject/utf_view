@@ -7,6 +7,9 @@
 // transcoding views (and, eventually, a SIMD-backed implementation).
 
 #include <benchmark/benchmark.h>
+// In module mode to_utf_view.hpp imports the module rather than including
+// simdutf, so pull it in directly for the pure-simdutf baseline below.
+#include <simdutf.h>
 
 #include <beman/utf_view/config.hpp>
 #include <beman/utf_view/to_utf_view.hpp>
@@ -90,6 +93,43 @@ auto make_transcode_benchmark(Input input, Adaptor adaptor, std::size_t input_by
   };
 }
 
+// Pure-simdutf baselines: a single bulk convert_* call over the whole corpus
+// into a pre-sized output buffer (allocated once, outside the timed loop), with
+// no per-code-unit iteration. This is the raw-transcode ceiling the view-based
+// path is measured against; the gap is the cost of the lazy element-by-element
+// range interface.
+auto make_simdutf_utf8_to_utf16(std::vector<char8_t> input) {
+  return [input = std::move(input)](benchmark::State& state) {
+    // UTF-8 -> UTF-16 produces at most one code unit per input byte.
+    std::vector<char16_t> out(input.size());
+    for (auto _ : state) {
+      std::size_t const produced = simdutf::convert_utf8_to_utf16le(
+          reinterpret_cast<char const*>(input.data()), input.size(), out.data());
+      benchmark::DoNotOptimize(produced);
+      benchmark::DoNotOptimize(out.data());
+      benchmark::ClobberMemory();
+    }
+    state.SetBytesProcessed(static_cast<std::int64_t>(state.iterations()) *
+                            static_cast<std::int64_t>(input.size()));
+  };
+}
+
+auto make_simdutf_utf16_to_utf8(std::vector<char16_t> input) {
+  return [input = std::move(input)](benchmark::State& state) {
+    // UTF-16 -> UTF-8 produces at most three bytes per input code unit.
+    std::vector<char> out(input.size() * 3);
+    for (auto _ : state) {
+      std::size_t const produced = simdutf::convert_utf16le_to_utf8(
+          input.data(), input.size(), out.data());
+      benchmark::DoNotOptimize(produced);
+      benchmark::DoNotOptimize(out.data());
+      benchmark::ClobberMemory();
+    }
+    state.SetBytesProcessed(static_cast<std::int64_t>(state.iterations()) *
+                            static_cast<std::int64_t>(input.size() * sizeof(char16_t)));
+  };
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -105,10 +145,16 @@ int main(int argc, char** argv) {
 
     benchmark::RegisterBenchmark(
         std::string(lang) + "/utf8_to_utf16",
-        make_transcode_benchmark(std::move(utf8), to_utf16, utf8_bytes));
+        make_transcode_benchmark(utf8, to_utf16, utf8_bytes));
+    benchmark::RegisterBenchmark(
+        std::string(lang) + "/utf8_to_utf16_simdutf",
+        make_simdutf_utf8_to_utf16(std::move(utf8)));
     benchmark::RegisterBenchmark(
         std::string(lang) + "/utf16_to_utf8",
-        make_transcode_benchmark(std::move(utf16), to_utf8, utf16_bytes));
+        make_transcode_benchmark(utf16, to_utf8, utf16_bytes));
+    benchmark::RegisterBenchmark(
+        std::string(lang) + "/utf16_to_utf8_simdutf",
+        make_simdutf_utf16_to_utf8(std::move(utf16)));
   }
 
   benchmark::Initialize(&argc, argv);
