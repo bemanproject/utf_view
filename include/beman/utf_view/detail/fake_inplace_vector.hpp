@@ -58,6 +58,18 @@ public:
   constexpr T* end() {
     return &storage_[size_];
   }
+  constexpr T* data() {
+    return &storage_[0];
+  }
+  constexpr const T* data() const {
+    return &storage_[0];
+  }
+  // Set the element count after a bulk write into data() (e.g. a simdutf
+  // transcode). std::inplace_vector::resize value-initializes new elements;
+  // our uses always write the storage first, so this only adjusts the count.
+  constexpr void resize(std::size_t n) {
+    size_ = n;
+  }
 
 private:
   T storage_[N];
