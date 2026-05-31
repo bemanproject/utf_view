@@ -30,6 +30,7 @@ import beman.utf_view;
 #include <expected>
 #include <iterator>
 #include <limits>
+#include <memory>
 #include <optional>
 #include <type_traits>
 #include <utility>
@@ -723,7 +724,7 @@ private:
   /* PAPER:       constexpr void exposition_only_read(); // @*exposition only*@ */
   /* PAPER: */
 
-  constexpr void refill_chunk() {
+  constexpr void refill_chunk_scalar() {
     guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
     auto const read{
       [&] {
@@ -750,6 +751,137 @@ private:
     while (sufficient_remaining_capacity() && current_ != exposition_only_end()) {
       read();
     }
+  }
+
+  // Largest number of *input* code units handed to simdutf per chunk, chosen so
+  // the worst-case transcoded output still fits in buf_ (capacity
+  // buffer_capacity). The divisor is the maximum number of output code units a
+  // single input code unit can expand to for this direction.
+  static constexpr std::size_t simd_input_window() {
+    if constexpr (std::is_same_v<ToType, char8_t>) {
+      // UTF-8 out: a lone BMP char16_t -> 3 bytes; a char32_t -> up to 4 bytes.
+      return buffer_capacity / (std::is_same_v<from_type, char32_t> ? 4 : 3);
+    } else if constexpr (std::is_same_v<ToType, char16_t>) {
+      // UTF-16 out: an astral char32_t -> a surrogate pair (2 units); UTF-8 in
+      // never produces more than one UTF-16 unit per input byte.
+      return buffer_capacity / (std::is_same_v<from_type, char32_t> ? 2 : 1);
+    } else {
+      // UTF-32 out: at most one code point per input code unit.
+      return buffer_capacity;
+    }
+  }
+
+  constexpr void refill_chunk_simd() {
+    // simdutf can only run at runtime, over a contiguous range whose remaining
+    // length we can measure in O(1), transcoding between two *different* UTF
+    // encodings. Constant evaluation, non-contiguous or unsized ranges, and
+    // same-encoding passes route to the scalar reader instead. These are
+    // compile-time / representational fences -- NOT the eventual runtime
+    // dispatch policy (error -> scalar fallback, staging copies for
+    // non-contiguous forward ranges, ISA tuning), which is still unimplemented.
+    if constexpr (std::ranges::contiguous_range<exposition_only_Base> &&
+                  std::sized_sentinel_for<
+                      std::ranges::sentinel_t<exposition_only_Base>,
+                      std::ranges::iterator_t<exposition_only_Base>> &&
+                  !std::is_same_v<from_type, ToType>) {
+      if !consteval {
+        buf_index_ = 0;
+        to_increment_ = 0;
+        buf_.clear();
+
+        auto const* const in = std::to_address(current_);
+        std::size_t const remaining =
+            static_cast<std::size_t>(exposition_only_end() - current_);
+        std::size_t const max_window = simd_input_window();
+        std::size_t window = remaining < max_window ? remaining : max_window;
+
+        // Trim the window back to the last *complete* code point so simdutf
+        // never sees a code point straddling the chunk boundary. Valid input is
+        // assumed here; genuinely truncated input falls through to the scalar
+        // reader below.
+        if constexpr (std::is_same_v<from_type, char8_t>) {
+          // A UTF-8 sequence is at most 4 bytes (lead + <= 3 continuations), so
+          // the last lead byte is within 3 bytes of the window end.
+          std::size_t lead = window;
+          bool found_lead = false;
+          for (int back = 0; back < 4 && lead > 0; ++back) {
+            --lead;
+            if (!detail::continuation(in[lead])) {
+              found_lead = true;
+              break;
+            }
+          }
+          if (found_lead) {
+            int const needed = detail::utf8_code_units(in[lead]);
+            std::size_t const have = window - lead;
+            if (needed < 1 || static_cast<std::size_t>(needed) > have) {
+              window = lead; // trailing sequence is incomplete: drop it
+            }
+          }
+          // !found_lead => >3 trailing continuation bytes, i.e. malformed near
+          // the boundary; leave the window and let the convert below reject it.
+        } else if constexpr (std::is_same_v<from_type, char16_t>) {
+          // A trailing high surrogate needs its low half from the next chunk.
+          if (window > 0 && detail::high_surrogate(in[window - 1])) {
+            --window;
+          }
+        }
+        // from_type == char32_t: fixed width, nothing to trim.
+
+        if (window == 0) {
+          // Remaining input is a single incomplete code point (truncation); let
+          // the scalar reader emit the replacement and make progress.
+          refill_chunk_scalar();
+          return;
+        }
+
+        std::size_t produced = 0;
+        if constexpr (std::is_same_v<from_type, char8_t> &&
+                      std::is_same_v<ToType, char16_t>) {
+          produced = simdutf::convert_utf8_to_utf16le(
+              reinterpret_cast<char const*>(in), window, buf_.data());
+        } else if constexpr (std::is_same_v<from_type, char8_t> &&
+                             std::is_same_v<ToType, char32_t>) {
+          produced = simdutf::convert_utf8_to_utf32(
+              reinterpret_cast<char const*>(in), window, buf_.data());
+        } else if constexpr (std::is_same_v<from_type, char16_t> &&
+                             std::is_same_v<ToType, char8_t>) {
+          produced = simdutf::convert_utf16le_to_utf8(
+              in, window, reinterpret_cast<char*>(buf_.data()));
+        } else if constexpr (std::is_same_v<from_type, char16_t> &&
+                             std::is_same_v<ToType, char32_t>) {
+          produced = simdutf::convert_utf16le_to_utf32(in, window, buf_.data());
+        } else if constexpr (std::is_same_v<from_type, char32_t> &&
+                             std::is_same_v<ToType, char8_t>) {
+          produced = simdutf::convert_utf32_to_utf8(
+              in, window, reinterpret_cast<char*>(buf_.data()));
+        } else if constexpr (std::is_same_v<from_type, char32_t> &&
+                             std::is_same_v<ToType, char16_t>) {
+          produced = simdutf::convert_utf32_to_utf16le(in, window, buf_.data());
+        } else {
+          static_assert(false);
+        }
+
+        if (produced == 0) {
+          // simdutf rejects the entire window on any malformed sequence. Re-run
+          // this chunk through the scalar reader, which substitutes U+FFFD.
+          // (A finer-grained path using convert_*_with_errors comes later.)
+          refill_chunk_scalar();
+          return;
+        }
+
+        buf_.resize(produced);
+        to_increment_ = static_cast<std::uint16_t>(window);
+        return;
+      }
+    }
+    refill_chunk_scalar();
+  }
+
+  constexpr void refill_chunk() {
+    // No dispatch yet: always enter the SIMD path, which itself falls back to
+    // the scalar reader wherever simdutf cannot be used.
+    refill_chunk_simd();
   }
 
 #if 0

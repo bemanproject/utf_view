@@ -99,8 +99,12 @@ endif()
 
 if(BEMAN_UTF_VIEW_USE_MODULES)
     target_link_libraries(beman.utf_view PRIVATE beman::transform_view)
+    # simdutf is called from the transcoding iterator, a template instantiated
+    # in consumer TUs, so its symbols must propagate (PUBLIC, not PRIVATE).
+    target_link_libraries(beman.utf_view PUBLIC simdutf::simdutf)
 else()
     target_link_libraries(beman.utf_view INTERFACE beman::transform_view)
+    target_link_libraries(beman.utf_view INTERFACE simdutf::simdutf)
 endif()
 
 add_subdirectory(include/beman/utf_view)
