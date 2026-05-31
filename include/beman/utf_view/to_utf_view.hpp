@@ -353,7 +353,7 @@ private:
     end_(end)
   {
     if (current_ != exposition_only_end())
-      exposition_only_read();
+      refill_chunk();
     else if constexpr (!std::ranges::forward_range<exposition_only_Base>) {
       buf_index_ = -1;
     }
@@ -513,7 +513,7 @@ private:
         std::advance(current_, to_increment_);
       }
       if (current_ != exposition_only_end()) {
-        exposition_only_read();
+        refill_chunk();
       } else if constexpr (!std::ranges::forward_range<exposition_only_Base>) {
         buf_index_ = -1;
       }
@@ -628,11 +628,6 @@ private:
     return {.c{c}, .to_incr{to_incr}, .success{success}};
   }
 
-  constexpr decode_code_point_result decode_code_point_utf8() {
-    guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
-    return decode_code_point_utf8_impl(current_, exposition_only_end());
-  }
-
   static constexpr decode_code_point_result decode_code_point_utf16_impl(
       std::ranges::iterator_t<exposition_only_Base>& it, std::ranges::sentinel_t<exposition_only_Base> const& last) {
     char32_t c{};
@@ -669,11 +664,6 @@ private:
     return {.c{c}, .to_incr{to_incr}, .success{success}};
   }
 
-  constexpr decode_code_point_result decode_code_point_utf16() {
-    guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
-    return decode_code_point_utf16_impl(current_, exposition_only_end());
-  }
-
   static constexpr decode_code_point_result decode_code_point_utf32_impl(
       std::ranges::iterator_t<exposition_only_Base>& it) {
     char32_t c = *it;
@@ -692,19 +682,6 @@ private:
       }
     }
     return {.c{c}, .to_incr{1}, .success{success}};
-  }
-
-  constexpr decode_code_point_result decode_code_point_utf32() {
-    guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
-    return decode_code_point_utf32_impl(current_);
-  }
-
-  // Encode the code point c as one or more code units in buf.
-  constexpr void update(char32_t c, std::uint8_t to_incr) {
-    to_increment_ = to_incr;
-    buf_index_ = 0;
-    buf_.clear();
-    encode_one(c);
   }
 
   constexpr void encode_one(char32_t const c) {
@@ -746,20 +723,32 @@ private:
   /* PAPER:       constexpr void exposition_only_read(); // @*exposition only*@ */
   /* PAPER: */
 
-  constexpr void exposition_only_read() { // @*exposition only*@
-    success_.emplace();
-    decode_code_point_result decode_result{};
-    if constexpr (std::is_same_v<from_type, char8_t>)
-      decode_result = decode_code_point_utf8();
-    else if constexpr (std::is_same_v<from_type, char16_t>)
-      decode_result = decode_code_point_utf16();
-    else if constexpr (std::is_same_v<from_type, char32_t>) {
-      decode_result = decode_code_point_utf32();
-    } else {
-      static_assert(false);
+  constexpr void refill_chunk() {
+    guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
+    auto const read{
+      [&] {
+        decode_code_point_result decode_result{};
+        if constexpr (std::is_same_v<from_type, char8_t>)
+          decode_result = decode_code_point_utf8_impl(current_, exposition_only_end());
+        else if constexpr (std::is_same_v<from_type, char16_t>)
+          decode_result = decode_code_point_utf16_impl(current_, exposition_only_end());
+        else if constexpr (std::is_same_v<from_type, char32_t>) {
+          decode_result = decode_code_point_utf32_impl(current_);
+        } else {
+          static_assert(false);
+        }
+        encode_one(decode_result.c);
+        to_increment_ += decode_result.to_incr;
+      }};
+    auto const sufficient_remaining_capacity{
+      [&] {
+        return (buf_.max_size() - buf_.size()) >= 4 / sizeof(ToType);
+      }};
+    buf_index_ = 0;
+    buf_.clear();
+    while (sufficient_remaining_capacity() && current_ != exposition_only_end()) {
+      read();
     }
-    update(decode_result.c, decode_result.to_incr);
-    success_ = decode_result.success;
   }
 
 #if 0
