@@ -883,8 +883,14 @@ private:
 
   constexpr void refill_chunk() {
     // No dispatch yet: always enter the SIMD path, which itself falls back to
-    // the scalar reader wherever simdutf cannot be used.
+    // the scalar reader wherever simdutf cannot be used. Define
+    // BEMAN_UTF_VIEW_FORCE_SCALAR to force the scalar reader everywhere (used to
+    // measure the SIMD-vs-scalar ceiling of the element-by-element view).
+#ifdef BEMAN_UTF_VIEW_FORCE_SCALAR
+    refill_chunk_scalar();
+#else
     refill_chunk_simd();
+#endif
   }
 
 #if 0
