@@ -505,7 +505,7 @@ private:
   {
     ++buf_index_;
     /* !PAPER */
-    if (buf_index_ == static_cast<std::int8_t>(buf_.size())) {
+    if (buf_index_ == static_cast<std::int16_t>(buf_.size())) {
     /* PAPER */
     /* PAPER:     if (buf_index_ == buf_.size()) { */
       if constexpr (std::ranges::forward_range<exposition_only_Base>) {
@@ -745,6 +745,7 @@ private:
         return (buf_.max_size() - buf_.size()) >= 4 / sizeof(ToType);
       }};
     buf_index_ = 0;
+    to_increment_ = 0;
     buf_.clear();
     while (sufficient_remaining_capacity() && current_ != exposition_only_end()) {
       read();
