@@ -21,6 +21,12 @@ import beman.utf_view;
 #include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
 #include <beman/utf_view/detail/fake_inplace_vector.hpp>
 #include <beman/utf_view/detail/constant_wrapper_polyfill.hpp>
+#ifdef BEMAN_UTF_VIEW_USE_STDSIMD
+// Header-only std::simd transcoding kernel. Inlined into the refill path; no
+// link dependency. Currently implements the UTF-16 -> UTF-8 direction; other
+// directions fall back to the scalar reader when this selector is active.
+#include <beman/utf_view/detail/simd_transcode.hpp>
+#endif
 #if !BEMAN_UTF_VIEW_USE_MODULES()
 #include <simdutf.h>
 #include <bit>
@@ -881,13 +887,61 @@ private:
     refill_chunk_scalar();
   }
 
-  constexpr void refill_chunk() {
-    // No dispatch yet: always enter the SIMD path, which itself falls back to
-    // the scalar reader wherever simdutf cannot be used. Define
-    // BEMAN_UTF_VIEW_FORCE_SCALAR to force the scalar reader everywhere (used to
-    // measure the SIMD-vs-scalar ceiling of the element-by-element view).
-#ifdef BEMAN_UTF_VIEW_FORCE_SCALAR
+#ifdef BEMAN_UTF_VIEW_USE_STDSIMD
+  // Standardizable std::simd kernel path. Unlike refill_chunk_simd (simdutf),
+  // the kernel is constexpr and owns the chunk boundary trim and output-capacity
+  // bound (interface B), so there is no `if !consteval` fence and no
+  // simd_input_window()/trim duplication here: hand it the remaining input and
+  // buf_'s capacity, then take input_consumed / output_produced back. Only the
+  // UTF-16 -> UTF-8 direction is implemented; everything else (other directions,
+  // non-contiguous/unsized ranges) routes to the scalar reader.
+  constexpr void refill_chunk_stdsimd() {
+    if constexpr (std::ranges::contiguous_range<exposition_only_Base> &&
+                  std::sized_sentinel_for<
+                      std::ranges::sentinel_t<exposition_only_Base>,
+                      std::ranges::iterator_t<exposition_only_Base>> &&
+                  std::is_same_v<from_type, char16_t> &&
+                  std::is_same_v<ToType, char8_t>) {
+      buf_index_ = 0;
+      to_increment_ = 0;
+      buf_.clear();
+
+      auto const* const in = std::to_address(current_);
+      std::size_t const remaining =
+          static_cast<std::size_t>(exposition_only_end() - current_);
+
+      detail::simd_kernel::transcode_result const r =
+          detail::simd_kernel::transcode_utf16_to_utf8(
+              in, remaining, buf_.data(), buffer_capacity);
+
+      // On any ill-formed unit, or when the kernel could make no forward
+      // progress (a lone trailing high surrogate, etc.), defer the whole chunk
+      // to the scalar reader so it can emit the Unicode 3.9.6 replacement and
+      // resync. (Coarse whole-chunk fallback; the error-offset fast-path that
+      // reuses the valid prefix is a later optimization.)
+      if (!r.ok || r.input_consumed == 0) {
+        refill_chunk_scalar();
+        return;
+      }
+
+      buf_.resize(r.output_produced);
+      to_increment_ = static_cast<std::uint16_t>(r.input_consumed);
+      return;
+    }
     refill_chunk_scalar();
+  }
+#endif
+
+  constexpr void refill_chunk() {
+    // Default: enter the SIMD path, which itself falls back to the scalar reader
+    // wherever the kernel cannot be used. Measurement selectors:
+    //   BEMAN_UTF_VIEW_FORCE_SCALAR  -- scalar reader everywhere (the ceiling
+    //                                   baseline for the element-by-element view).
+    //   BEMAN_UTF_VIEW_USE_STDSIMD   -- the std::simd kernel instead of simdutf.
+#if defined(BEMAN_UTF_VIEW_FORCE_SCALAR)
+    refill_chunk_scalar();
+#elif defined(BEMAN_UTF_VIEW_USE_STDSIMD)
+    refill_chunk_stdsimd();
 #else
     refill_chunk_simd();
 #endif
