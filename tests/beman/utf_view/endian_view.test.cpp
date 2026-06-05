@@ -107,6 +107,20 @@ static_assert(
                   test_random_access_iterator<int>, test_random_access_iterator<int>>>()
           | from_big_endian)>>);
 
+static_assert(
+  std::endian::native == std::endian::big ||
+  std::contiguous_iterator<
+    std::ranges::iterator_t<
+        decltype(std::declval< std::ranges::subrange<int*, int*>>()
+          | from_little_endian)>>);
+
+static_assert(
+  std::endian::native == std::endian::little ||
+  std::contiguous_iterator<
+    std::ranges::iterator_t<
+        decltype(std::declval< std::ranges::subrange<int*, int*>>()
+          | from_big_endian)>>);
+
 constexpr bool smoke_test() {
   std::vector<int> foo{0x12345678};
   auto bar{foo | from_big_endian};

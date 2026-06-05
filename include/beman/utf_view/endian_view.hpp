@@ -33,23 +33,9 @@ namespace detail {
 
 /* PAPER */
 
-struct exposition_only_byteswap_if_native_is_big_endian {
+struct exposition_only_byteswap {
   constexpr auto operator()(auto x) const noexcept {
-    if constexpr (std::endian::native == std::endian::big) {
-      return std::byteswap(x);
-    } else {
-      return x;
-    }
-  }
-};
-
-struct exposition_only_byteswap_if_native_is_little_endian { // @*exposition only*@/
-  constexpr auto operator()(auto x) const noexcept {
-    if constexpr (std::endian::native == std::endian::little) {
-      return std::byteswap(x);
-    } else {
-      return x;
-    }
+    return std::byteswap(x);
   }
 };
 
@@ -59,9 +45,9 @@ struct exposition_only_byteswap_if_native_is_little_endian { // @*exposition onl
 
 namespace detail {
 
-  template <bool byteswap_if_native_is_big>
+  template <std::endian endianness>
   struct from_to_endian_impl
-      : std::ranges::range_adaptor_closure<from_to_endian_impl<byteswap_if_native_is_big>> {
+      : std::ranges::range_adaptor_closure<from_to_endian_impl<endianness>> {
     template <std::ranges::range R>
       requires std::integral<std::ranges::range_value_t<R>>
     constexpr auto operator()(R&& r) const {
@@ -69,12 +55,11 @@ namespace detail {
       if constexpr (detail::is_empty_view<T>) {
         return std::ranges::empty_view<std::ranges::range_value_t<T>>{};
       } else {
-        if constexpr (byteswap_if_native_is_big) {
-          return beman::transform_view::transform_view(
-              std::forward<R>(r), exposition_only_byteswap_if_native_is_big_endian{});
+        if constexpr (std::endian::native == endianness) {
+          return std::views::all(std::forward<R>(r));
         } else {
           return beman::transform_view::transform_view(
-              std::forward<R>(r), exposition_only_byteswap_if_native_is_little_endian{});
+              std::forward<R>(r), exposition_only_byteswap{});
         }
       }
     }
@@ -82,21 +67,18 @@ namespace detail {
 
 } // namespace detail
 
-inline constexpr detail::from_to_endian_impl<true> from_little_endian;
+inline constexpr detail::from_to_endian_impl<std::endian::little> from_little_endian;
 
-inline constexpr detail::from_to_endian_impl<false> from_big_endian;
+inline constexpr detail::from_to_endian_impl<std::endian::big> from_big_endian;
 
-inline constexpr detail::from_to_endian_impl<true> to_little_endian;
+inline constexpr detail::from_to_endian_impl<std::endian::little> to_little_endian;
 
-inline constexpr detail::from_to_endian_impl<false> to_big_endian;
+inline constexpr detail::from_to_endian_impl<std::endian::big> to_big_endian;
 
-/* PAPER:   inline constexpr @*unspecified*@ from_little_endian;  */
-/* PAPER:                                                         */
-/* PAPER:   inline constexpr @*unspecified*@ from_big_endian;     */
-/* PAPER:                                                         */
-/* PAPER:   inline constexpr @*unspecified*@ to_little_endian;    */
-/* PAPER:                                                         */
-/* PAPER:   inline constexpr @*unspecified*@ to_big_endian;       */
+/* PAPER:   inline constexpr @*unspecified*@ from_little_endian = @*unspecified*@;  */
+/* PAPER:   inline constexpr @*unspecified*@ from_big_endian = @*unspecified*@;     */
+/* PAPER:   inline constexpr @*unspecified*@ to_little_endian = @*unspecified*@;    */
+/* PAPER:   inline constexpr @*unspecified*@ to_big_endian = @*unspecified*@;       */
 
 /* PAPER: } */
 
