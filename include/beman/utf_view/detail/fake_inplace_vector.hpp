@@ -58,6 +58,18 @@ public:
   constexpr T* end() {
     return &storage_[size_];
   }
+  constexpr const T* begin() const {
+    return &storage_[0];
+  }
+  constexpr const T* end() const {
+    return &storage_[size_];
+  }
+  constexpr T* data() {
+    return &storage_[0];
+  }
+  constexpr const T* data() const {
+    return &storage_[0];
+  }
 
 private:
   T storage_[N];

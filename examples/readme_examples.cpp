@@ -236,6 +236,22 @@ std::basic_string<ToCharT> transcode_to(std::basic_string<FromCharT> const& inpu
   return input | to_utf<ToCharT> | std::ranges::to<std::basic_string<ToCharT>>();
 }
 
+// base_code_units() returns the source code units that were decoded to produce
+// the code point at the iterator's current position. For a forward-or-better
+// iterator the result is a subrange of the same underlying iterators returned by
+// base(), so it can be used to copy or splice the original encoding of a single
+// code point.
+std::u8string first_nonascii_units(std::u8string_view str) {
+  auto view = str | to_utf32;
+  for (auto it = view.begin(); it != view.end(); ++it) {
+    if (*it > 0x7F) {
+      auto code_units = it.base_code_units();
+      return std::u8string(code_units.begin(), code_units.end());
+    }
+  }
+  return {};
+}
+
 #if __cpp_lib_ranges_chunk >= 202202L
 std::u8string parse_message_subset(
     std::span<std::byte> message, std::size_t offset, std::size_t length) {
@@ -316,6 +332,9 @@ bool readme_examples() {
     return false;
   }
   if (!basis_operation()) {
+    return false;
+  }
+  if (first_nonascii_units(u8"aé") != u8"\xC3\xA9") {
     return false;
   }
 #else

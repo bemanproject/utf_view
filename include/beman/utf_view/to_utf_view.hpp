@@ -252,6 +252,9 @@ private:
 /* !PAPER */
   using from_type = std::ranges::range_value_t<V>; // @*exposition only*@
 
+  using exposition_only_from_buf_type = // @*exposition only*@
+      detail::fake_inplace_vector<from_type, 4 / sizeof(from_type)>;
+
   static consteval auto iter_concept_impl() {
     if constexpr (std::ranges::bidirectional_range<exposition_only_Base>) {
       return std::bidirectional_iterator_tag{};
@@ -298,6 +301,11 @@ public: // MSVC has some bug with their implementation of friendship
 
   std::int8_t buf_index_{}; // @*exposition only*@
   std::uint8_t to_increment_{}; // @*exposition only*@
+
+  [[no_unique_address]] std::conditional_t<std::ranges::forward_range<exposition_only_Base>, std::monostate, exposition_only_from_buf_type> from_buf_{}; // @*exposition only*@
+/* PAPER:   inplace_vector<from_type, 4 / sizeof(from_type)> from_buf_{}; // @*exposition only*@, present only if */
+/* PAPER:                                                                //   forward_range<exposition_only_Base> is false */
+/* PAPER */
 
   /* !PAPER */
   std::expected<void, utf_transcoding_error> success_{};
@@ -361,6 +369,30 @@ public:
   {
     return std::move(current_);
   }
+
+  /* PAPER:       constexpr subrange<iterator_t<exposition_only_Base>> base_code_units() const */
+  /* PAPER:         requires forward_range<exposition_only_Base>; */
+  /* !PAPER */
+  constexpr auto base_code_units() const
+    requires std::ranges::forward_range<exposition_only_Base>
+  {
+    auto last = current_;
+    if (current_ != end_)
+      std::ranges::advance(last, to_increment_);
+    return std::ranges::subrange<std::ranges::iterator_t<exposition_only_Base>>{current_, last};
+  }
+  /* PAPER */
+
+  /* PAPER:       constexpr subrange<const from_type*> base_code_units() const */
+  /* PAPER:         requires (!forward_range<exposition_only_Base>); */
+  /* !PAPER */
+  constexpr std::ranges::subrange<from_type const*>
+  base_code_units() const
+    requires (!std::ranges::forward_range<exposition_only_Base>)
+  {
+    return {from_buf_.begin(), from_buf_.end()};
+  }
+  /* PAPER */
 
   /* PAPER:       constexpr value_type operator*() const; */
   /* !PAPER */
@@ -455,6 +487,34 @@ private:
     It orig;
   };
 
+  // For input (non-forward) ranges, decoding consumes the underlying iterator
+  // irreversibly, so the source code units are recorded into from_buf_ as they
+  // are consumed. Each increment appends the code unit at the current position
+  // before advancing, so from_buf_ ends up holding exactly the to_increment_
+  // code units that were decoded.
+  struct exposition_only_recording_iterator { // @*exposition only*@
+    using value_type = from_type;
+    using difference_type = std::ptrdiff_t;
+    using iterator_concept = std::input_iterator_tag;
+    std::ranges::iterator_t<exposition_only_Base>* current_ptr_;
+    exposition_only_from_buf_type* from_buf_ptr_;
+    constexpr decltype(auto) operator*() const {
+      return **current_ptr_;
+    }
+    constexpr exposition_only_recording_iterator& operator++() {
+      from_buf_ptr_->push_back(static_cast<from_type>(**current_ptr_));
+      ++*current_ptr_;
+      return *this;
+    }
+    constexpr void operator++(int) {
+      ++*this;
+    }
+    friend constexpr bool operator==(exposition_only_recording_iterator const& lhs,
+                                     std::ranges::sentinel_t<exposition_only_Base> const& rhs) {
+      return *lhs.current_ptr_ == rhs;
+    }
+  };
+
   constexpr std::ranges::iterator_t<exposition_only_Base> begin() const
     requires std::ranges::bidirectional_range<exposition_only_Base>
   {
@@ -492,14 +552,16 @@ private:
         exposition_only_read();
       } else if constexpr (!std::ranges::forward_range<exposition_only_Base>) {
         buf_index_ = -1;
+        from_buf_.clear();
       }
     }
   }
 
   /* !PAPER */
 
+  template <class It, class S>
   static constexpr decode_code_point_result decode_code_point_utf8_impl(
-      std::ranges::iterator_t<exposition_only_Base>& it, std::ranges::sentinel_t<exposition_only_Base> const& last) {
+      It& it, S const& last) {
     char32_t c{};
     std::uint8_t u = *it;
     ++it;
@@ -605,12 +667,19 @@ private:
   }
 
   constexpr decode_code_point_result decode_code_point_utf8() {
-    guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
-    return decode_code_point_utf8_impl(current_, exposition_only_end());
+    if constexpr (std::ranges::forward_range<exposition_only_Base>) {
+      guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
+      return decode_code_point_utf8_impl(current_, exposition_only_end());
+    } else {
+      from_buf_.clear();
+      exposition_only_recording_iterator rec{&current_, &from_buf_};
+      return decode_code_point_utf8_impl(rec, exposition_only_end());
+    }
   }
 
+  template <class It, class S>
   static constexpr decode_code_point_result decode_code_point_utf16_impl(
-      std::ranges::iterator_t<exposition_only_Base>& it, std::ranges::sentinel_t<exposition_only_Base> const& last) {
+      It& it, S const& last) {
     char32_t c{};
     std::uint16_t u = *it;
     ++it;
@@ -646,12 +715,19 @@ private:
   }
 
   constexpr decode_code_point_result decode_code_point_utf16() {
-    guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
-    return decode_code_point_utf16_impl(current_, exposition_only_end());
+    if constexpr (std::ranges::forward_range<exposition_only_Base>) {
+      guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
+      return decode_code_point_utf16_impl(current_, exposition_only_end());
+    } else {
+      from_buf_.clear();
+      exposition_only_recording_iterator rec{&current_, &from_buf_};
+      return decode_code_point_utf16_impl(rec, exposition_only_end());
+    }
   }
 
+  template <class It>
   static constexpr decode_code_point_result decode_code_point_utf32_impl(
-      std::ranges::iterator_t<exposition_only_Base>& it) {
+      It& it) {
     char32_t c = *it;
     std::expected<void, utf_transcoding_error> success{};
     ++it;
@@ -671,8 +747,14 @@ private:
   }
 
   constexpr decode_code_point_result decode_code_point_utf32() {
-    guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
-    return decode_code_point_utf32_impl(current_);
+    if constexpr (std::ranges::forward_range<exposition_only_Base>) {
+      guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
+      return decode_code_point_utf32_impl(current_);
+    } else {
+      from_buf_.clear();
+      exposition_only_recording_iterator rec{&current_, &from_buf_};
+      return decode_code_point_utf32_impl(rec);
+    }
   }
 
   // Encode the code point c as one or more code units in buf.

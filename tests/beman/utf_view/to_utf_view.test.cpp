@@ -452,6 +452,146 @@ constexpr bool utf_iterator_base_test() {
   return true;
 }
 
+constexpr bool base_code_units_test() {
+  // "Aé€😀": code points encoded as 1, 2, 3, and 4 UTF-8 code units.
+  std::initializer_list<char8_t> arr{
+      u8'A',
+      static_cast<char8_t>('\xC3'), static_cast<char8_t>('\xA9'), // U+00E9
+      static_cast<char8_t>('\xE2'), static_cast<char8_t>('\x82'),
+      static_cast<char8_t>('\xAC'),                               // U+20AC
+      static_cast<char8_t>('\xF0'), static_cast<char8_t>('\x9F'),
+      static_cast<char8_t>('\x98'), static_cast<char8_t>('\x80')}; // U+1F600
+  std::ptrdiff_t const expected_lengths[] = {1, 2, 3, 4};
+
+  // Forward range: base_code_units() is a subrange of base() iterators covering
+  // exactly the source code units of the current code point.
+  {
+    test_forward_iterator it_begin(arr);
+    std::ranges::subrange subrange{std::move(it_begin), std::default_sentinel};
+    auto view = subrange | to_utf32;
+    std::size_t i = 0;
+    for (auto it = view.begin(); it != view.end(); ++it, ++i) {
+      auto code_units = it.base_code_units();
+      if (std::ranges::distance(code_units) != expected_lengths[i]) {
+        return false;
+      }
+      if (code_units.begin() != it.base()) {
+        return false;
+      }
+    }
+    if (i != 4) {
+      return false;
+    }
+  }
+
+  // Bidirectional range: reverse iteration reports the same source code units,
+  // and the past-the-end iterator yields an empty subrange.
+  {
+    test_bidi_iterator it_begin(arr);
+    auto end_it = it_begin;
+    while (end_it != std::default_sentinel) {
+      ++end_it;
+    }
+    std::ranges::subrange subrange{it_begin, end_it};
+    auto view = subrange | to_utf32;
+    if (std::ranges::distance(view.end().base_code_units()) != 0) {
+      return false;
+    }
+    std::ptrdiff_t const reversed_lengths[] = {4, 3, 2, 1};
+    std::size_t i = 0;
+    auto it = view.end();
+    do {
+      --it;
+      auto code_units = it.base_code_units();
+      if (std::ranges::distance(code_units) != reversed_lengths[i]) {
+        return false;
+      }
+      if (code_units.begin() != it.base()) {
+        return false;
+      }
+      ++i;
+    } while (it != view.begin());
+    if (i != 4) {
+      return false;
+    }
+  }
+
+  // Input range: base_code_units() references the iterator's internal cache of
+  // decoded source code units (subrange over const from_type*).
+  {
+    test_input_iterator it_begin(arr);
+    std::ranges::subrange subrange{std::move(it_begin), std::default_sentinel};
+    auto view = std::move(subrange) | to_utf32;
+    static_assert(std::is_same_v<decltype(view.begin().base_code_units()),
+                                 std::ranges::subrange<char8_t const*>>);
+    auto src = arr.begin();
+    std::size_t i = 0;
+    for (auto it = view.begin(); it != view.end(); ++it, ++i) {
+      auto code_units = it.base_code_units();
+      if (std::ranges::distance(code_units) != expected_lengths[i]) {
+        return false;
+      }
+      for (char8_t const code_unit : code_units) {
+        if (src == arr.end() || code_unit != *src) {
+          return false;
+        }
+        ++src;
+      }
+    }
+    if (i != 4 || src != arr.end()) {
+      return false;
+    }
+  }
+
+  // A single source code unit can yield multiple output code units (a surrogate
+  // pair here); base_code_units() stays fixed across those output positions.
+  {
+    std::initializer_list<char32_t> u32{U'\U0001F600', U'X'};
+    test_forward_iterator it_begin(u32);
+    std::ranges::subrange subrange{std::move(it_begin), std::default_sentinel};
+    auto view = subrange | to_utf16;
+    auto it = view.begin();
+    auto const code_point_base = it.base();
+    if (std::ranges::distance(it.base_code_units()) != 1) {
+      return false;
+    }
+    ++it; // trailing surrogate, still the same source code unit
+    if (std::ranges::distance(it.base_code_units()) != 1) {
+      return false;
+    }
+    if (it.base() != code_point_base ||
+        it.base_code_units().begin() != code_point_base) {
+      return false;
+    }
+    ++it; // U'X'
+    if (std::ranges::distance(it.base_code_units()) != 1 ||
+        *it.base_code_units().begin() != U'X') {
+      return false;
+    }
+  }
+
+  // Input range, invalid sequence: the cache holds the consumed code unit(s).
+  {
+    std::initializer_list<char8_t> truncated{static_cast<char8_t>('\xC2')};
+    test_input_iterator it_begin(truncated);
+    std::ranges::subrange subrange{std::move(it_begin), std::default_sentinel};
+    auto view = std::move(subrange) | to_utf32_or_error;
+    auto it = view.begin();
+    auto code_units = it.base_code_units();
+    if (std::ranges::distance(code_units) != 1) {
+      return false;
+    }
+    if (*code_units.begin() != static_cast<char8_t>('\xC2')) {
+      return false;
+    }
+    if ((*it).has_value()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 constexpr bool post_increment_decrement_test() {
   std::initializer_list<char8_t> arr{u8'x'};
   {
@@ -1585,6 +1725,9 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
     return false;
   }
   if (!utf_iterator_base_test()) {
+    return false;
+  }
+  if (!base_code_units_test()) {
     return false;
   }
   if (!post_increment_decrement_test()) {
