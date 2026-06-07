@@ -21,6 +21,7 @@ import std;
 #include <functional>
 #include <iterator>
 #include <optional>
+#include <print>
 #include <ranges>
 #include <stdexcept>
 #include <string>
@@ -298,6 +299,25 @@ constexpr detail::fake_inplace_vector<ToType, N> transcode_trucating_correctly(
 }
 #endif
 
+void print_runs(std::ranges::range auto input) {
+  auto utf_view = input | beman::utf_view::to_utf32;
+  auto it = utf_view.begin();
+  while (it != utf_view.end()) {
+    auto units = it.base_code_units();
+    char32_t code_point = *it;
+    int count = 1;
+    ++it;
+    while (it != utf_view.end() && *it == code_point) {
+      ++count;
+      ++it;
+    }
+    std::print(
+      "{}x{::#x} ", count,
+      units | std::views::transform([](char8_t c) { return (uint8_t)c; } ));
+  }
+  std::println("");
+}
+
 bool readme_examples() {
   using namespace std::string_view_literals;
 #ifndef _MSC_VER
@@ -386,6 +406,11 @@ bool readme_examples() {
     }
   }
 #endif
+  std::u8string text = u8"ⒶⒶⒶⒷⒸ";
+  std::print("forward: ");
+  print_runs(text);
+  // std::print("input  : ");
+  // print_runs(text | std::views::as_input); // UB
   return true;
 }
 
