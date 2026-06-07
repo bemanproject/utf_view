@@ -21,11 +21,13 @@ import std;
 #include <functional>
 #include <iterator>
 #include <optional>
+#include <print>
 #include <ranges>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
+#include <version>
 #endif
 
 namespace beman::utf_view::examples {
@@ -267,7 +269,7 @@ constexpr bool is_continuation(T c) {
 }
 
 template <typename FromType, typename ToType, std::size_t N>
-constexpr detail::fake_inplace_vector<ToType, N> transcode_trucating_correctly(
+constexpr detail::fake_inplace_vector<ToType, N> transcode_truncating_correctly(
     std::basic_string_view<FromType> input) {
   detail::fake_inplace_vector<ToType, N> output;
   for (auto code_point_view : input
@@ -280,6 +282,50 @@ constexpr detail::fake_inplace_vector<ToType, N> transcode_trucating_correctly(
   }
   return output;
 }
+#endif
+
+#if __cpp_lib_ranges_as_input >= 202502L
+void print_utf8_code_points_and_code_units(std::ranges::range auto input) {
+  auto print_code_point{
+    [](char32_t code_point, auto code_unit_range) {
+    std::println(
+      "{:#x} = {::#x}", static_cast<std::uint32_t>(code_point),
+      code_unit_range
+      | std::views::transform([](char8_t c) { return (std::uint8_t)c; }));
+    }};
+  auto code_points = input
+                     | std::ranges::to<std::u8string>()
+                     | beman::utf_view::to_utf32;
+  for (auto it = code_points.begin(); it != code_points.end(); ++it) {
+    print_code_point(*it, std::ranges::subrange(it.base(), std::ranges::next(it).base()));
+  }
+}
+
+constexpr bool is_utf8_continuation(char8_t c) { return (c & 0xC0) == 0x80; }
+
+void print_utf16_and_utf8_code_units_per_code_point(std::ranges::range auto input) {
+  auto print_code_point{
+    [](auto u16_view, auto u8_view) {
+      std::println(
+        "{::#x} = {::#x}",
+        u16_view | std::views::transform([](char16_t c) { return (std::uint16_t)c; }),
+        u8_view | std::views::transform([](char8_t c) { return (std::uint8_t)c; }));
+    }};
+  auto it = input.begin();
+  std::u8string code_point;
+  while (it != input.end()) {
+    code_point.clear();
+    code_point.push_back(*it);                     // lead byte
+    ++it;
+    it = std::ranges::find_if(std::move(it), input.end(), [&](char8_t c) {
+      if (!is_utf8_continuation(c)) return true;    // next lead: stop, don't consume
+      code_point.push_back(c);                      // continuation: keep
+      return false;
+    });
+    print_code_point(code_point | beman::utf_view::to_utf16, code_point);
+  }
+}
+
 #endif
 
 bool readme_examples() {
@@ -335,23 +381,27 @@ bool readme_examples() {
     return false;
   }
   {
-    auto result = transcode_trucating_correctly<char8_t, char16_t, 5>(u8"😀abc"sv);
+    auto result = transcode_truncating_correctly<char8_t, char16_t, 5>(u8"😀abc"sv);
     if (result.size() != 5) {
       return false;
     }
-    auto result2 = transcode_trucating_correctly<char8_t, char16_t, 4>(u8"😀abc"sv);
+    auto result2 = transcode_truncating_correctly<char8_t, char16_t, 4>(u8"😀abc"sv);
     if (result2.size() != 4) {
       return false;
     }
-    auto result3 = transcode_trucating_correctly<char8_t, char16_t, 2>(u8"😀abc"sv);
+    auto result3 = transcode_truncating_correctly<char8_t, char16_t, 2>(u8"😀abc"sv);
     if (result3.size() != 2) {
       return false;
     }
-    auto result4 = transcode_trucating_correctly<char8_t, char16_t, 1>(u8"😀abc"sv);
+    auto result4 = transcode_truncating_correctly<char8_t, char16_t, 1>(u8"😀abc"sv);
     if (result4.size() != 0) {
       return false;
     }
   }
+#endif
+#if __cpp_lib_ranges_as_input >= 202502L
+  print_utf8_code_points_and_code_units(u8"AΩ€😀b"sv | std::views::as_input);
+  print_utf16_and_utf8_code_units_per_code_point(u8"AΩ€😀b"sv | std::views::as_input);
 #endif
   {
     std::u16string zamin = u"𒀭𒎏𒄈𒋢𒍠𒊩";
