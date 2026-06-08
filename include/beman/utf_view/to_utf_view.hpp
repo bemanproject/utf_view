@@ -383,14 +383,14 @@ public:
   }
   /* PAPER */
 
-  /* PAPER:       constexpr subrange<const from_type*> base_code_units() const */
+  /* PAPER:       constexpr inplace_vector<from_type, 4 / sizeof(from_type)> base_code_units() const */
   /* PAPER:         requires (!forward_range<exposition_only_Base>); */
   /* !PAPER */
-  constexpr std::ranges::subrange<from_type const*>
+  constexpr exposition_only_from_buf_type
   base_code_units() const
     requires (!std::ranges::forward_range<exposition_only_Base>)
   {
-    return {from_buf_.begin(), from_buf_.end()};
+    return from_buf_;
   }
   /* PAPER */
 
