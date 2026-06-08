@@ -318,6 +318,39 @@ void print_runs(std::ranges::range auto input) {
   std::println("");
 }
 
+constexpr bool is_tag(char32_t c) { return (c & ~0x7F) == 0xE0000; }
+
+// A custom sink that accepts iterator pairs rather than ranges.
+struct sink {
+  std::u8string* out;
+  template <typename It>
+  void consume(It first, It last) {
+    for (; first != last; ++first) {
+      out->push_back(*first);
+    }
+  }
+};
+
+void partition_tags(std::ranges::range auto input, sink non_tags, sink tags) {
+  auto utf_view = input | beman::utf_view::to_utf32;
+  for (auto it = utf_view.begin(); it != utf_view.end(); ++it) {
+    (is_tag(*it) ? tags : non_tags)
+      .consume(it.base_code_units().begin(), it.base_code_units().end());
+  }
+}
+
+void print_errors(std::ranges::range auto chars) {
+  auto utf_view = chars | std::views::filter([](char8_t c) { return (c & 0x80) != 0; }) |
+                  beman::utf_view::to_utf32_or_error;
+  for (auto it = utf_view.begin(); it != utf_view.end(); ++it) {
+    if (!(*it).has_value()) {
+      std::println("{::#x}", it.base_code_units() | std::views::transform([](char8_t c) {
+                               return (uint8_t)c;
+                             }));
+    }
+  }
+}
+
 bool readme_examples() {
   using namespace std::string_view_literals;
 #ifndef _MSC_VER
@@ -411,6 +444,16 @@ bool readme_examples() {
   print_runs(text);
   // std::print("input  : ");
   // print_runs(text | std::views::as_input); // UB
+  {
+    // partition_tags works on a forward range; passing an input range would be UB.
+    std::u8string non_tags, tags;
+    partition_tags(u8"A\U000E0041B"sv, sink{&non_tags}, sink{&tags});
+    if (non_tags != u8"AB" || tags != u8"\xF3\xA0\x81\x81") {
+      return false;
+    }
+  }
+  std::print("errors: ");
+  print_errors(u8"\xC3\xA9\xFF"sv);
   return true;
 }
 
