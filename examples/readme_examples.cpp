@@ -385,6 +385,40 @@ void print_decrypted_errors(std::ranges::range auto packets) {
   }
 }
 
+// Not a transcoding example: this shows that adding views::as_input in front of a
+// filter (even when unneeded) removes chunk_view's .base(), the same way it would
+// remove a forward-only .base_code_units().
+struct Task {
+  int priority;
+};
+
+bool submit_batch(std::ranges::range auto batch) { // processes each batch atomically
+  for (Task const& t : batch) {
+    if (t.priority == 400) { // pretend this batch hits a transient failure
+      return false;
+    }
+  }
+  return true;
+}
+
+void requeue(std::ranges::range auto rest) {
+  for (Task const& t : rest) {
+    std::print("{} ", t.priority);
+  }
+  std::println("(requeued)");
+}
+
+void submit_high_priority_tasks(std::vector<Task>& tasks) {
+  auto high = tasks | std::views::filter([](Task const& t) { return t.priority > 100; });
+  auto batches = high | std::views::chunk(2);
+  for (auto it = batches.begin(); it != batches.end(); ++it) {
+    if (!submit_batch(*it)) {
+      requeue(std::ranges::subrange(it.base(), high.end()));
+      return;
+    }
+  }
+}
+
 bool readme_examples() {
   using namespace std::string_view_literals;
 #ifndef _MSC_VER
@@ -491,6 +525,8 @@ bool readme_examples() {
   print_errors(std::vector<std::u8string>{u8"\xC3\xA9", u8"\xFF"});
   // ...but decrypting the packets first makes join an input range.
   print_decrypted_errors(std::vector<std::u8string>{u8"\x96", u8"\xfc\xaa"});
+  std::vector<Task> tasks{{200}, {50}, {300}, {400}, {500}, {600}};
+  submit_high_priority_tasks(tasks);
   return true;
 }
 
