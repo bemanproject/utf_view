@@ -339,14 +339,48 @@ void partition_tags(std::ranges::range auto input, sink non_tags, sink tags) {
   }
 }
 
-void print_errors(std::ranges::range auto chars) {
-  auto utf_view = chars | std::views::filter([](char8_t c) { return (c & 0x80) != 0; }) |
+void print_nonascii_code_points_and_code_units(std::ranges::range auto text) {
+  auto print_code_point = [](char32_t code_point, auto code_unit_range) {
+    std::println("{:#x} = {::#x}", static_cast<std::uint32_t>(code_point),
+                 code_unit_range |
+                     std::views::transform([](char8_t c) { return (uint8_t)c; }));
+  };
+  auto code_points =
+      text | std::views::filter([](char8_t c) { return c >= 0x80; }) |
+      beman::utf_view::to_utf32;
+  for (auto it = code_points.begin(); it != code_points.end(); ++it) {
+    print_code_point(*it, it.base_code_units());
+  }
+}
+
+std::u8string decrypt(std::u8string_view packet) {
+  return packet |
+         std::views::transform([](char8_t c) { return (char8_t)(c ^ 0x55); }) |
+         std::ranges::to<std::u8string>();
+}
+
+void print_code_units_hex(std::ranges::range auto code_units) {
+  std::println("{::#x}",
+               code_units | std::views::transform([](char8_t c) { return (uint8_t)c; }));
+}
+
+// join over stored packets stays a forward range.
+void print_errors(std::ranges::range auto packets) {
+  auto utf_view = packets | std::views::join | beman::utf_view::to_utf32_or_error;
+  for (auto it = utf_view.begin(); it != utf_view.end(); ++it) {
+    if (!(*it).has_value()) {
+      print_code_units_hex(it.base_code_units());
+    }
+  }
+}
+
+// Decrypting the packets first yields prvalue buffers, so join is an input range.
+void print_decrypted_errors(std::ranges::range auto packets) {
+  auto utf_view = packets | std::views::transform(decrypt) | std::views::join |
                   beman::utf_view::to_utf32_or_error;
   for (auto it = utf_view.begin(); it != utf_view.end(); ++it) {
     if (!(*it).has_value()) {
-      std::println("{::#x}", it.base_code_units() | std::views::transform([](char8_t c) {
-                               return (uint8_t)c;
-                             }));
+      print_code_units_hex(it.base_code_units());
     }
   }
 }
@@ -452,8 +486,11 @@ bool readme_examples() {
       return false;
     }
   }
-  std::print("errors: ");
-  print_errors(u8"\xC3\xA9\xFF"sv);
+  print_nonascii_code_points_and_code_units(u8"café 😀"sv);
+  // join over stored packets stays a forward range...
+  print_errors(std::vector<std::u8string>{u8"\xC3\xA9", u8"\xFF"});
+  // ...but decrypting the packets first makes join an input range.
+  print_decrypted_errors(std::vector<std::u8string>{u8"\x96", u8"\xfc\xaa"});
   return true;
 }
 
