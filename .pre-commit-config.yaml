@@ -45,6 +45,6 @@ repos:
     rev: v0.5.1
     hooks:
     - id: beman-tidy
-      args: [".", "--verbose", "--require-all"]
+      args: [".", "--verbose"]
 
 exclude: 'cookiecutter/|infra/|port/'

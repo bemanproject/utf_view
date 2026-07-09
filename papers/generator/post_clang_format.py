@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 # SPDX-License-Identifier: BSL-1.0
 
 import re
