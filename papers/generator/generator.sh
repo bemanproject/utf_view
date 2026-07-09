@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 # SPDX-License-Identifier: BSL-1.0
 
 set -euo pipefail
