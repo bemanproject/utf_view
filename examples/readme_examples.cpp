@@ -16,6 +16,8 @@ import std;
 #else
 #include <algorithm>
 #include <array>
+#include <bit>
+#include <cstdint>
 #include <cstdlib>
 #include <filesystem>
 #include <functional>
@@ -256,6 +258,61 @@ std::u8string parse_message_subset(
 }
 #endif
 
+// Byte-oriented encoding-scheme <-> encoding-form pipelines built only from the
+// facilities in P4030 (endian views) and P2728 (code unit casting views), as
+// discussed in the SG16 thread about P4030. std::views::concat is C++26.
+#if defined(__cpp_lib_ranges_concat) && __cpp_lib_ranges_chunk >= 202202L
+// Bytes (UTF-32 encoding scheme, optionally BOM-prefixed) -> encoding form.
+// Design decisions: pad a trailing partial code unit with zero bytes; if no BOM
+// is present assume little-endian; keep the BOM in the output.
+//
+// The two endian adaptors are distinct types, so the conditional expression must
+// pick between two already-materialized results (both std::u32string), not
+// between the two adaptors. The byte stream is modelled as std::byte (matching
+// parse_message_subset above); a std::array<char, 4> staging buffer would reject
+// a std::byte input range, since std::byte does not convert to char.
+std::u32string parse_utf32_bytes_with_bom(std::ranges::forward_range auto bytes) {
+  auto u32s =
+    bytes
+    | std::views::chunk(4)
+    | std::views::transform(
+        [](auto chunk) {
+          std::array<std::byte, 4> a{};
+          std::ranges::copy(chunk, a.begin());
+          return std::bit_cast<std::uint32_t>(a);
+        });
+  std::endian const bom_endianness =
+    [](std::ranges::forward_range auto values) {
+      if (std::ranges::empty(values)) {
+        return std::endian::little;
+      }
+      constexpr auto big_endian_bom{std::bit_cast<std::uint32_t>(std::array<std::byte, 4>{
+          std::byte{0x00}, std::byte{0x00}, std::byte{0xFE}, std::byte{0xFF}})};
+      return *std::ranges::begin(values) == big_endian_bom
+             ? std::endian::big : std::endian::little;
+    }(u32s);
+  return bom_endianness == std::endian::little
+         ? u32s | from_little_endian | std::ranges::to<std::u32string>()
+         : u32s | from_big_endian | std::ranges::to<std::u32string>();
+}
+
+// Encoding form -> bytes (UTF-32LE encoding scheme with a leading BOM).
+std::vector<std::byte> to_utf32le_bytes_with_bom(std::u32string utf32) {
+  return std::views::concat(std::views::single(U'\xFEFF'), utf32)
+    | std::views::transform(
+        [](char32_t const c) {
+          return static_cast<std::uint32_t>(c);
+        })
+    | to_little_endian
+    | std::views::transform(
+        [](std::uint32_t const x) {
+          return std::bit_cast<std::array<std::byte, 4>>(x);
+        })
+    | std::views::join
+    | std::ranges::to<std::vector>();
+}
+#endif
+
 #if __cpp_lib_ranges_chunk_by >= 202202L
 template <typename T>
 constexpr bool is_continuation(T c) {
@@ -380,6 +437,39 @@ bool readme_examples() {
   if (!std::ranges::equal(u8"\xf0\x9f\x99\x82"sv, parse_message_subset(message, 1, 4))) {
     return false;
   }
+#if defined(__cpp_lib_ranges_concat) && __cpp_lib_ranges_chunk >= 202202L
+  {
+    std::u32string const original = U"Aé\U0001F642"; // "Aé🙂"
+    // Round-trip: encoding form -> UTF-32LE bytes (with BOM) -> encoding form.
+    // parse keeps the BOM, so the result is U+FEFF followed by the original.
+    std::vector<std::byte> const le_bytes = to_utf32le_bytes_with_bom(original);
+    // First four bytes are the little-endian BOM: FF FE 00 00.
+    std::array<std::byte, 4> const le_bom{
+      std::byte{0xFF}, std::byte{0xFE}, std::byte{0x00}, std::byte{0x00}};
+    if (!std::ranges::equal(le_bytes | std::views::take(4), le_bom)) {
+      return false;
+    }
+    if (le_bytes.size() != 4 * (original.size() + 1)) {
+      return false;
+    }
+    if (parse_utf32_bytes_with_bom(le_bytes) != std::u32string{U'\uFEFF'} + original) {
+      return false;
+    }
+    // A big-endian BOM (00 00 FE FF) is detected; the BOM is kept in the output.
+    std::vector<std::byte> be_bytes{
+      std::byte{0x00}, std::byte{0x00}, std::byte{0xFE}, std::byte{0xFF}, // BOM
+      std::byte{0x00}, std::byte{0x00}, std::byte{0x00}, std::byte{0x41}}; // 'A'
+    if (parse_utf32_bytes_with_bom(be_bytes) != (std::u32string{U'\uFEFF'} + U"A")) {
+      return false;
+    }
+    // No BOM: assume little-endian, keep all code points.
+    std::vector<std::byte> no_bom{
+      std::byte{0x41}, std::byte{0x00}, std::byte{0x00}, std::byte{0x00}}; // 'A' LE
+    if (parse_utf32_bytes_with_bom(no_bom) != U"A") {
+      return false;
+    }
+  }
+#endif
   {
     auto result = transcode_truncating_correctly<char8_t, char16_t, 5>(u8"😀abc"sv);
     if (result.size() != 5) {
