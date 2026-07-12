@@ -5,6 +5,12 @@
       "package_name": "beman.transform_view",
       "git_repository": "https://github.com/bemanproject/transform_view.git",
       "git_tag": "225fd3d2987548c10c2cfabd279119b1e68950e2"
+    },
+    {
+      "name": "wg21",
+      "package_name": "MparkWg21",
+      "git_repository": "https://github.com/ednolan/wg21.git",
+      "git_tag": "5f9f51817fc3500c1e11b7c4fcdb22f61cbbeff1"
     }
   ]
 }
