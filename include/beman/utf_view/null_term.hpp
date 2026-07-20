@@ -39,7 +39,7 @@ struct null_sentinel_t {
   template <std::input_iterator I>
   requires exposition_only_default_initializable_and_equality_comparable_iter_value<I>
   friend constexpr bool operator==(I const& it, null_sentinel_t) {
-    return *it == std::iter_value_t<I>();
+    return !*it;
   }
 };
 
