@@ -10,3 +10,4 @@ disabled_rules:
     - readme.implements # The repository currently implementes 3 papers. TODO: Split them into separate repos.
 ignored_paths:
     - tests/beman/utf_view/framework.cpp
+    - infra/
