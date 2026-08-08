@@ -36,7 +36,7 @@ jobs:
       matrix_config: >
         {
           "gcc": [
-            { "versions": ["trunk"],
+            { "versions": ["trunk-enolantest"],
               "tests": [
                 { "cxxversions": ["c++26"],
                   "tests": [
