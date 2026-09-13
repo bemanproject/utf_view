@@ -362,7 +362,15 @@ public:
     return std::move(exposition_only_current_);
   }
 
-  /* PAPER:       constexpr value_type operator*() const; */
+  constexpr auto base_code_units() const
+    requires std::ranges::forward_range<exposition_only_Base>
+  {
+    return std::ranges::subrange(
+        exposition_only_current_,
+        std::ranges::next(exposition_only_current_, exposition_only_to_increment_));
+  }
+
+  /* PAPER:   constexpr value_type operator*() const; */
   /* !PAPER */
   constexpr value_type operator*() const {
     if constexpr (E == to_utf_view_kind::expected) {
@@ -490,8 +498,11 @@ private:
       }
       if (exposition_only_current_ != exposition_only_end()) {
         exposition_only_read();
-      } else if constexpr (!std::ranges::forward_range<exposition_only_Base>) {
-        exposition_only_buf_index_ = -1;
+      } else {
+        exposition_only_to_increment_ = 0;
+        if constexpr (!std::ranges::forward_range<exposition_only_Base>) {
+          exposition_only_buf_index_ = -1;
+        }
       }
     }
   }
