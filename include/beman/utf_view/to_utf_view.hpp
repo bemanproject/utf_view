@@ -362,6 +362,12 @@ public:
     return std::move(current_);
   }
 
+  constexpr std::ranges::subrange<std::ranges::iterator_t<exposition_only_Base>> base_code_units() const
+    requires std::ranges::forward_range<exposition_only_Base>
+  {
+    return std::ranges::subrange(current_, std::ranges::next(current_, to_increment_));
+  }
+
   /* PAPER:       constexpr value_type operator*() const; */
   /* !PAPER */
   constexpr value_type operator*() const {
@@ -487,6 +493,7 @@ private:
       if constexpr (std::ranges::forward_range<exposition_only_Base>) {
         buf_index_ = 0;
         std::advance(current_, to_increment_);
+        to_increment_ = 0;
       }
       if (current_ != exposition_only_end()) {
         exposition_only_read();

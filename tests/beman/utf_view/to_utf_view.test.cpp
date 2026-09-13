@@ -1457,6 +1457,42 @@ constexpr bool input_range_equality_test() {
   return true;
 }
 
+constexpr bool base_code_units_test() {
+  std::initializer_list<char8_t> arr{
+    static_cast<char8_t>('\x51'), static_cast<char8_t>('\xCF'),
+    static_cast<char8_t>('\x95'), static_cast<char8_t>('\xE5'),
+    static_cast<char8_t>('\xAD'), static_cast<char8_t>('\xA6'),
+    static_cast<char8_t>('\xF0'), static_cast<char8_t>('\xA1'),
+    static_cast<char8_t>('\xAA'), static_cast<char8_t>('\x87')};
+  test_forward_iterator forward_it(arr);
+  test_forward_iterator second_code_point(std::ranges::next(forward_it, 1));
+  test_forward_iterator third_code_point(std::ranges::next(second_code_point, 2));
+  test_forward_iterator fourth_code_point(std::ranges::next(third_code_point, 3));
+  test_forward_iterator end(std::ranges::next(fourth_code_point, 4));
+  auto u32v{std::ranges::subrange{forward_it, std::default_sentinel} | to_utf32};
+  auto it{u32v.begin()};
+  if (it.base_code_units() != std::ranges::subrange(forward_it, second_code_point)) {
+    return false;
+  }
+  ++it;
+  if (it.base_code_units() != std::ranges::subrange(second_code_point, third_code_point)) {
+    return false;
+  }
+  ++it;
+  if (it.base_code_units() != std::ranges::subrange(third_code_point, fourth_code_point)) {
+    return false;
+  }
+  ++it;
+  if (it.base_code_units() != std::ranges::subrange(fourth_code_point, end)) {
+    return false;
+  }
+  ++it;
+  if (it.base_code_units() != std::ranges::subrange(end, end)) {
+    return false;
+  }
+  return true;
+}
+
 CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
   if (!input_iterator_test(std::initializer_list<char8_t>{u8'x'})) {
     return false;
