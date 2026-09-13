@@ -147,7 +147,7 @@ You can disable building examples by setting CMake option `BEMAN_UTF_VIEW_BUILD_
 |----------|---------|---------------|------------------|
 | GCC      | 16-14   | C++26, C++23  | libstdc++        |
 | GCC      | trunk   | C++26, C++23  | libstdc++        |
-| Clang    | 22-19   | C++26, C++23  | libc++           |
+| Clang    | 23-19   | C++26, C++23  | libc++           |
 | Clang    | trunk   | C++26, C++23  | libc++           |
 | MSVC     | latest  | C++23         | MSVC STL         |
 
