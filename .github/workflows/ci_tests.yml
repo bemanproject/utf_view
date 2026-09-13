@@ -96,7 +96,7 @@ jobs:
                 }
               ]
             },
-            { "versions": ["22"],
+            { "versions": ["23", "22"],
               "tests": [
                 { "cxxversions": ["c++26", "c++23"],
                   "tests": [
