@@ -1457,6 +1457,282 @@ constexpr bool input_range_equality_test() {
   return true;
 }
 
+constexpr bool base_code_units_test() {
+  auto const subrange_equal{
+    []<typename Subrange>(Subrange const& s1, Subrange const& s2) {
+      return s1.begin() == s2.begin() && s1.end() == s2.end();
+    }};
+  {
+    std::initializer_list<char8_t> const arr{
+      static_cast<char8_t>('\x51'), static_cast<char8_t>('\xCF'),
+      static_cast<char8_t>('\x95'), static_cast<char8_t>('\xE5'),
+      static_cast<char8_t>('\xAD'), static_cast<char8_t>('\xA6'),
+      static_cast<char8_t>('\xF0'), static_cast<char8_t>('\xA1'),
+      static_cast<char8_t>('\xAA'), static_cast<char8_t>('\x87')};
+    {
+      test_forward_iterator const forward_it(arr);
+      test_forward_iterator const second_code_point(std::ranges::next(forward_it, 1));
+      test_forward_iterator const third_code_point(std::ranges::next(second_code_point, 2));
+      test_forward_iterator const fourth_code_point(std::ranges::next(third_code_point, 3));
+      test_forward_iterator const end(std::ranges::next(fourth_code_point, 4));
+      auto u32v{std::ranges::subrange{forward_it, std::default_sentinel} | to_utf32};
+      auto it{u32v.begin()};
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(forward_it, second_code_point))) {
+        return false;
+      }
+      ++it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(second_code_point, third_code_point))) {
+        return false;
+      }
+      ++it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(third_code_point, fourth_code_point))) {
+        return false;
+      }
+      ++it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(fourth_code_point, end))) {
+        return false;
+      }
+      ++it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(end, end))) {
+        return false;
+      }
+    }
+    {
+      test_bidi_iterator const bidi_it(arr);
+      test_bidi_iterator const second_code_point(std::ranges::next(bidi_it, 1));
+      test_bidi_iterator const third_code_point(std::ranges::next(second_code_point, 2));
+      test_bidi_iterator const fourth_code_point(std::ranges::next(third_code_point, 3));
+      test_bidi_iterator const end(std::ranges::next(fourth_code_point, 4));
+      auto u32v{std::ranges::subrange{bidi_it, std::default_sentinel} | to_utf32};
+      auto it{u32v.begin()};
+      std::ranges::advance(it, 4);
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(end, end))) {
+        return false;
+      }
+      --it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(fourth_code_point, end))) {
+        return false;
+      }
+      --it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(third_code_point, fourth_code_point))) {
+        return false;
+      }
+      --it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(second_code_point, third_code_point))) {
+        return false;
+      }
+      --it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(bidi_it, second_code_point))) {
+        return false;
+      }
+    }
+  }
+  {
+    std::initializer_list<char32_t> arr{U'\u0051', U'\u03D5', U'\u5B66', U'\x00021A87'};
+    {
+      test_forward_iterator const forward_it(arr);
+      test_forward_iterator const second_code_point(std::ranges::next(forward_it));
+      test_forward_iterator const third_code_point(std::ranges::next(second_code_point));
+      test_forward_iterator const fourth_code_point(std::ranges::next(third_code_point));
+      test_forward_iterator const end(std::ranges::next(fourth_code_point));
+      auto u32v{std::ranges::subrange{forward_it, std::default_sentinel} | to_utf8};
+      auto it{u32v.begin()};
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(forward_it, second_code_point))) {
+        return false;
+      }
+      ++it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(second_code_point, third_code_point))) {
+        return false;
+      }
+      ++it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(second_code_point, third_code_point))) {
+        return false;
+      }
+      ++it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(third_code_point, fourth_code_point))) {
+        return false;
+      }
+      ++it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(third_code_point, fourth_code_point))) {
+        return false;
+      }
+      ++it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(third_code_point, fourth_code_point))) {
+        return false;
+      }
+      ++it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(fourth_code_point, end))) {
+        return false;
+      }
+      ++it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(fourth_code_point, end))) {
+        return false;
+      }
+      ++it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(fourth_code_point, end))) {
+        return false;
+      }
+      ++it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(fourth_code_point, end))) {
+        return false;
+      }
+      ++it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(end, end))) {
+        return false;
+      }
+    }
+    {
+      test_bidi_iterator const bidi_it(arr);
+      test_bidi_iterator const second_code_point(std::ranges::next(bidi_it));
+      test_bidi_iterator const third_code_point(std::ranges::next(second_code_point));
+      test_bidi_iterator const fourth_code_point(std::ranges::next(third_code_point));
+      test_bidi_iterator const end(std::ranges::next(fourth_code_point));
+      auto u32v{std::ranges::subrange{bidi_it, std::default_sentinel} | to_utf8};
+      auto it{u32v.begin()};
+      std::ranges::advance(it, 10);
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(end, end))) {
+        return false;
+      }
+      --it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(fourth_code_point, end))) {
+        return false;
+      }
+      --it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(fourth_code_point, end))) {
+        return false;
+      }
+      --it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(fourth_code_point, end))) {
+        return false;
+      }
+      --it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(fourth_code_point, end))) {
+        return false;
+      }
+      --it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(third_code_point, fourth_code_point))) {
+        return false;
+      }
+      --it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(third_code_point, fourth_code_point))) {
+        return false;
+      }
+      --it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(third_code_point, fourth_code_point))) {
+        return false;
+      }
+      --it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(second_code_point, third_code_point))) {
+        return false;
+      }
+      --it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(second_code_point, third_code_point))) {
+        return false;
+      }
+      --it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(bidi_it, second_code_point))) {
+        return false;
+      }
+    }
+  }
+  {
+    // invalid UTF
+    std::initializer_list<char8_t> const arr{
+      static_cast<char8_t>('\xf0'), static_cast<char8_t>('\x9f'),
+      static_cast<char8_t>('\x99'), static_cast<char8_t>('\xff'),
+      static_cast<char8_t>('\xF0'), static_cast<char8_t>('\xA1'),
+      static_cast<char8_t>('\xAA'), static_cast<char8_t>('\x87')};
+    {
+      test_forward_iterator const forward_it(arr);
+      test_forward_iterator const second_code_point(std::ranges::next(forward_it, 3));
+      test_forward_iterator const third_code_point(std::ranges::next(second_code_point, 1));
+      test_forward_iterator const end(std::ranges::next(third_code_point, 4));
+      auto u32v{std::ranges::subrange{forward_it, std::default_sentinel} | to_utf32};
+      auto it{u32v.begin()};
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(forward_it, second_code_point))) {
+        return false;
+      }
+      ++it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(second_code_point, third_code_point))) {
+        return false;
+      }
+      ++it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(third_code_point, end))) {
+        return false;
+      }
+      ++it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(end, end))) {
+        return false;
+      }
+    }
+    {
+      test_bidi_iterator const bidi_it(arr);
+      test_bidi_iterator const second_code_point(std::ranges::next(bidi_it, 3));
+      test_bidi_iterator const third_code_point(std::ranges::next(second_code_point, 1));
+      test_bidi_iterator const end(std::ranges::next(third_code_point, 4));
+      auto u32v{std::ranges::subrange{bidi_it, std::default_sentinel} | to_utf32};
+      auto it{u32v.begin()};
+      std::ranges::advance(it, 3);
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(end, end))) {
+        return false;
+      }
+      --it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(third_code_point, end))) {
+        return false;
+      }
+      --it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(second_code_point, third_code_point))) {
+        return false;
+      }
+      --it;
+      if (!subrange_equal(
+          it.base_code_units(), std::ranges::subrange(bidi_it, second_code_point))) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
   if (!input_iterator_test(std::initializer_list<char8_t>{u8'x'})) {
     return false;
@@ -1606,6 +1882,9 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
     return false;
   }
   if (!input_range_equality_test()) {
+    return false;
+  }
+  if (!base_code_units_test()) {
     return false;
   }
   return true;
