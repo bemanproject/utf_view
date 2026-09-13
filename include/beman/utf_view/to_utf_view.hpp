@@ -104,7 +104,7 @@ enum class utf_transcoding_error {
   invalid_utf8_leading_byte
 };
 
-enum class to_utf_view_error_kind : bool {
+enum class to_utf_view_kind : bool {
   replacement,
   expected
 };
@@ -129,7 +129,7 @@ using to_utf32_tag_t = to_utf_tag_t<char32_t>;
 
 constexpr to_utf32_tag_t to_utf32_tag{};
 
-template <std::ranges::input_range V, to_utf_view_error_kind E, exposition_only_code_unit ToType>
+template <std::ranges::input_range V, to_utf_view_kind E, exposition_only_code_unit ToType>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 class to_utf_view : public std::ranges::view_interface<to_utf_view<V, E, ToType>> {
 private:
@@ -143,12 +143,12 @@ public:
     requires std::default_initializable<V>
   = default;
   /* PAPER:   template <auto E2> */
-  /* PAPER:     constexpr explicit to_utf_view(V base, constant_wrapper<E2, to_utf_view_error_kind>, to_utf_tag_t<ToType>) */
-  /* PAPER:       requires (constant_wrapper<E2, to_utf_view_error_kind>::value == E); */
+  /* PAPER:     constexpr explicit to_utf_view(V base, constant_wrapper<E2, to_utf_view_kind>, to_utf_tag_t<ToType>) */
+  /* PAPER:       requires (constant_wrapper<E2, to_utf_view_kind>::value == E); */
   /* !PAPER */
   template <auto E2>
-  constexpr explicit to_utf_view(V base, detail::constant_wrapper<E2, to_utf_view_error_kind>, to_utf_tag_t<ToType>)
-    requires (detail::constant_wrapper<E2, to_utf_view_error_kind>::value == E)
+  constexpr explicit to_utf_view(V base, detail::constant_wrapper<E2, to_utf_view_kind>, to_utf_tag_t<ToType>)
+    requires (detail::constant_wrapper<E2, to_utf_view_kind>::value == E)
       : base_(std::move(base)) { }
   /* PAPER */
 
@@ -237,9 +237,9 @@ public:
 };
 
 template <class R, auto E2, exposition_only_code_unit ToType>
-to_utf_view(R&&, detail::constant_wrapper<E2, to_utf_view_error_kind>, to_utf_tag_t<ToType>) -> to_utf_view<std::views::all_t<R>, detail::constant_wrapper<E2, to_utf_view_error_kind>::value, ToType>;
+to_utf_view(R&&, detail::constant_wrapper<E2, to_utf_view_kind>, to_utf_tag_t<ToType>) -> to_utf_view<std::views::all_t<R>, detail::constant_wrapper<E2, to_utf_view_kind>::value, ToType>;
 
-template <std::ranges::input_range V, to_utf_view_error_kind E, exposition_only_code_unit ToType>
+template <std::ranges::input_range V, to_utf_view_kind E, exposition_only_code_unit ToType>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 template <bool Const>
 /* PAPER:   class to_utf_view<V, E, ToType>::@*iterator*@ { */
@@ -273,7 +273,7 @@ public:
   using iterator_concept = decltype(iter_concept_impl());
   /* PAPER */
   using value_type =
-      std::conditional_t<E == to_utf_view_error_kind::expected, std::expected<ToType, utf_transcoding_error>, ToType>;
+      std::conditional_t<E == to_utf_view_kind::expected, std::expected<ToType, utf_transcoding_error>, ToType>;
   using reference_type = value_type;
   using difference_type = std::ptrdiff_t;
 
@@ -304,7 +304,7 @@ public: // MSVC has some bug with their implementation of friendship
 
   /* PAPER */
 
-  template <std::ranges::input_range V2, to_utf_view_error_kind E2, exposition_only_code_unit ToType2>
+  template <std::ranges::input_range V2, to_utf_view_kind E2, exposition_only_code_unit ToType2>
     requires std::ranges::view<V2> && exposition_only_code_unit<std::ranges::range_value_t<V2>>
   friend class to_utf_view; // @*exposition only*@
 
@@ -365,7 +365,7 @@ public:
   /* PAPER:       constexpr value_type operator*() const; */
   /* !PAPER */
   constexpr value_type operator*() const {
-    if constexpr (E == to_utf_view_error_kind::expected) {
+    if constexpr (E == to_utf_view_kind::expected) {
       if (!success_.has_value()) {
         return std::unexpected{success_.error()};
       }
@@ -374,7 +374,7 @@ public:
   }
   /* PAPER */
 
-  constexpr exposition_only_iterator& operator++() requires(E == to_utf_view_error_kind::expected)
+  constexpr exposition_only_iterator& operator++() requires(E == to_utf_view_kind::expected)
   {
     if (!exposition_only_success()) {
       /* !PAPER */
@@ -389,7 +389,7 @@ public:
     return *this;
   }
 
-  constexpr exposition_only_iterator& operator++() requires(E == to_utf_view_error_kind::replacement)
+  constexpr exposition_only_iterator& operator++() requires(E == to_utf_view_kind::replacement)
   {
     exposition_only_advance_one();
     return *this;
@@ -466,11 +466,11 @@ private:
     return end_;
   }
 
-  /* PAPER:       constexpr expected<void, utf_transcoding_error> @*success*@() const noexcept requires(E == to_utf_view_error_kind::expected); // @*exposition only*@ */
+  /* PAPER:       constexpr expected<void, utf_transcoding_error> @*success*@() const noexcept requires(E == to_utf_view_kind::expected); // @*exposition only*@ */
   /* !PAPER */
 
   constexpr bool exposition_only_success() const noexcept // @*exposition only*@
-    requires(E == to_utf_view_error_kind::expected)
+    requires(E == to_utf_view_kind::expected)
   {
     return !!success_;
   }
@@ -879,7 +879,7 @@ private:
     current_ = read_reverse_impl_result.new_curr;
     assert(buf_.size());
     buf_index_ = buf_.size() - 1;
-    if constexpr (E == to_utf_view_error_kind::expected) {
+    if constexpr (E == to_utf_view_kind::expected) {
       if (!success_.has_value()) {
         buf_index_ = 0;
       }
@@ -889,7 +889,7 @@ private:
   /* PAPER */
 };
 
-template <std::ranges::input_range V, to_utf_view_error_kind E, exposition_only_code_unit ToType>
+template <std::ranges::input_range V, to_utf_view_kind E, exposition_only_code_unit ToType>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 template <bool Const>
 struct to_utf_view<V, E, ToType>::exposition_only_sentinel {
@@ -939,14 +939,14 @@ namespace detail {
   inline constexpr bool is_to_utf_subrange_v<std::ranges::subrange<I, I, std::ranges::subrange_kind::unsized>> =
     requires { typename I::is_to_utf_view_iterator; };
 
-  template <to_utf_view_error_kind E, exposition_only_code_unit ToType>
+  template <to_utf_view_kind E, exposition_only_code_unit ToType>
   struct to_utf_impl : std::ranges::range_adaptor_closure<to_utf_impl<E, ToType>> {
     template <std::ranges::range R>
     requires is_not_array_of_char<R>
     constexpr auto operator()(R&& r) const {
       using T = std::remove_cvref_t<R>;
       if constexpr (detail::is_empty_view<T>) {
-        if constexpr (E == to_utf_view_error_kind::replacement) {
+        if constexpr (E == to_utf_view_kind::replacement) {
           return std::ranges::empty_view<ToType>{};
         } else {
           return std::ranges::empty_view<std::expected<ToType, utf_transcoding_error>>{};
@@ -967,22 +967,22 @@ namespace detail {
 } // namespace detail
 
 template <exposition_only_code_unit ToType>
-inline constexpr detail::to_utf_impl<to_utf_view_error_kind::replacement, ToType> to_utf;
+inline constexpr detail::to_utf_impl<to_utf_view_kind::replacement, ToType> to_utf;
 
-inline constexpr detail::to_utf_impl<to_utf_view_error_kind::replacement, char8_t> to_utf8;
+inline constexpr detail::to_utf_impl<to_utf_view_kind::replacement, char8_t> to_utf8;
 
-inline constexpr detail::to_utf_impl<to_utf_view_error_kind::replacement, char16_t> to_utf16;
+inline constexpr detail::to_utf_impl<to_utf_view_kind::replacement, char16_t> to_utf16;
 
-inline constexpr detail::to_utf_impl<to_utf_view_error_kind::replacement, char32_t> to_utf32;
+inline constexpr detail::to_utf_impl<to_utf_view_kind::replacement, char32_t> to_utf32;
 
 template <exposition_only_code_unit ToType>
-inline constexpr detail::to_utf_impl<to_utf_view_error_kind::expected, ToType> to_utf_or_error;
+inline constexpr detail::to_utf_impl<to_utf_view_kind::expected, ToType> to_utf_or_error;
 
-inline constexpr detail::to_utf_impl<to_utf_view_error_kind::expected, char8_t> to_utf8_or_error;
+inline constexpr detail::to_utf_impl<to_utf_view_kind::expected, char8_t> to_utf8_or_error;
 
-inline constexpr detail::to_utf_impl<to_utf_view_error_kind::expected, char16_t> to_utf16_or_error;
+inline constexpr detail::to_utf_impl<to_utf_view_kind::expected, char16_t> to_utf16_or_error;
 
-inline constexpr detail::to_utf_impl<to_utf_view_error_kind::expected, char32_t> to_utf32_or_error;
+inline constexpr detail::to_utf_impl<to_utf_view_kind::expected, char32_t> to_utf32_or_error;
 
 /* PAPER: namespace views {                                     */
 /* PAPER:                                                       */
@@ -1010,13 +1010,13 @@ inline constexpr detail::to_utf_impl<to_utf_view_error_kind::expected, char32_t>
 
 } // namespace beman::utf_view
 
-template <class V, beman::utf_view::to_utf_view_error_kind E, class ToType>
+template <class V, beman::utf_view::to_utf_view_kind E, class ToType>
 inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf_view<V, E, ToType>> =
     std::ranges::enable_borrowed_range<V>;
 
 /* PAPER: namespace std::ranges {                                                                              */
 /* PAPER:                                                                                                      */
-/* PAPER:   template <class V, to_utf_view_error_kind E, class ToType>                                         */
+/* PAPER:   template <class V, to_utf_view_kind E, class ToType>                                               */
 /* PAPER:   inline constexpr bool enable_borrowed_range<to_utf_view<V, E, ToType>> = enable_borrowed_range<V>; */
 /* PAPER:                                                                                                      */
 /* PAPER: }                                                                                                    */

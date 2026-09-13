@@ -37,7 +37,7 @@ static_assert(
     std::ranges::iterator_t<
       to_utf_view<
           std::ranges::subrange<test_input_iterator<char8_t>, std::default_sentinel_t>,
-          to_utf_view_error_kind::replacement, char8_t>>>);
+          to_utf_view_kind::replacement, char8_t>>>);
 
 static_assert(
   std::input_iterator<
@@ -45,7 +45,7 @@ static_assert(
           to_utf_view<
               std::ranges::subrange<
                   test_comparable_input_iterator<char8_t>, std::default_sentinel_t>,
-              to_utf_view_error_kind::replacement, char8_t>>>);
+              to_utf_view_kind::replacement, char8_t>>>);
 
 static_assert(
   std::input_iterator<
@@ -53,14 +53,14 @@ static_assert(
           to_utf_view<
               std::ranges::subrange<
                   test_copyable_input_iterator<char8_t>, std::default_sentinel_t>,
-              to_utf_view_error_kind::replacement, char8_t>>>);
+              to_utf_view_kind::replacement, char8_t>>>);
 static_assert(
   !std::forward_iterator<
       std::ranges::iterator_t<
           to_utf_view<
               std::ranges::subrange<
                   test_copyable_input_iterator<char8_t>, std::default_sentinel_t>,
-              to_utf_view_error_kind::replacement, char8_t>>>);
+              to_utf_view_kind::replacement, char8_t>>>);
 
 static_assert(
   std::forward_iterator<
@@ -68,21 +68,21 @@ static_assert(
           to_utf_view<
               std::ranges::subrange<
                   test_forward_iterator<char8_t>, test_forward_iterator<char8_t>>,
-              to_utf_view_error_kind::replacement, char8_t>>>);
+              to_utf_view_kind::replacement, char8_t>>>);
 static_assert(
   std::bidirectional_iterator<
       std::ranges::iterator_t<
           to_utf_view<
               std::ranges::subrange<
                   test_bidi_iterator<char8_t>, std::default_sentinel_t>,
-              to_utf_view_error_kind::replacement, char8_t>>>);
+              to_utf_view_kind::replacement, char8_t>>>);
 static_assert(
   std::bidirectional_iterator<
       std::ranges::sentinel_t<
           to_utf_view<
               std::ranges::subrange<
                   test_bidi_iterator<char8_t>, test_bidi_iterator<char8_t>>,
-              to_utf_view_error_kind::replacement, char8_t>>>);
+              to_utf_view_kind::replacement, char8_t>>>);
 
 template <exposition_only_code_unit CharT>
 using test_case_code_unit_result = std::expected<CharT, utf_transcoding_error>;
@@ -871,7 +871,7 @@ constexpr bool empty_test() {
     std::is_same_v<
         decltype(std::views::empty<char8_t> | to_utf8_or_error),
         std::ranges::empty_view<std::expected<char8_t, utf_transcoding_error>>>);
-  auto empty_utf{to_utf_view{std::views::empty<char8_t>, detail::cw<to_utf_view_error_kind::replacement>, to_utf8_tag}};
+  auto empty_utf{to_utf_view{std::views::empty<char8_t>, detail::cw<to_utf_view_kind::replacement>, to_utf8_tag}};
   if (!empty_utf.empty()) {
     return false;
   }
