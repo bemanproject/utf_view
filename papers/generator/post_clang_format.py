@@ -9,7 +9,10 @@ def convert_snake_to_kebab(text):
     def snake_to_kebab(match):
         word = match.group(0)
         word = word.replace('exposition_only_', '', 1)
-        kebab_case_word = word.replace('_', '-')
+        if word[-1] == "_":
+            kebab_case_word = word
+        else:
+            kebab_case_word = word.replace('_', '-')
         return f"@*{kebab_case_word}*@"
 
     pattern = r'\bexposition_only_[a-zA-Z_]+\b'
