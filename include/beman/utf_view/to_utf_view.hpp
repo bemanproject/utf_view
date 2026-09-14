@@ -283,21 +283,21 @@ private:
 public: // MSVC has some bug with their implementation of friendship
 #endif
 /* !PAPER */
-  [[no_unique_address]] std::conditional_t<std::ranges::bidirectional_range<exposition_only_Base>, std::ranges::iterator_t<exposition_only_Base>, std::monostate> begin_{};
-/* PAPER:   iterator_t<exposition_only_Base> begin_{}; // @*exposition only*@, present only if */
+  [[no_unique_address]] std::conditional_t<std::ranges::bidirectional_range<exposition_only_Base>, std::ranges::iterator_t<exposition_only_Base>, std::monostate> exposition_only_begin_{};
+/* PAPER:   iterator_t<exposition_only_Base> @*begin_*@{}; // @*exposition only*@, present only if */
 /* PAPER:                                              //   bidirectional_range<exposition_only_Base> is true */
 /* PAPER */
-  std::ranges::iterator_t<exposition_only_Base> current_{}; // @*exposition only*@
+  std::ranges::iterator_t<exposition_only_Base> exposition_only_current_{}; // @*exposition only*@
 /* !PAPER */
-  [[no_unique_address]] std::ranges::sentinel_t<exposition_only_Base> end_{}; // @*exposition only*@
-/* PAPER:   sentinel_t<exposition_only_Base> end_; // @*exposition only*@ */
+  [[no_unique_address]] std::ranges::sentinel_t<exposition_only_Base> exposition_only_end_{}; // @*exposition only*@
+/* PAPER:   sentinel_t<exposition_only_Base> @*end_*@; // @*exposition only*@ */
 
-  detail::fake_inplace_vector<value_type, 4 / sizeof(ToType)> buf_{}; // @*exposition only*@
-/* PAPER:   inplace_vector<value_type, 4 / sizeof(ToType)> buf_{}; // @*exposition only*@ */
+  detail::fake_inplace_vector<value_type, 4 / sizeof(ToType)> exposition_only_buf_{}; // @*exposition only*@
+/* PAPER:   inplace_vector<value_type, 4 / sizeof(ToType)> @*buf_*@{}; // @*exposition only*@ */
 /* PAPER */
 
-  std::int8_t buf_index_{}; // @*exposition only*@
-  std::uint8_t to_increment_{}; // @*exposition only*@
+  std::int8_t exposition_only_buf_index_{}; // @*exposition only*@
+  std::uint8_t exposition_only_to_increment_{}; // @*exposition only*@
 
   /* !PAPER */
   std::expected<void, utf_transcoding_error> success_{};
@@ -326,11 +326,11 @@ private:
       std::ranges::iterator_t<exposition_only_Base> current,
       std::ranges::sentinel_t<exposition_only_Base> end) // @*exposition only*@
     requires std::ranges::bidirectional_range<exposition_only_Base>
-  : begin_(std::move(begin)),
-    current_(std::move(current)),
-    end_(end)
+  : exposition_only_begin_(std::move(begin)),
+    exposition_only_current_(std::move(current)),
+    exposition_only_end_(end)
   {
-    if (current_ != exposition_only_end())
+    if (exposition_only_current_ != exposition_only_end())
       exposition_only_read();
   }
 
@@ -338,13 +338,13 @@ private:
       std::ranges::iterator_t<exposition_only_Base> current,
       std::ranges::sentinel_t<exposition_only_Base> end) // @*exposition only*@
     requires (!std::ranges::bidirectional_range<exposition_only_Base>)
-  : current_(std::move(current)),
-    end_(end)
+  : exposition_only_current_(std::move(current)),
+    exposition_only_end_(end)
   {
-    if (current_ != exposition_only_end())
+    if (exposition_only_current_ != exposition_only_end())
       exposition_only_read();
     else if constexpr (!std::ranges::forward_range<exposition_only_Base>) {
-      buf_index_ = -1;
+      exposition_only_buf_index_ = -1;
     }
   }
 
@@ -353,13 +353,13 @@ public:
   constexpr const std::ranges::iterator_t<exposition_only_Base>& base() const& noexcept
     requires std::ranges::forward_range<exposition_only_Base>
   {
-    return current_;
+    return exposition_only_current_;
   }
 
   constexpr std::ranges::iterator_t<exposition_only_Base> base() &&
     requires std::ranges::forward_range<exposition_only_Base>
   {
-    return std::move(current_);
+    return std::move(exposition_only_current_);
   }
 
   /* PAPER:       constexpr value_type operator*() const; */
@@ -370,7 +370,7 @@ public:
         return std::unexpected{success_.error()};
       }
     }
-    return buf_[buf_index_];
+    return exposition_only_buf_[exposition_only_buf_index_];
   }
   /* PAPER */
 
@@ -378,7 +378,7 @@ public:
   {
     if (!exposition_only_success()) {
       /* !PAPER */
-      assert(buf_index_ == 0);
+      assert(exposition_only_buf_index_ == 0);
       /* PAPER */
       if constexpr (std::is_same_v<ToType, char8_t>) {
         exposition_only_advance_one();
@@ -408,10 +408,10 @@ public:
   constexpr exposition_only_iterator& operator--()
     requires std::ranges::bidirectional_range<exposition_only_Base>
   {
-    if (!buf_index_)
+    if (!exposition_only_buf_index_)
       exposition_only_read_reverse();
     else
-      --buf_index_;
+      --exposition_only_buf_index_;
     return *this;
   }
 
@@ -427,7 +427,7 @@ public:
                                    const exposition_only_iterator& rhs)
     requires std::equality_comparable<std::ranges::iterator_t<exposition_only_Base>>
   {
-    return lhs.current_ == rhs.current_ && lhs.buf_index_ == rhs.buf_index_;
+    return lhs.exposition_only_current_ == rhs.exposition_only_current_ && lhs.exposition_only_buf_index_ == rhs.exposition_only_buf_index_;
   }
 
 private:
@@ -458,12 +458,12 @@ private:
   constexpr std::ranges::iterator_t<exposition_only_Base> begin() const
     requires std::ranges::bidirectional_range<exposition_only_Base>
   {
-    return begin_;
+    return exposition_only_begin_;
   }
 
   /* PAPER */
   constexpr std::ranges::sentinel_t<exposition_only_Base> exposition_only_end() const { // @*exposition only*@
-    return end_;
+    return exposition_only_end_;
   }
 
   /* PAPER:       constexpr expected<void, utf_transcoding_error> @*success*@() const noexcept requires(E == to_utf_view_kind::expected); // @*exposition only*@ */
@@ -479,19 +479,19 @@ private:
 
   constexpr void exposition_only_advance_one() // @*exposition only*@
   {
-    ++buf_index_;
+    ++exposition_only_buf_index_;
     /* !PAPER */
-    if (buf_index_ == static_cast<std::int8_t>(buf_.size())) {
+    if (exposition_only_buf_index_ == static_cast<std::int8_t>(exposition_only_buf_.size())) {
     /* PAPER */
-    /* PAPER:     if (buf_index_ == buf_.size()) { */
+    /* PAPER:     if (exposition_only_buf_index_ == exposition_only_buf_.size()) { */
       if constexpr (std::ranges::forward_range<exposition_only_Base>) {
-        buf_index_ = 0;
-        std::advance(current_, to_increment_);
+        exposition_only_buf_index_ = 0;
+        std::advance(exposition_only_current_, exposition_only_to_increment_);
       }
-      if (current_ != exposition_only_end()) {
+      if (exposition_only_current_ != exposition_only_end()) {
         exposition_only_read();
       } else if constexpr (!std::ranges::forward_range<exposition_only_Base>) {
-        buf_index_ = -1;
+        exposition_only_buf_index_ = -1;
       }
     }
   }
@@ -605,8 +605,8 @@ private:
   }
 
   constexpr decode_code_point_result decode_code_point_utf8() {
-    guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
-    return decode_code_point_utf8_impl(current_, exposition_only_end());
+    guard<std::ranges::iterator_t<exposition_only_Base>> g{exposition_only_current_, exposition_only_current_};
+    return decode_code_point_utf8_impl(exposition_only_current_, exposition_only_end());
   }
 
   static constexpr decode_code_point_result decode_code_point_utf16_impl(
@@ -646,8 +646,8 @@ private:
   }
 
   constexpr decode_code_point_result decode_code_point_utf16() {
-    guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
-    return decode_code_point_utf16_impl(current_, exposition_only_end());
+    guard<std::ranges::iterator_t<exposition_only_Base>> g{exposition_only_current_, exposition_only_current_};
+    return decode_code_point_utf16_impl(exposition_only_current_, exposition_only_end());
   }
 
   static constexpr decode_code_point_result decode_code_point_utf32_impl(
@@ -671,44 +671,44 @@ private:
   }
 
   constexpr decode_code_point_result decode_code_point_utf32() {
-    guard<std::ranges::iterator_t<exposition_only_Base>> g{current_, current_};
-    return decode_code_point_utf32_impl(current_);
+    guard<std::ranges::iterator_t<exposition_only_Base>> g{exposition_only_current_, exposition_only_current_};
+    return decode_code_point_utf32_impl(exposition_only_current_);
   }
 
   // Encode the code point c as one or more code units in buf.
   constexpr void update(char32_t c, std::uint8_t to_incr) {
-    to_increment_ = to_incr;
-    buf_index_ = 0;
-    buf_.clear();
+    exposition_only_to_increment_ = to_incr;
+    exposition_only_buf_index_ = 0;
+    exposition_only_buf_.clear();
     if constexpr (std::is_same_v<ToType, char32_t>) {
-      buf_.push_back(c);
+      exposition_only_buf_.push_back(c);
     } else if constexpr (std::is_same_v<ToType, char16_t>) {
       if (c <= std::numeric_limits<char16_t>::max()) {
-        buf_.push_back(static_cast<char16_t>(c));
+        exposition_only_buf_.push_back(static_cast<char16_t>(c));
       } else {
         // From http://www.unicode.org/faq/utf_bom.html#utf16-4
         const char32_t lead_offset = 0xD800 - (0x10000 >> 10);
         char16_t lead = lead_offset + (c >> 10);
         char16_t trail = 0xDC00 + (c & 0x3FF);
-        buf_.push_back(lead);
-        buf_.push_back(trail);
+        exposition_only_buf_.push_back(lead);
+        exposition_only_buf_.push_back(trail);
       }
     } else if constexpr (std::is_same_v<ToType, char8_t>) {
       int bits = std::bit_width(static_cast<std::uint32_t>(c));
       if (bits <= 7) [[likely]] {
-        buf_.push_back(static_cast<char8_t>(c));
+        exposition_only_buf_.push_back(static_cast<char8_t>(c));
       } else if (bits <= 11) {
-        buf_.push_back(0xC0 | (c >> 6));
-        buf_.push_back(0x80 | (c & 0x3F));
+        exposition_only_buf_.push_back(0xC0 | (c >> 6));
+        exposition_only_buf_.push_back(0x80 | (c & 0x3F));
       } else if (bits <= 16) {
-        buf_.push_back(0xE0 | (c >> 12));
-        buf_.push_back(0x80 | ((c >> 6) & 0x3F));
-        buf_.push_back(0x80 | (c & 0x3F));
+        exposition_only_buf_.push_back(0xE0 | (c >> 12));
+        exposition_only_buf_.push_back(0x80 | ((c >> 6) & 0x3F));
+        exposition_only_buf_.push_back(0x80 | (c & 0x3F));
       } else {
-        buf_.push_back(0xF0 | ((c >> 18) & 0x07));
-        buf_.push_back(0x80 | ((c >> 12) & 0x3F));
-        buf_.push_back(0x80 | ((c >> 6) & 0x3F));
-        buf_.push_back(0x80 | (c & 0x3F));
+        exposition_only_buf_.push_back(0xF0 | ((c >> 18) & 0x07));
+        exposition_only_buf_.push_back(0x80 | ((c >> 12) & 0x3F));
+        exposition_only_buf_.push_back(0x80 | ((c >> 6) & 0x3F));
+        exposition_only_buf_.push_back(0x80 | (c & 0x3F));
       }
     } else {
       static_assert(false);
@@ -740,8 +740,8 @@ private:
   };
 
   constexpr read_reverse_impl_result read_reverse_utf8() const {
-    assert(current_ != begin());
-    auto it{current_};
+    assert(exposition_only_current_ != begin());
+    auto it{exposition_only_current_};
     auto const orig{it};
     unsigned reversed{};
     do {
@@ -811,8 +811,8 @@ private:
   }
 
   constexpr read_reverse_impl_result read_reverse_utf16() const {
-    assert(current_ != begin());
-    auto it{current_};
+    assert(exposition_only_current_ != begin());
+    auto it{exposition_only_current_};
     auto const orig{it};
     --it;
     if (detail::high_surrogate(*it)) {
@@ -851,8 +851,8 @@ private:
   }
 
   constexpr read_reverse_impl_result read_reverse_utf32() const {
-    assert(current_ != begin());
-    auto it{current_};
+    assert(exposition_only_current_ != begin());
+    auto it{exposition_only_current_};
     auto const orig{it};
     --it;
     auto new_curr{orig};
@@ -876,12 +876,12 @@ private:
     update(read_reverse_impl_result.decode_result.c,
            read_reverse_impl_result.decode_result.to_incr);
     success_ = read_reverse_impl_result.decode_result.success;
-    current_ = read_reverse_impl_result.new_curr;
-    assert(buf_.size());
-    buf_index_ = buf_.size() - 1;
+    exposition_only_current_ = read_reverse_impl_result.new_curr;
+    assert(exposition_only_buf_.size());
+    exposition_only_buf_index_ = exposition_only_buf_.size() - 1;
     if constexpr (E == to_utf_view_kind::expected) {
       if (!success_.has_value()) {
-        buf_index_ = 0;
+        exposition_only_buf_index_ = 0;
       }
     }
   }
@@ -895,29 +895,29 @@ template <bool Const>
 struct to_utf_view<V, E, ToType>::exposition_only_sentinel {
 private:
   using exposition_only_Base = exposition_only_maybe_const<Const, V>; // @*exposition only*@
-  std::ranges::sentinel_t<exposition_only_Base> end_ = std::ranges::sentinel_t<exposition_only_Base>();
+  std::ranges::sentinel_t<exposition_only_Base> exposition_only_end_ = std::ranges::sentinel_t<exposition_only_Base>();
 
 public:
   exposition_only_sentinel() = default;
   constexpr explicit exposition_only_sentinel(std::ranges::sentinel_t<exposition_only_Base> end)
-  : end_{end}
+  : exposition_only_end_{end}
   {}
   constexpr explicit exposition_only_sentinel(exposition_only_sentinel<!Const> i)
     requires Const && std::convertible_to<std::ranges::sentinel_t<V>, std::ranges::sentinel_t<exposition_only_Base>>
-  : end_{i.end_}
+  : exposition_only_end_{i.exposition_only_end_}
   {}
 
   constexpr std::ranges::sentinel_t<exposition_only_Base> base() const {
-    return end_;
+    return exposition_only_end_;
   }
 
   template<bool OtherConst>
     requires std::sentinel_for<std::ranges::sentinel_t<exposition_only_Base>, std::ranges::iterator_t<exposition_only_maybe_const<OtherConst, V>>>
   friend constexpr bool operator==(const exposition_only_iterator<OtherConst>& x, const exposition_only_sentinel& y) {
     if constexpr (std::ranges::forward_range<exposition_only_Base>) {
-      return x.current_ == y.end_;
+      return x.exposition_only_current_ == y.exposition_only_end_;
     } else {
-      return x.current_ == y.end_ && x.buf_index_ == -1;
+      return x.exposition_only_current_ == y.exposition_only_end_ && x.exposition_only_buf_index_ == -1;
     }
   }
 };
