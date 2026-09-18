@@ -229,9 +229,16 @@ public:
     return std::ranges::empty(exposition_only_base_);
   }
 
-  constexpr std::size_t size()
+  constexpr auto size()
     requires std::ranges::sized_range<V> &&
              std::same_as<char32_t, std::ranges::range_value_t<V>> &&
+             std::same_as<char32_t, ToType> {
+    return std::ranges::size(exposition_only_base_);
+  }
+
+  constexpr auto size() const
+    requires std::ranges::sized_range<const V> &&
+             std::same_as<char32_t, std::ranges::range_value_t<const V>> &&
              std::same_as<char32_t, ToType> {
     return std::ranges::size(exposition_only_base_);
   }
