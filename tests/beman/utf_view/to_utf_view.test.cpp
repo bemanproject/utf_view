@@ -84,6 +84,19 @@ static_assert(
                   test_bidi_iterator<char8_t>, test_bidi_iterator<char8_t>>,
               to_utf_view_kind::replacement, char8_t>>>);
 
+// size() is only available when a UTF-32 -> UTF-32 view is transcoding a sized range.
+static_assert(std::ranges::sized_range<
+              to_utf_view<std::u32string_view, to_utf_view_kind::replacement, char32_t>>);
+static_assert(std::ranges::sized_range<
+              const to_utf_view<std::u32string_view, to_utf_view_kind::replacement, char32_t>>);
+static_assert(!std::ranges::sized_range<
+              to_utf_view<std::u8string_view, to_utf_view_kind::replacement, char32_t>>);
+static_assert(!std::ranges::sized_range<
+              to_utf_view<std::u32string_view, to_utf_view_kind::replacement, char8_t>>);
+static_assert(!std::ranges::sized_range<
+              to_utf_view<std::ranges::subrange<test_forward_iterator<char32_t>, std::default_sentinel_t>,
+                          to_utf_view_kind::replacement, char32_t>>);
+
 template <exposition_only_code_unit CharT>
 using test_case_code_unit_result = std::expected<CharT, utf_transcoding_error>;
 
