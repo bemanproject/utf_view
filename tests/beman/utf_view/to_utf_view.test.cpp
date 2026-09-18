@@ -83,6 +83,21 @@ static_assert(
               std::ranges::subrange<
                   test_bidi_iterator<char8_t>, test_bidi_iterator<char8_t>>,
               to_utf_view_kind::replacement, char8_t>>>);
+static_assert(
+  std::random_access_iterator<
+      std::ranges::iterator_t<
+          to_utf_view<
+              std::ranges::subrange<
+                  test_random_access_iterator<char32_t>, std::default_sentinel_t>,
+              to_utf_view_kind::replacement, char32_t>>>);
+static_assert(
+  std::random_access_iterator<
+      std::ranges::sentinel_t<
+          to_utf_view<
+              std::ranges::subrange<
+                  test_random_access_iterator<char32_t>,
+                  test_random_access_iterator<char32_t>>,
+              to_utf_view_kind::replacement, char32_t>>>);
 
 // size() is only available when a UTF-32 -> UTF-32 view is transcoding a sized range.
 static_assert(std::ranges::sized_range<
