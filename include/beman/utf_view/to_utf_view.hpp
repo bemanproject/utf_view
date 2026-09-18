@@ -136,7 +136,7 @@ private:
   template<bool> struct exposition_only_iterator; // @*exposition only*@
   template<bool> struct exposition_only_sentinel; // @*exposition only*@
 
-  V base_ = V(); // @*exposition only*@
+  V exposition_only_base_ = V(); // @*exposition only*@
 
 public:
   constexpr to_utf_view()
@@ -149,16 +149,16 @@ public:
   template <auto E2>
   constexpr explicit to_utf_view(V base, detail::constant_wrapper<E2, to_utf_view_kind>, to_utf_tag_t<ToType>)
     requires (detail::constant_wrapper<E2, to_utf_view_kind>::value == E)
-      : base_(std::move(base)) { }
+      : exposition_only_base_(std::move(base)) { }
   /* PAPER */
 
   constexpr V base() const&
     requires std::copy_constructible<V>
   {
-    return base_;
+    return exposition_only_base_;
   }
   constexpr V base() && {
-    return std::move(base_);
+    return std::move(exposition_only_base_);
   }
 
   /* !PAPER */
@@ -166,10 +166,13 @@ public:
   constexpr exposition_only_iterator<false> begin() {
     if constexpr (std::ranges::bidirectional_range<V>) {
       return exposition_only_iterator<false>(
-          std::ranges::begin(base_), std::ranges::begin(base_), std::ranges::end(base_));
+          std::ranges::begin(exposition_only_base_),
+          std::ranges::begin(exposition_only_base_),
+          std::ranges::end(exposition_only_base_));
     } else {
       return exposition_only_iterator<false>(
-          std::ranges::begin(base_), std::ranges::end(base_));
+          std::ranges::begin(exposition_only_base_),
+          std::ranges::end(exposition_only_base_));
     }
   }
   /* PAPER */
@@ -179,58 +182,69 @@ public:
                 (!std::ranges::forward_range<const V>)) {
     if constexpr (std::ranges::bidirectional_range<const V>) {
       return exposition_only_iterator<true>(
-          std::ranges::begin(base_), std::ranges::begin(base_), std::ranges::end(base_));
+          std::ranges::begin(exposition_only_base_),
+          std::ranges::begin(exposition_only_base_),
+          std::ranges::end(exposition_only_base_));
     } else {
       return exposition_only_iterator<true>(
-          std::ranges::begin(base_), std::ranges::end(base_));
+          std::ranges::begin(exposition_only_base_),
+          std::ranges::end(exposition_only_base_));
     }
   }
 
   constexpr exposition_only_sentinel<false> end() {
-    return exposition_only_sentinel<false>(std::ranges::end(base_));
+    return exposition_only_sentinel<false>(std::ranges::end(exposition_only_base_));
   }
   constexpr exposition_only_iterator<false> end() requires std::ranges::common_range<V> {
     if constexpr (std::ranges::bidirectional_range<V>) {
       return exposition_only_iterator<false>(
-          std::ranges::begin(base_), std::ranges::end(base_), std::ranges::end(base_));
+          std::ranges::begin(exposition_only_base_),
+          std::ranges::end(exposition_only_base_),
+          std::ranges::end(exposition_only_base_));
     } else {
-      return exposition_only_iterator<false>(std::ranges::end(base_), std::ranges::end(base_));
+      return exposition_only_iterator<false>(
+          std::ranges::end(exposition_only_base_),
+          std::ranges::end(exposition_only_base_));
     }
   }
   constexpr exposition_only_sentinel<true> end() const
       requires std::ranges::range<const V> {
-    return exposition_only_sentinel<true>(std::ranges::end(base_));
+    return exposition_only_sentinel<true>(std::ranges::end(exposition_only_base_));
   }
   constexpr exposition_only_iterator<true> end() const
     requires std::ranges::common_range<const V> {
     if constexpr (std::ranges::bidirectional_range<const V>) {
       return exposition_only_iterator<true>(
-          std::ranges::begin(base_), std::ranges::end(base_), std::ranges::end(base_));
+          std::ranges::begin(exposition_only_base_),
+          std::ranges::end(exposition_only_base_),
+          std::ranges::end(exposition_only_base_));
     } else {
-      return exposition_only_iterator<true>(std::ranges::end(base_), std::ranges::end(base_));
+      return exposition_only_iterator<true>(
+          std::ranges::end(exposition_only_base_),
+          std::ranges::end(exposition_only_base_));
     }
   }
 
   constexpr bool empty() const {
-    return std::ranges::empty(base_);
+    return std::ranges::empty(exposition_only_base_);
   }
 
   constexpr std::size_t size()
     requires std::ranges::sized_range<V> &&
              std::same_as<char32_t, std::ranges::range_value_t<V>> &&
              std::same_as<char32_t, ToType> {
-    return std::ranges::size(base_);
+    return std::ranges::size(exposition_only_base_);
   }
 
   /* !PAPER */
 #if defined(__cpp_lib_ranges_reserve_hint)
   /* PAPER:   constexpr auto reserve_hint() requires approximately_sized_range<V>; */
   constexpr auto reserve_hint() requires std::ranges::approximately_sized_range<V> {
-    return std::ranges::reserve_hint(base_);
+    return std::ranges::reserve_hint(exposition_only_base_);
   }
   /* PAPER:   constexpr auto reserve_hint() const requires approximately_sized_range<const V>; */
   constexpr auto reserve_hint() const requires std::ranges::approximately_sized_range<const V>; {
-    return std::ranges::reserve_hint(base_);
+    return std::ranges::reserve_hint(exposition_only_base_);
   }
 #endif
   /* PAPER */
