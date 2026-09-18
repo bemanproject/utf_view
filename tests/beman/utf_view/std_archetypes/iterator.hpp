@@ -208,6 +208,115 @@ struct basic_bidirectional_iterator_archetype {
 using bidirectional_iterator_archetype =
     basic_bidirectional_iterator_archetype<std::uint8_t>;
 
+template <std::copyable State, typename ValueType = detail::value_type_archetype<State>,
+          typename ReferenceType = detail::reference_type_archetype<State>>
+struct basic_random_access_iterator_archetype {
+  using value_type = ValueType;
+  using reference_type = ReferenceType;
+  using difference_type = std::ptrdiff_t;
+  using iterator_concept = std::random_access_iterator_tag;
+  constexpr basic_random_access_iterator_archetype()
+      : x{} { }
+  constexpr explicit basic_random_access_iterator_archetype(State x_in)
+      : x{std::move(x_in)} { }
+  basic_random_access_iterator_archetype(basic_random_access_iterator_archetype const&) =
+      default;
+  basic_random_access_iterator_archetype& operator=(
+      basic_random_access_iterator_archetype const&) = default;
+  basic_random_access_iterator_archetype(basic_random_access_iterator_archetype&&) =
+      default;
+  basic_random_access_iterator_archetype& operator=(
+      basic_random_access_iterator_archetype&&) = default;
+
+  constexpr reference_type operator*() const {
+    return reference_type{x};
+  }
+  constexpr basic_random_access_iterator_archetype& operator++() {
+    ++x;
+    return *this;
+  }
+  constexpr basic_random_access_iterator_archetype operator++(int) {
+    basic_random_access_iterator_archetype result{*this};
+    ++x;
+    return result;
+  }
+  constexpr basic_random_access_iterator_archetype& operator--() {
+    --x;
+    return *this;
+  }
+  constexpr basic_random_access_iterator_archetype operator--(int) {
+    basic_random_access_iterator_archetype result{*this};
+    --x;
+    return result;
+  }
+
+  friend constexpr boolean_testable_archetype operator==(
+      basic_random_access_iterator_archetype const& lhs,
+      basic_random_access_iterator_archetype const& rhs) {
+    return boolean_testable_archetype{lhs.x == rhs.x};
+  }
+  friend constexpr boolean_testable_archetype operator!=(
+      basic_random_access_iterator_archetype const& lhs,
+      basic_random_access_iterator_archetype const& rhs) {
+    return boolean_testable_archetype{lhs.x != rhs.x};
+  }
+  friend constexpr auto operator<=>(
+      basic_random_access_iterator_archetype const& lhs,
+      basic_random_access_iterator_archetype const& rhs) {
+    return lhs.x <=> rhs.x;
+  }
+
+  friend constexpr basic_random_access_iterator_archetype& operator+=(
+      basic_random_access_iterator_archetype& it,
+      std::ptrdiff_t const n) {
+    it.x += n;
+    return it;
+  }
+
+  friend constexpr basic_random_access_iterator_archetype operator+(
+      basic_random_access_iterator_archetype it,
+      std::ptrdiff_t const n) {
+    it += n;
+    return it;
+  }
+
+  friend constexpr basic_random_access_iterator_archetype operator+(
+      std::ptrdiff_t const n,
+      basic_random_access_iterator_archetype it) {
+    it += n;
+    return it;
+  }
+
+  friend constexpr basic_random_access_iterator_archetype& operator-=(
+      basic_random_access_iterator_archetype& it,
+      std::ptrdiff_t const n) {
+    it.x -= n;
+    return it;
+  }
+
+  friend constexpr basic_random_access_iterator_archetype operator-(
+      basic_random_access_iterator_archetype it,
+      std::ptrdiff_t const n) {
+    it -= n;
+    return it;
+  }
+
+  friend constexpr std::ptrdiff_t operator-(
+      basic_random_access_iterator_archetype const& lhs,
+      basic_random_access_iterator_archetype const& rhs) {
+    return lhs.x - rhs.x;
+  }
+
+  constexpr reference_type operator[](std::ptrdiff_t const n) const {
+    return *(*this + n);
+  }
+
+  State x;
+};
+
+using random_access_iterator_archetype =
+    basic_random_access_iterator_archetype<std::uint8_t>;
+
 } // namespace beman::utf_view::tests::std_archetypes
 
 #endif // BEMAN_UTF_VIEW_TESTS_STD_ARCHETYPES_ITERATOR_HPP
