@@ -83,6 +83,21 @@ static_assert(
               std::ranges::subrange<
                   test_bidi_iterator<char8_t>, test_bidi_iterator<char8_t>>,
               to_utf_view_kind::replacement, char8_t>>>);
+static_assert(
+  std::random_access_iterator<
+      std::ranges::iterator_t<
+          to_utf_view<
+              std::ranges::subrange<
+                  test_random_access_iterator<char32_t>, std::default_sentinel_t>,
+              to_utf_view_kind::replacement, char32_t>>>);
+static_assert(
+  std::random_access_iterator<
+      std::ranges::sentinel_t<
+          to_utf_view<
+              std::ranges::subrange<
+                  test_random_access_iterator<char32_t>,
+                  test_random_access_iterator<char32_t>>,
+              to_utf_view_kind::replacement, char32_t>>>);
 
 // size() is only available when a UTF-32 -> UTF-32 view is transcoding a sized range.
 static_assert(std::ranges::sized_range<
@@ -1746,6 +1761,92 @@ constexpr bool base_code_units_test() {
   return true;
 }
 
+CONSTEXPR_UNLESS_MSVC bool utf32_self_transcode_test() {
+  using namespace std::string_view_literals;
+  constexpr auto test1{
+    [](auto const cpo, auto const value) {
+      std::initializer_list<char32_t> const arr{
+        {U'\u0051'}, {U'\u03D5'}, {U'\u5B66'}, {U'\x00021A87'}};
+      test_random_access_iterator begin(arr);
+      test_random_access_iterator end(arr);
+      std::ranges::advance(end, arr.size());
+      auto random_access_utf_view{std::ranges::subrange{begin, end} | cpo};
+      auto it1{random_access_utf_view.begin()};
+      auto it2{random_access_utf_view.begin()};
+      if ((it1 <=> it2) != std::strong_ordering::equal) {
+        return false;
+      }
+      it1 += 2;
+      if (*it1 != value(U'\u5B66')) {
+        return false;
+      }
+      if ((it1 <=> it2) != std::strong_ordering::greater) {
+        return false;
+      }
+      if ((it2 + 2) != it1) {
+        return false;
+      }
+      if ((2 + it2) != it1) {
+        return false;
+      }
+      it2 += 2;
+      it1 -= 2;
+      if ((it1 <=> it2) != std::strong_ordering::less) {
+        return false;
+      }
+      if ((it2 - 2) != it1) {
+        return false;
+      }
+      if (it1[0] != value(U'\u0051')) {
+        return false;
+      }
+      if (it1[1] != value(U'\u03D5')) {
+        return false;
+      }
+      if (it1[2] != value(U'\u5B66')) {
+        return false;
+      }
+      if (it1[3] != value(U'\x00021A87')) {
+        return false;
+      }
+      if ((it1 + 4) != random_access_utf_view.end()) {
+        return false;
+      }
+      if (!std::ranges::empty((it1 + 4).base_code_units())) {
+        return false;
+      }
+      return true;
+    }};
+  if (!test1(to_utf32, [](char32_t const c) { return c; })) {
+    return false;
+  }
+  if (!test1(
+         to_utf32_or_error,
+         [](char32_t const c){
+           return std::expected<char32_t, utf_transcoding_error>{c};
+         })) {
+    return false;
+  }
+  auto const from_u32sv{
+    U"\u0051\u03D5\u5B66\x00021A87"sv
+    | to_utf32};
+  static_assert(
+    std::is_same_v<
+        decltype(from_u32sv.begin())::iterator_category,
+        std::random_access_iterator_tag>);
+  auto const from_transformed_u32sv{
+    U"\u0051\u03D5\u5B66\x00021A87"sv
+    | std::views::transform([](char32_t const c) { return c; })
+    | to_utf32};
+  static_assert(
+    std::is_same_v<
+        decltype(from_transformed_u32sv.begin())::iterator_category,
+        std::input_iterator_tag>);
+  static_assert(
+    std::ranges::random_access_range<decltype(from_transformed_u32sv)>);
+  return true;
+}
+
 CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
   if (!input_iterator_test(std::initializer_list<char8_t>{u8'x'})) {
     return false;
@@ -1898,6 +1999,9 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
     return false;
   }
   if (!base_code_units_test()) {
+    return false;
+  }
+  if (!utf32_self_transcode_test()) {
     return false;
   }
   return true;
