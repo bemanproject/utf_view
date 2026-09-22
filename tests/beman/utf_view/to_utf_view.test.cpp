@@ -1809,6 +1809,12 @@ CONSTEXPR_UNLESS_MSVC bool utf32_self_transcode_test() {
       if (it1[3] != value(U'\x00021A87')) {
         return false;
       }
+      if ((it1 + 4) != random_access_utf_view.end()) {
+        return false;
+      }
+      if (!std::ranges::empty((it1 + 4).base_code_units())) {
+        return false;
+      }
       return true;
     }};
   if (!test1(to_utf32, [](char32_t const c) { return c; })) {
@@ -1822,7 +1828,7 @@ CONSTEXPR_UNLESS_MSVC bool utf32_self_transcode_test() {
     return false;
   }
   auto const from_transformed_u32sv{
-    U"\u0051\u03D5\u5B66\x00021A87"
+    U"\u0051\u03D5\u5B66\x00021A87"sv
     | std::views::transform([](char32_t const c) { return c; })
     | to_utf32};
   static_assert(

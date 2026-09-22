@@ -462,6 +462,7 @@ public:
   {
     return lhs.exposition_only_current_ == rhs.exposition_only_current_ && lhs.exposition_only_buf_index_ == rhs.exposition_only_buf_index_;
   }
+
   friend constexpr auto operator<=>(
       exposition_only_iterator const& lhs, exposition_only_iterator const& rhs)
     requires std::ranges::random_access_range<exposition_only_Base>
@@ -478,8 +479,7 @@ public:
              && std::same_as<char32_t, ToType>
   {
     it.exposition_only_current_ += n;
-    if (it.exposition_only_current_ != it.exposition_only_end())
-      it.exposition_only_read();
+    it.exposition_only_reseat();
     return it;
   }
 
@@ -510,8 +510,7 @@ public:
              && std::same_as<char32_t, ToType>
   {
     it.exposition_only_current_ -= n;
-    if (it.exposition_only_current_ != it.exposition_only_end())
-      it.exposition_only_read();
+    it.exposition_only_reseat();
     return it;
   }
 
