@@ -1780,10 +1780,10 @@ CONSTEXPR_UNLESS_MSVC bool utf32_self_transcode_test() {
   if ((it1 <=> it2) != std::strong_ordering::greater) {
     return false;
   }
-  if ((it1 + 2) != it2) {
+  if ((it2 + 2) != it1) {
     return false;
   }
-  if ((2 + it1) != it2) {
+  if ((2 + it2) != it1) {
     return false;
   }
   it2 += 2;
@@ -1995,7 +1995,7 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_constexpr_appendix_tests() {
 #endif
 
 #ifndef _MSC_VER
-// static_assert(utf_view_test());
+static_assert(utf_view_test());
 // static_assert(utf_view_constexpr_appendix_tests());
 #endif
 
