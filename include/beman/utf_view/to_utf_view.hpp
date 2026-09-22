@@ -464,10 +464,7 @@ public:
   }
   friend constexpr auto operator<=>(
       exposition_only_iterator const& lhs, exposition_only_iterator const& rhs)
-    requires (std::derived_from<
-               typename std::iterator_traits<
-                   std::ranges::iterator_t<exposition_only_Base>>::iterator_category,
-               std::random_access_iterator_tag>)
+    requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, ToType>
   {
@@ -477,10 +474,7 @@ public:
   friend constexpr exposition_only_iterator& operator+=(
       exposition_only_iterator& it,
       std::iter_difference_t<std::ranges::iterator_t<exposition_only_Base>> const n)
-    requires (std::derived_from<
-               typename std::iterator_traits<
-                   std::ranges::iterator_t<exposition_only_Base>>::iterator_category,
-               std::random_access_iterator_tag>)
+    requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, ToType>
   {
@@ -493,10 +487,7 @@ public:
   friend constexpr exposition_only_iterator operator+(
       exposition_only_iterator it,
       std::iter_difference_t<std::ranges::iterator_t<exposition_only_Base>> const n)
-    requires (std::derived_from<
-               typename std::iterator_traits<
-                   std::ranges::iterator_t<exposition_only_Base>>::iterator_category,
-               std::random_access_iterator_tag>)
+    requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, ToType>
   {
@@ -507,10 +498,7 @@ public:
   friend constexpr exposition_only_iterator operator+(
       std::iter_difference_t<std::ranges::iterator_t<exposition_only_Base>> const n,
       exposition_only_iterator it)
-    requires (std::derived_from<
-               typename std::iterator_traits<
-                   std::ranges::iterator_t<exposition_only_Base>>::iterator_category,
-               std::random_access_iterator_tag>)
+    requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, ToType>
   {
@@ -521,10 +509,7 @@ public:
   friend constexpr exposition_only_iterator& operator-=(
       exposition_only_iterator& it,
       std::iter_difference_t<std::ranges::iterator_t<exposition_only_Base>> const n)
-    requires (std::derived_from<
-               typename std::iterator_traits<
-                   std::ranges::iterator_t<exposition_only_Base>>::iterator_category,
-               std::random_access_iterator_tag>)
+    requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, ToType>
   {
@@ -537,10 +522,7 @@ public:
   friend constexpr exposition_only_iterator operator-(
       exposition_only_iterator it,
       std::iter_difference_t<std::ranges::iterator_t<exposition_only_Base>> const n)
-    requires (std::derived_from<
-               typename std::iterator_traits<
-                   std::ranges::iterator_t<exposition_only_Base>>::iterator_category,
-               std::random_access_iterator_tag>)
+    requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, ToType>
   {
@@ -552,22 +534,16 @@ public:
   operator-(
       exposition_only_iterator const& lhs,
       exposition_only_iterator const& rhs)
-    requires (std::derived_from<
-               typename std::iterator_traits<
-                   std::ranges::iterator_t<exposition_only_Base>>::iterator_category,
-               std::random_access_iterator_tag>)
+    requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, ToType>
   {
     return lhs.exposition_only_current_ - rhs.exposition_only_current_;
   }
 
-  constexpr char32_t operator[](
+  constexpr value_type operator[](
       std::iter_difference_t<std::ranges::iterator_t<exposition_only_Base>> const n) const
-    requires (std::derived_from<
-               typename std::iterator_traits<
-                   std::ranges::iterator_t<exposition_only_Base>>::iterator_category,
-               std::random_access_iterator_tag>)
+    requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, ToType>
   {
