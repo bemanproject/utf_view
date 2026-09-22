@@ -351,8 +351,7 @@ private:
     exposition_only_current_(std::move(current)),
     exposition_only_end_(end)
   {
-    if (exposition_only_current_ != exposition_only_end())
-      exposition_only_read();
+    exposition_only_reseat();
   }
 
   constexpr exposition_only_iterator(
@@ -362,11 +361,7 @@ private:
   : exposition_only_current_(std::move(current)),
     exposition_only_end_(end)
   {
-    if (exposition_only_current_ != exposition_only_end())
-      exposition_only_read();
-    else if constexpr (!std::ranges::forward_range<exposition_only_Base>) {
-      exposition_only_buf_index_ = -1;
-    }
+    exposition_only_reseat();
   }
 
 public:
@@ -495,6 +490,17 @@ private:
     return exposition_only_end_;
   }
 
+  constexpr void exposition_only_reseat() { // @*exposition only*@
+    if (exposition_only_current_ != exposition_only_end())
+      exposition_only_read();
+    else {
+      exposition_only_to_increment_ = 0;
+      if constexpr (!std::ranges::forward_range<exposition_only_Base>) {
+        exposition_only_buf_index_ = -1;
+      }
+    }
+  }
+
   /* PAPER:       constexpr expected<void, utf_transcoding_error> @*success*@() const noexcept requires(E == to_utf_view_kind::expected); // @*exposition only*@ */
   /* !PAPER */
 
@@ -517,14 +523,7 @@ private:
         exposition_only_buf_index_ = 0;
         std::advance(exposition_only_current_, exposition_only_to_increment_);
       }
-      if (exposition_only_current_ != exposition_only_end()) {
-        exposition_only_read();
-      } else {
-        exposition_only_to_increment_ = 0;
-        if constexpr (!std::ranges::forward_range<exposition_only_Base>) {
-          exposition_only_buf_index_ = -1;
-        }
-      }
+      exposition_only_reseat();
     }
   }
 
