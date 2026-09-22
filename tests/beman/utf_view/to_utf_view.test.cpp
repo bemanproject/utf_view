@@ -1827,10 +1827,21 @@ CONSTEXPR_UNLESS_MSVC bool utf32_self_transcode_test() {
          })) {
     return false;
   }
+  auto const from_u32sv{
+    U"\u0051\u03D5\u5B66\x00021A87"sv
+    | to_utf32};
+  static_assert(
+    std::is_same_v<
+        decltype(from_u32sv.begin())::iterator_category,
+        std::random_access_iterator_tag>);
   auto const from_transformed_u32sv{
     U"\u0051\u03D5\u5B66\x00021A87"sv
     | std::views::transform([](char32_t const c) { return c; })
     | to_utf32};
+  static_assert(
+    std::is_same_v<
+        decltype(from_transformed_u32sv.begin())::iterator_category,
+        std::input_iterator_tag>);
   static_assert(
     std::ranges::random_access_range<decltype(from_transformed_u32sv)>);
   return true;
