@@ -296,7 +296,7 @@ public:
   using value_type =
       std::conditional_t<E == to_utf_view_kind::expected, std::expected<ToType, utf_transcoding_error>, ToType>;
   using reference_type = value_type;
-  using difference_type = std::ptrdiff_t;
+  using difference_type = std::ranges::range_difference_t<exposition_only_Base>;
 
 private:
 /* !PAPER */
