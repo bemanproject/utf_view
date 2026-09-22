@@ -20,6 +20,8 @@ import beman.utf_view;
 #include <beman/utf_view/detail/concepts.hpp>
 #if !BEMAN_UTF_VIEW_USE_MODULES()
 #include <beman/transform_view/transform_view.hpp>
+#include <concepts>
+#include <cstddef>
 #include <ranges>
 #include <type_traits>
 #endif
@@ -33,9 +35,9 @@ namespace detail {
 /* PAPER */
 
 template <class T>
-struct exposition_only_implicit_cast_to {
+struct exposition_only_cast_to {
   constexpr T operator()(auto x) const noexcept {
-    return x;
+    return static_cast<T>(x);
   }
 };
 
@@ -45,11 +47,25 @@ struct exposition_only_implicit_cast_to {
 
 namespace detail {
 
+  // A source type U may be cast to the code unit type Char if it is Char
+  // itself, or if it is std::byte or a non-bool integral type of the same
+  // width as Char. This rules out narrowing, widening (e.g. accidentally
+  // treating UTF-8 code units as code points), floating-point sources, bool,
+  // enumerations other than std::byte, and class types such as proxy
+  // references.
+  template <class U, class Char>
+  concept code_unit_castable =
+    std::same_as<U, Char> ||
+    ((std::same_as<U, std::byte> ||
+      (std::is_integral_v<U> && !std::same_as<U, bool>)) &&
+     sizeof(U) == sizeof(Char));
+
   template <typename Char>
   struct as_code_unit_impl
       : std::ranges::range_adaptor_closure<as_code_unit_impl<Char>> {
     template <std::ranges::range R>
-      requires std::convertible_to<std::ranges::range_reference_t<R>, Char> &&
+      requires code_unit_castable<
+                 std::remove_cvref_t<std::ranges::range_reference_t<R>>, Char> &&
                (!std::is_array_v<std::remove_cvref_t<R>>)
     constexpr auto operator()(R&& r) const {
       using T = std::remove_cvref_t<R>;
@@ -57,7 +73,7 @@ namespace detail {
         return std::ranges::empty_view<Char>{};
       } else {
         return beman::transform_view::transform_view(
-            std::forward<R>(r), exposition_only_implicit_cast_to<Char>{});
+            std::forward<R>(r), exposition_only_cast_to<Char>{});
       }
     }
   };
