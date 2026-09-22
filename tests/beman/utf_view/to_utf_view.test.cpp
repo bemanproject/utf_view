@@ -1761,6 +1761,21 @@ constexpr bool base_code_units_test() {
   return true;
 }
 
+CONSTEXPR_UNLESS_MSVC bool utf32_self_transcode_test() {
+  std::initializer_list<char32_t> const arr{
+    {U'\u0051'}, {U'\u03D5'}, {U'\u5B66'}, {U'\x00021A87'}};
+  test_random_access_iterator begin{arr};
+  test_random_access_iterator end{arr};
+  std::ranges::advance(end, arr.size());
+  auto random_access_utf_view{std::ranges::subrange{begin, end} | to_utf32};
+  auto it1{random_access_utf_view.begin()};
+  auto it2{random_access_utf_view.begin()};
+  if (!((it1 <=> it2) == std::strong_ordering::equal)) {
+    return false;
+  }
+  return true;
+}
+
 CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
   if (!input_iterator_test(std::initializer_list<char8_t>{u8'x'})) {
     return false;
