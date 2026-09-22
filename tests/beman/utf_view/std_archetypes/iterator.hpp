@@ -133,12 +133,12 @@ struct basic_forward_iterator_archetype {
     return result;
   }
 
-  friend boolean_testable_archetype operator==(
+  friend constexpr boolean_testable_archetype operator==(
       basic_forward_iterator_archetype const& lhs,
       basic_forward_iterator_archetype const& rhs) {
     return boolean_testable_archetype{lhs.x == rhs.x};
   }
-  friend boolean_testable_archetype operator!=(
+  friend constexpr boolean_testable_archetype operator!=(
       basic_forward_iterator_archetype const& lhs,
       basic_forward_iterator_archetype const& rhs) {
     return boolean_testable_archetype{lhs.x != rhs.x};
@@ -191,12 +191,12 @@ struct basic_bidirectional_iterator_archetype {
     return result;
   }
 
-  friend boolean_testable_archetype operator==(
+  friend constexpr boolean_testable_archetype operator==(
       basic_bidirectional_iterator_archetype const& lhs,
       basic_bidirectional_iterator_archetype const& rhs) {
     return boolean_testable_archetype{lhs.x == rhs.x};
   }
-  friend boolean_testable_archetype operator!=(
+  friend constexpr boolean_testable_archetype operator!=(
       basic_bidirectional_iterator_archetype const& lhs,
       basic_bidirectional_iterator_archetype const& rhs) {
     return boolean_testable_archetype{lhs.x != rhs.x};
