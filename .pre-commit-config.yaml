@@ -21,7 +21,7 @@ repos:
 
     # CMake linting and formatting
   - repo: https://github.com/BlankSpruce/gersemi-pre-commit
-    rev: 0.27.7
+    rev: 0.29.1
     hooks:
     - id: gersemi
       name: CMake linting
@@ -36,13 +36,13 @@ repos:
   #   - id: markdownlint
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.2
+    rev: v2.4.3
     hooks:
       - id: codespell
 
     # Beman Standard checking via beman-tidy
   - repo: https://github.com/bemanproject/beman-tidy
-    rev: v0.5.2
+    rev: v0.5.4
     hooks:
     - id: beman-tidy
       args: [".", "--verbose", "--require-all"]
