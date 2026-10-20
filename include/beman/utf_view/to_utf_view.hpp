@@ -20,7 +20,6 @@ import beman.utf_view;
 #include <beman/utf_view/detail/concepts.hpp>
 #include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
 #include <beman/utf_view/detail/fake_inplace_vector.hpp>
-#include <beman/utf_view/detail/constant_wrapper_polyfill.hpp>
 #if !BEMAN_UTF_VIEW_USE_MODULES()
 #include <bit>
 #include <cassert>
@@ -113,26 +112,6 @@ enum class to_utf_view_kind : bool {
   expected
 };
 
-template <exposition_only_code_unit ToType>
-struct to_utf_tag_t {
-  explicit to_utf_tag_t() = default;
-};
-
-template <exposition_only_code_unit ToType>
-constexpr to_utf_tag_t<ToType> to_utf_tag{};
-
-using to_utf8_tag_t = to_utf_tag_t<char8_t>;
-
-constexpr to_utf8_tag_t to_utf8_tag{};
-
-using to_utf16_tag_t = to_utf_tag_t<char16_t>;
-
-constexpr to_utf16_tag_t to_utf16_tag{};
-
-using to_utf32_tag_t = to_utf_tag_t<char32_t>;
-
-constexpr to_utf32_tag_t to_utf32_tag{};
-
 template <std::ranges::input_range V, to_utf_view_kind E, exposition_only_code_unit ToType>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 class to_utf_view : public std::ranges::view_interface<to_utf_view<V, E, ToType>> {
@@ -146,13 +125,9 @@ public:
   constexpr to_utf_view()
     requires std::default_initializable<V>
   = default;
-  /* PAPER:   template <auto E2> */
-  /* PAPER:     constexpr explicit to_utf_view(V base, constant_wrapper<E2, to_utf_view_kind>, to_utf_tag_t<ToType>) */
-  /* PAPER:       requires (constant_wrapper<E2, to_utf_view_kind>::value == E); */
+  /* PAPER:   constexpr explicit to_utf_view(V base); */
   /* !PAPER */
-  template <auto E2>
-  constexpr explicit to_utf_view(V base, detail::constant_wrapper<E2, to_utf_view_kind>, to_utf_tag_t<ToType>)
-    requires (detail::constant_wrapper<E2, to_utf_view_kind>::value == E)
+  constexpr explicit to_utf_view(V base)
       : exposition_only_base_(std::move(base)) { }
   /* PAPER */
 
@@ -260,9 +235,6 @@ public:
 #endif
   /* PAPER */
 };
-
-template <class R, auto E2, exposition_only_code_unit ToType>
-to_utf_view(R&&, detail::constant_wrapper<E2, to_utf_view_kind>, to_utf_tag_t<ToType>) -> to_utf_view<std::views::all_t<R>, detail::constant_wrapper<E2, to_utf_view_kind>::value, ToType>;
 
 template <std::ranges::input_range V, to_utf_view_kind E, exposition_only_code_unit ToType>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
@@ -1071,14 +1043,13 @@ namespace detail {
           return std::ranges::empty_view<std::expected<ToType, utf_transcoding_error>>{};
         }
       } else if constexpr (detail::is_to_utf_view_v<T>) {
-        return to_utf_view(std::forward<R>(r).base(), detail::cw<E>, to_utf_tag<ToType>);
+        return to_utf_view<std::views::all_t<decltype(std::forward<R>(r).base())>, E, ToType>(
+            std::forward<R>(r).base());
       } else if constexpr (detail::is_to_utf_subrange_v<T>) {
-        return to_utf_view(
-            std::ranges::subrange(r.begin().base(), r.end().base()),
-            detail::cw<E>,
-            to_utf_tag<ToType>);
+        auto sub = std::ranges::subrange(r.begin().base(), r.end().base());
+        return to_utf_view<std::views::all_t<decltype(sub)>, E, ToType>(std::move(sub));
       } else {
-        return to_utf_view(std::forward<R>(r), detail::cw<E>, to_utf_tag<ToType>);
+        return to_utf_view<std::views::all_t<R>, E, ToType>(std::forward<R>(r));
       }
     }
   };
