@@ -10,7 +10,6 @@ if(BEMAN_UTF_VIEW_USE_MODULES)
                     code_unit_view.hpp
                     config.hpp
                     detail/concepts.hpp
-                    detail/constant_wrapper_polyfill.hpp
                     detail/constexpr_unless_msvc.hpp
                     detail/fake_inplace_vector.hpp
                     endian_view.hpp
@@ -28,7 +27,6 @@ else()
                     code_unit_view.hpp
                     config.hpp
                     detail/concepts.hpp
-                    detail/constant_wrapper_polyfill.hpp
                     detail/constexpr_unless_msvc.hpp
                     detail/fake_inplace_vector.hpp
                     endian_view.hpp

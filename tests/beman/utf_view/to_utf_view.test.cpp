@@ -6,7 +6,6 @@
 //          https://www.boost.org/LICENSE_1_0.txt)
 
 #include <beman/utf_view/config.hpp>
-#include <beman/utf_view/detail/constant_wrapper_polyfill.hpp>
 #include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
 #include <beman/utf_view/null_term.hpp>
 #include <beman/utf_view/to_utf_view.hpp>
@@ -899,8 +898,32 @@ constexpr bool empty_test() {
     std::is_same_v<
         decltype(std::views::empty<char8_t> | to_utf8_or_error),
         std::ranges::empty_view<std::expected<char8_t, utf_transcoding_error>>>);
-  auto empty_utf{to_utf_view{std::views::empty<char8_t>, detail::cw<to_utf_view_kind::replacement>, to_utf8_tag}};
+  to_utf_view<std::ranges::empty_view<char8_t>, to_utf_view_kind::replacement, char8_t> empty_utf{
+      std::views::empty<char8_t>};
   if (!empty_utf.empty()) {
+    return false;
+  }
+  return true;
+}
+
+template <class R>
+concept to_utf_view_ctad_works = requires(R&& r) { to_utf_view{std::forward<R>(r)}; };
+
+constexpr bool explicit_construction_test() {
+  // Like elements_view and adjacent_view, to_utf_view has no deduction guide, since its
+  // constant template parameters can't be deduced from a constructor argument.
+  static_assert(!to_utf_view_ctad_works<std::u8string_view>);
+  static_assert(!to_utf_view_ctad_works<std::u8string&>);
+  std::u8string s{u8"\u00e9"};
+  to_utf_view<std::views::all_t<std::u8string&>, to_utf_view_kind::replacement, char32_t> lvalue_view{s};
+  static_assert(std::is_same_v<decltype(lvalue_view), decltype(s | to_utf32)>);
+  if (!std::ranges::equal(lvalue_view, U"\u00e9"sv)) {
+    return false;
+  }
+  to_utf_view<std::views::all_t<std::u8string>, to_utf_view_kind::expected, char16_t> rvalue_view{
+      std::u8string{u8"\u00e9"}};
+  static_assert(std::is_same_v<decltype(rvalue_view), decltype(std::u8string{} | to_utf16_or_error)>);
+  if (*rvalue_view.begin() != u'\u00e9') {
     return false;
   }
   return true;
@@ -1990,6 +2013,9 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
     return false;
   }
   if (!empty_test()) {
+    return false;
+  }
+  if (!explicit_construction_test()) {
     return false;
   }
   if (!rvalue_array_test()) {
