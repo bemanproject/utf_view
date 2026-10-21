@@ -1061,42 +1061,33 @@ namespace detail {
 template <exposition_only_code_unit ToType>
 inline constexpr detail::to_utf_impl<to_utf_view_kind::replacement, ToType> to_utf;
 
-inline constexpr detail::to_utf_impl<to_utf_view_kind::replacement, char8_t> to_utf8;
-
-inline constexpr detail::to_utf_impl<to_utf_view_kind::replacement, char16_t> to_utf16;
-
-inline constexpr detail::to_utf_impl<to_utf_view_kind::replacement, char32_t> to_utf32;
-
 template <exposition_only_code_unit ToType>
 inline constexpr detail::to_utf_impl<to_utf_view_kind::expected, ToType> to_utf_or_error;
 
-inline constexpr detail::to_utf_impl<to_utf_view_kind::expected, char8_t> to_utf8_or_error;
+inline constexpr auto to_utf8 = to_utf<char8_t>;
 
-inline constexpr detail::to_utf_impl<to_utf_view_kind::expected, char16_t> to_utf16_or_error;
+inline constexpr auto to_utf8_or_error = to_utf_or_error<char8_t>;
 
-inline constexpr detail::to_utf_impl<to_utf_view_kind::expected, char32_t> to_utf32_or_error;
+inline constexpr auto to_utf16 = to_utf<char16_t>;
 
-/* PAPER: namespace views {                                     */
-/* PAPER:                                                       */
-/* PAPER:   template<@*code-unit-to*@ ToType>                   */
-/* PAPER:   inline constexpr @*unspecified*@ to_utf;            */
-/* PAPER:                                                       */
-/* PAPER:   template<@*code-unit-to*@ ToType>                   */
-/* PAPER:   inline constexpr @*unspecified*@ to_utf_or_error;   */
-/* PAPER:                                                       */
-/* PAPER:   inline constexpr @*unspecified*@ to_utf8;           */
-/* PAPER:                                                       */
-/* PAPER:   inline constexpr @*unspecified*@ to_utf8_or_error;  */
-/* PAPER:                                                       */
-/* PAPER:   inline constexpr @*unspecified*@ to_utf16;          */
-/* PAPER:                                                       */
-/* PAPER:   inline constexpr @*unspecified*@ to_utf16_or_error; */
-/* PAPER:                                                       */
-/* PAPER:   inline constexpr @*unspecified*@ to_utf32;          */
-/* PAPER:                                                       */
-/* PAPER:   inline constexpr @*unspecified*@ to_utf32_or_error; */
-/* PAPER:                                                       */
-/* PAPER: }                                                     */
+inline constexpr auto to_utf16_or_error = to_utf_or_error<char16_t>;
+
+inline constexpr auto to_utf32 = to_utf<char32_t>;
+
+inline constexpr auto to_utf32_or_error = to_utf_or_error<char32_t>;
+
+/* PAPER: namespace views {                                                                     */
+/* PAPER:                                                                                       */
+/* PAPER:   template<@*code-unit*@ ToType> inline constexpr @*unspecified*@ to_utf = @*unspecified*@;          */
+/* PAPER:   template<@*code-unit*@ ToType> inline constexpr @*unspecified*@ to_utf_or_error = @*unspecified*@; */
+/* PAPER:   inline constexpr auto to_utf8 = to_utf<char8_t>;                                    */
+/* PAPER:   inline constexpr auto to_utf8_or_error = to_utf_or_error<char8_t>;                  */
+/* PAPER:   inline constexpr auto to_utf16 = to_utf<char16_t>;                                  */
+/* PAPER:   inline constexpr auto to_utf16_or_error = to_utf_or_error<char16_t>;                */
+/* PAPER:   inline constexpr auto to_utf32 = to_utf<char32_t>;                                  */
+/* PAPER:   inline constexpr auto to_utf32_or_error = to_utf_or_error<char32_t>;                */
+/* PAPER:                                                                                       */
+/* PAPER: }                                                                                     */
 /* PAPER:                                                       */
 /* PAPER: }                                                     */
 
