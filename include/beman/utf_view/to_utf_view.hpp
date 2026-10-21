@@ -294,8 +294,10 @@ public: // MSVC has some bug with their implementation of friendship
   [[no_unique_address]] std::ranges::sentinel_t<exposition_only_Base> exposition_only_end_{}; // @*exposition only*@
 /* PAPER:   sentinel_t<exposition_only_Base> @*end_*@; // @*exposition only*@ */
 
-  detail::fake_inplace_vector<value_type, 4 / sizeof(ToType)> exposition_only_buf_{}; // @*exposition only*@
-/* PAPER:   inplace_vector<value_type, 4 / sizeof(ToType)> @*buf_*@{}; // @*exposition only*@ */
+  detail::fake_inplace_vector<value_type,
+                              std::same_as<ToType, char8_t> ? 4 : std::same_as<ToType, char16_t> ? 2 : 1>
+      exposition_only_buf_{}; // @*exposition only*@
+/* PAPER:   inplace_vector<value_type, same_as<ToType, char8_t> ? 4 : same_as<ToType, char16_t> ? 2 : 1> @*buf_*@{}; // @*exposition only*@ */
 /* PAPER */
 
   std::int8_t exposition_only_buf_index_{}; // @*exposition only*@

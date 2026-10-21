@@ -22,6 +22,7 @@ import beman.utf_view;
 #include <beman/transform_view/transform_view.hpp>
 #include <concepts>
 #include <cstddef>
+#include <limits>
 #include <ranges>
 #include <type_traits>
 #endif
@@ -47,18 +48,32 @@ struct exposition_only_cast_to {
 
 namespace detail {
 
+  // The width of an integral type is the number of bits in its value
+  // representation ([basic.fundamental]), i.e. value bits plus the sign bit
+  // and excluding padding bits. For std::byte it is the width of its
+  // underlying type, unsigned char.
+  template <class T>
+  using code_unit_width_type =
+    std::conditional_t<std::same_as<T, std::byte>, unsigned char, T>;
+
+  template <class T>
+  constexpr int code_unit_width =
+    std::numeric_limits<code_unit_width_type<T>>::digits +
+    std::numeric_limits<code_unit_width_type<T>>::is_signed;
+
   // A source type U may be cast to the code unit type Char if it is Char
   // itself, or if it is std::byte or a non-bool integral type of the same
-  // width as Char. This rules out narrowing, widening (e.g. accidentally
-  // treating UTF-8 code units as code points), floating-point sources, bool,
-  // enumerations other than std::byte, and class types such as proxy
-  // references.
+  // width as Char. Width rather than sizeof is compared so that padding bits
+  // cannot hide a narrowing conversion. This rules out narrowing, widening
+  // (e.g. accidentally treating UTF-8 code units as code points),
+  // floating-point sources, bool, enumerations other than std::byte, and class
+  // types such as proxy references.
   template <class U, class Char>
   concept code_unit_castable =
     std::same_as<U, Char> ||
     ((std::same_as<U, std::byte> ||
       (std::is_integral_v<U> && !std::same_as<U, bool>)) &&
-     sizeof(U) == sizeof(Char));
+     code_unit_width<U> == code_unit_width<Char>);
 
   template <typename Char>
   struct as_code_unit_impl

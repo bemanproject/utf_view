@@ -17,6 +17,7 @@ import std;
 #include <cstddef>
 #include <cstdint>
 #include <ranges>
+#include <limits>
 #include <span>
 #include <string>
 #include <string_view>
@@ -108,6 +109,22 @@ static_assert(
 
 // Conversion rule: a source type is accepted if it is the target type, or if it
 // is std::byte or a non-bool integral type of the same width as the target.
+// Width counts value and sign bits and excludes padding, so signed and
+// unsigned types of the same size have the same width.
+constexpr int char_bit{std::numeric_limits<unsigned char>::digits};
+static_assert(detail::code_unit_width<char> == char_bit);
+static_assert(detail::code_unit_width<signed char> == char_bit);
+static_assert(detail::code_unit_width<unsigned char> == char_bit);
+static_assert(detail::code_unit_width<std::byte> == char_bit);
+static_assert(detail::code_unit_width<char8_t> == char_bit);
+static_assert(detail::code_unit_width<short> ==
+              detail::code_unit_width<unsigned short>);
+static_assert(detail::code_unit_width<int> == detail::code_unit_width<unsigned>);
+static_assert(detail::code_unit_width<char16_t> >= 16);
+static_assert(detail::code_unit_width<char32_t> >= 32);
+static_assert(detail::code_unit_width<wchar_t> ==
+              std::numeric_limits<wchar_t>::digits +
+                  std::numeric_limits<wchar_t>::is_signed);
 template <class R, auto const& Adaptor>
 constexpr bool adaptable = requires { std::declval<R>() | Adaptor; };
 
@@ -153,7 +170,7 @@ static_assert(adaptable<std::span<short const>, as_char16_t>);
 static_assert(adaptable<std::span<unsigned short const>, as_char16_t>);
 static_assert(adaptable<std::span<std::uint16_t const>, as_char16_t>);
 static_assert(adaptable<std::wstring_view, as_char16_t> ==
-              (sizeof(wchar_t) == sizeof(char16_t)));
+              (detail::code_unit_width<wchar_t> == detail::code_unit_width<char16_t>));
 static_assert(!adaptable<std::u8string_view, as_char16_t>);
 static_assert(!adaptable<std::u32string_view, as_char16_t>);
 static_assert(!adaptable<std::string_view, as_char16_t>);
@@ -164,13 +181,13 @@ static_assert(adaptable<std::u32string_view, as_char32_t>);
 static_assert(adaptable<std::span<std::uint32_t const>, as_char32_t>);
 static_assert(adaptable<std::span<std::int32_t const>, as_char32_t>);
 static_assert(adaptable<std::span<int const>, as_char32_t> ==
-              (sizeof(int) == sizeof(char32_t)));
+              (detail::code_unit_width<int> == detail::code_unit_width<char32_t>));
 static_assert(adaptable<std::span<unsigned const>, as_char32_t> ==
-              (sizeof(unsigned) == sizeof(char32_t)));
+              (detail::code_unit_width<unsigned> == detail::code_unit_width<char32_t>));
 static_assert(adaptable<std::span<long const>, as_char32_t> ==
-              (sizeof(long) == sizeof(char32_t)));
+              (detail::code_unit_width<long> == detail::code_unit_width<char32_t>));
 static_assert(adaptable<std::wstring_view, as_char32_t> ==
-              (sizeof(wchar_t) == sizeof(char32_t)));
+              (detail::code_unit_width<wchar_t> == detail::code_unit_width<char32_t>));
 static_assert(!adaptable<std::u8string_view, as_char32_t>);
 static_assert(!adaptable<std::u16string_view, as_char32_t>);
 static_assert(!adaptable<std::span<long long const>, as_char32_t>);
@@ -179,11 +196,11 @@ static_assert(!adaptable<std::span<double const>, as_char32_t>);
 // as_wchar_t
 static_assert(adaptable<std::wstring_view, as_wchar_t>);
 static_assert(adaptable<std::u16string_view, as_wchar_t> ==
-              (sizeof(wchar_t) == sizeof(char16_t)));
+              (detail::code_unit_width<wchar_t> == detail::code_unit_width<char16_t>));
 static_assert(adaptable<std::u32string_view, as_wchar_t> ==
-              (sizeof(wchar_t) == sizeof(char32_t)));
+              (detail::code_unit_width<wchar_t> == detail::code_unit_width<char32_t>));
 static_assert(adaptable<std::span<unsigned short const>, as_wchar_t> ==
-              (sizeof(wchar_t) == sizeof(unsigned short)));
+              (detail::code_unit_width<wchar_t> == detail::code_unit_width<unsigned short>));
 static_assert(!adaptable<std::u8string_view, as_wchar_t>);
 static_assert(!adaptable<std::string_view, as_wchar_t>);
 
@@ -239,7 +256,7 @@ constexpr bool signed_source_test() {
 }
 
 constexpr bool int_source_test() {
-  if constexpr (sizeof(int) == sizeof(char32_t)) {
+  if constexpr (detail::code_unit_width<int> == detail::code_unit_width<char32_t>) {
     std::array<int, 2> const code_points{0x1F574, 0xFFFD};
     auto const as_utf32{code_points | as_char32_t |
                         std::ranges::to<std::u32string>()};
