@@ -223,10 +223,54 @@ constexpr bool special_case_test() {
   return true;
 }
 
+// If the source range's element type is already the target type, the adaptor
+// is a no-op that gives back views::all of the source, preserving contiguity.
+template <class R, auto const& Adaptor>
+constexpr bool is_no_op =
+  std::same_as<decltype(std::declval<R>() | Adaptor), std::views::all_t<R>>;
+
+static_assert(is_no_op<std::u8string_view, as_char8_t>);
+static_assert(is_no_op<std::u8string&, as_char8_t>);
+static_assert(is_no_op<std::u8string const&, as_char8_t>);
+static_assert(is_no_op<std::u8string, as_char8_t>);
+static_assert(is_no_op<std::span<char8_t>, as_char8_t>);
+static_assert(is_no_op<std::string_view, as_char>);
+static_assert(is_no_op<std::wstring_view, as_wchar_t>);
+static_assert(is_no_op<std::u16string_view, as_char16_t>);
+static_assert(is_no_op<std::u32string_view, as_char32_t>);
+static_assert(
+  is_no_op<std::ranges::subrange<test_input_iterator<char8_t>, std::default_sentinel_t>,
+           as_char8_t>);
+static_assert(!is_no_op<std::string_view, as_char8_t>);
+static_assert(!is_no_op<std::u8string_view, as_char>);
+static_assert(!is_no_op<std::span<unsigned char const>, as_char8_t>);
+static_assert(!is_no_op<std::span<std::byte const>, as_char8_t>);
+static_assert(!is_no_op<std::span<std::uint16_t const>, as_char16_t>);
+static_assert(!is_no_op<std::span<std::uint32_t const>, as_char32_t>);
+
+static_assert(
+  std::ranges::contiguous_range<decltype(std::declval<std::u8string_view>() | as_char8_t)>);
+static_assert(
+  std::ranges::contiguous_range<decltype(std::declval<std::u8string&>() | as_char8_t)>);
+static_assert(
+  std::ranges::contiguous_range<decltype(std::declval<std::u8string>() | as_char8_t)>);
+static_assert(
+  !std::ranges::contiguous_range<decltype(std::declval<std::string_view>() | as_char8_t)>);
+
 constexpr bool same_type_test() {
   std::u8string_view foo{u8"foo"};
   auto bar{foo | as_char8_t};
+  static_assert(std::same_as<decltype(bar), std::u8string_view>);
+  if (bar.data() != foo.data() || bar.size() != foo.size()) {
+    return false;
+  }
   if ((bar | std::ranges::to<std::u8string>()) != foo) {
+    return false;
+  }
+  std::u8string baz{u8"baz"};
+  auto qux{baz | as_char8_t};
+  static_assert(std::same_as<decltype(qux), std::ranges::ref_view<std::u8string>>);
+  if (std::ranges::data(qux) != baz.data()) {
     return false;
   }
   return true;
