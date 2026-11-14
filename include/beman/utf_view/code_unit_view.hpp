@@ -86,6 +86,10 @@ namespace detail {
       using T = std::remove_cvref_t<R>;
       if constexpr (detail::is_empty_view<T>) {
         return std::ranges::empty_view<Char>{};
+      } else if constexpr (std::same_as<
+                             std::remove_cvref_t<std::ranges::range_reference_t<R>>,
+                             Char>) {
+        return std::views::all(std::forward<R>(r));
       } else {
         return beman::transform_view::transform_view(
             std::forward<R>(r), exposition_only_cast_to<Char>{});
