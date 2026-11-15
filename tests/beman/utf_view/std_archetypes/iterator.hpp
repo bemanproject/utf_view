@@ -260,10 +260,25 @@ struct basic_random_access_iterator_archetype {
       basic_random_access_iterator_archetype const& rhs) {
     return boolean_testable_archetype{lhs.x != rhs.x};
   }
-  friend constexpr auto operator<=>(
+  friend constexpr boolean_testable_archetype operator<(
       basic_random_access_iterator_archetype const& lhs,
       basic_random_access_iterator_archetype const& rhs) {
-    return lhs.x <=> rhs.x;
+    return boolean_testable_archetype{lhs.x < rhs.x};
+  }
+  friend constexpr boolean_testable_archetype operator>(
+      basic_random_access_iterator_archetype const& lhs,
+      basic_random_access_iterator_archetype const& rhs) {
+    return boolean_testable_archetype{lhs.x > rhs.x};
+  }
+  friend constexpr boolean_testable_archetype operator<=(
+      basic_random_access_iterator_archetype const& lhs,
+      basic_random_access_iterator_archetype const& rhs) {
+    return boolean_testable_archetype{lhs.x <= rhs.x};
+  }
+  friend constexpr boolean_testable_archetype operator>=(
+      basic_random_access_iterator_archetype const& lhs,
+      basic_random_access_iterator_archetype const& rhs) {
+    return boolean_testable_archetype{lhs.x >= rhs.x};
   }
 
   friend constexpr basic_random_access_iterator_archetype& operator+=(

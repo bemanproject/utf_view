@@ -23,6 +23,7 @@ import beman.utf_view;
 #if !BEMAN_UTF_VIEW_USE_MODULES()
 #include <bit>
 #include <cassert>
+#include <compare>
 #include <concepts>
 #include <cstdint>
 #include <expected>
@@ -424,11 +425,48 @@ public:
     return lhs.exposition_only_current_ == rhs.exposition_only_current_ && lhs.exposition_only_buf_index_ == rhs.exposition_only_buf_index_;
   }
 
+  friend constexpr bool operator<(
+      const exposition_only_iterator& lhs, const exposition_only_iterator& rhs)
+    requires std::ranges::random_access_range<exposition_only_Base>
+             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
+             && std::same_as<char32_t, charT>
+  {
+    return lhs.exposition_only_current_ < rhs.exposition_only_current_;
+  }
+
+  friend constexpr bool operator>(
+      const exposition_only_iterator& lhs, const exposition_only_iterator& rhs)
+    requires std::ranges::random_access_range<exposition_only_Base>
+             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
+             && std::same_as<char32_t, charT>
+  {
+    return rhs < lhs;
+  }
+
+  friend constexpr bool operator<=(
+      const exposition_only_iterator& lhs, const exposition_only_iterator& rhs)
+    requires std::ranges::random_access_range<exposition_only_Base>
+             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
+             && std::same_as<char32_t, charT>
+  {
+    return !(rhs < lhs);
+  }
+
+  friend constexpr bool operator>=(
+      const exposition_only_iterator& lhs, const exposition_only_iterator& rhs)
+    requires std::ranges::random_access_range<exposition_only_Base>
+             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
+             && std::same_as<char32_t, charT>
+  {
+    return !(lhs < rhs);
+  }
+
   friend constexpr auto operator<=>(
       const exposition_only_iterator& lhs, const exposition_only_iterator& rhs)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, charT>
+             && std::three_way_comparable<std::ranges::iterator_t<exposition_only_Base>>
   {
     return lhs.exposition_only_current_ <=> rhs.exposition_only_current_;
   }
