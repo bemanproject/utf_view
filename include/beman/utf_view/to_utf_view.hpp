@@ -248,11 +248,9 @@ private:
   using exposition_only_Base = exposition_only_maybe_const<Const, V>; // @*exposition only*@
 
 /* !PAPER */
-  using from_type = std::ranges::range_value_t<V>; // @*exposition only*@
-
   static consteval auto iter_concept_impl() {
     if constexpr (std::ranges::random_access_range<exposition_only_Base>
-                  && std::same_as<char32_t, from_type>
+                  && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
                   && std::same_as<char32_t, ToType>) {
       return std::random_access_iterator_tag{};
     } else if constexpr (std::ranges::bidirectional_range<exposition_only_Base>) {
@@ -814,11 +812,11 @@ private:
   constexpr void exposition_only_read() { // @*exposition only*@
     success_.emplace();
     decode_code_point_result decode_result{};
-    if constexpr (std::is_same_v<from_type, char8_t>)
+    if constexpr (std::is_same_v<std::ranges::range_value_t<exposition_only_Base>, char8_t>)
       decode_result = decode_code_point_utf8();
-    else if constexpr (std::is_same_v<from_type, char16_t>)
+    else if constexpr (std::is_same_v<std::ranges::range_value_t<exposition_only_Base>, char16_t>)
       decode_result = decode_code_point_utf16();
-    else if constexpr (std::is_same_v<from_type, char32_t>) {
+    else if constexpr (std::is_same_v<std::ranges::range_value_t<exposition_only_Base>, char32_t>) {
       decode_result = decode_code_point_utf32();
     } else {
       static_assert(false);
@@ -958,11 +956,11 @@ private:
   constexpr void exposition_only_read_reverse() { // @*exposition only*@
     success_.emplace();
     auto const read_reverse_impl_result{[&] {
-      if constexpr (std::is_same_v<from_type, char8_t>) {
+      if constexpr (std::is_same_v<std::ranges::range_value_t<exposition_only_Base>, char8_t>) {
         return read_reverse_utf8();
-      } else if constexpr (std::is_same_v<from_type, char16_t>) {
+      } else if constexpr (std::is_same_v<std::ranges::range_value_t<exposition_only_Base>, char16_t>) {
         return read_reverse_utf16();
-      } else if constexpr (std::is_same_v<from_type, char32_t>) {
+      } else if constexpr (std::is_same_v<std::ranges::range_value_t<exposition_only_Base>, char32_t>) {
         return read_reverse_utf32();
       }
     }()};
