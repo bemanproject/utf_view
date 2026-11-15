@@ -299,12 +299,11 @@ public: // MSVC has some bug with their implementation of friendship
   /* !PAPER */
   std::expected<void, utf_transcoding_error> success_{};
 
-  /* PAPER */
-
   template <std::ranges::input_range V2, to_utf_view_kind E2, exposition_only_code_unit ToType2>
     requires std::ranges::view<V2> && exposition_only_code_unit<std::ranges::range_value_t<V2>>
-  friend class to_utf_view; // @*exposition only*@
+  friend class to_utf_view;
 
+  /* PAPER */
 public:
   constexpr exposition_only_iterator()
     requires std::default_initializable<std::ranges::iterator_t<exposition_only_Base>> = default;
