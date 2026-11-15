@@ -10,11 +10,13 @@
 #include <beman/utf_view/null_term.hpp>
 #include <beman/utf_view/to_utf_view.hpp>
 #include <framework.hpp>
+#include <std_archetypes/iterator.hpp>
 #include <test_iterators.hpp>
 #if BEMAN_UTF_VIEW_USE_MODULES()
 import std;
 #else
 #include <algorithm>
+#include <compare>
 #include <cstddef>
 #include <cstring>
 #include <initializer_list>
@@ -1806,6 +1808,15 @@ CONSTEXPR_UNLESS_MSVC bool utf32_self_transcode_test() {
       if ((it1 <=> it2) != std::strong_ordering::greater) {
         return false;
       }
+      if (it1 < it2 || !(it2 < it1) || !(it1 > it2) || it2 > it1) {
+        return false;
+      }
+      if (it1 <= it2 || !(it2 <= it1) || !(it1 >= it2) || it2 >= it1) {
+        return false;
+      }
+      if (!(it1 <= it1) || !(it1 >= it1) || it1 < it1 || it1 > it1) {
+        return false;
+      }
       if ((it2 + 2) != it1) {
         return false;
       }
@@ -1841,6 +1852,38 @@ CONSTEXPR_UNLESS_MSVC bool utf32_self_transcode_test() {
       return true;
     }};
   if (!test1(to_utf32, [](char32_t const c) { return c; })) {
+    return false;
+  }
+  // A random access iterator is only required to provide the relational
+  // operators, not operator<=>
+  constexpr auto test2{
+    [](auto const cpo) {
+      using archetype =
+        tests::std_archetypes::basic_random_access_iterator_archetype<
+          char32_t, char32_t, char32_t>;
+      static_assert(std::random_access_iterator<archetype>);
+      static_assert(!std::three_way_comparable<archetype>);
+      auto random_access_utf_view{
+        std::ranges::subrange{archetype{U'a'}, archetype{U'e'}} | cpo};
+      using view_type = decltype(random_access_utf_view);
+      static_assert(std::ranges::random_access_range<view_type>);
+      static_assert(
+        !std::three_way_comparable<std::ranges::iterator_t<view_type>>);
+      auto it1{random_access_utf_view.begin()};
+      auto it2{random_access_utf_view.begin()};
+      if (it1 < it2 || it1 > it2 || !(it1 <= it2) || !(it1 >= it2)) {
+        return false;
+      }
+      it1 += 2;
+      if (it1 < it2 || !(it2 < it1) || !(it1 > it2) || it2 > it1) {
+        return false;
+      }
+      if (it1 <= it2 || !(it2 <= it1) || !(it1 >= it2) || it2 >= it1) {
+        return false;
+      }
+      return true;
+    }};
+  if (!test2(to_utf32) || !test2(to_utf32_or_error)) {
     return false;
   }
   if (!test1(

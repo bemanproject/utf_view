@@ -10,6 +10,7 @@
 #if BEMAN_UTF_VIEW_USE_MODULES()
 import std;
 #else
+#include <compare>
 #include <iterator>
 #endif
 
@@ -23,5 +24,7 @@ static_assert(std::bidirectional_iterator<bidirectional_iterator_archetype>);
 static_assert(std::bidirectional_iterator<basic_bidirectional_iterator_archetype<int>>);
 static_assert(std::random_access_iterator<random_access_iterator_archetype>);
 static_assert(std::random_access_iterator<basic_random_access_iterator_archetype<int>>);
+static_assert(!std::three_way_comparable<random_access_iterator_archetype>);
+static_assert(!std::three_way_comparable<basic_random_access_iterator_archetype<int>>);
 
 } // namespace beman::utf_view::tests::std_archetypes
