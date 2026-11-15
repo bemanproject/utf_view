@@ -292,7 +292,7 @@ public: // MSVC has some bug with their implementation of friendship
 /* PAPER:   inplace_vector<charT, same_as<charT, char8_t> ? 4 : same_as<charT, char16_t> ? 2 : 1> @*buf_*@{}; // @*exposition only*@ */
 /* PAPER */
 
-  std::int8_t exposition_only_buf_index_{}; // @*exposition only*@
+  std::uint8_t exposition_only_buf_index_{}; // @*exposition only*@
   std::uint8_t exposition_only_to_increment_{}; // @*exposition only*@
 
   /* !PAPER */
@@ -539,7 +539,8 @@ private:
     else {
       exposition_only_to_increment_ = 0;
       if constexpr (!std::ranges::forward_range<exposition_only_Base>) {
-        exposition_only_buf_index_ = -1;
+        exposition_only_buf_.clear();
+        exposition_only_buf_index_ = 0;
       }
     }
   }
@@ -558,10 +559,7 @@ private:
   constexpr void exposition_only_advance_one() // @*exposition only*@
   {
     ++exposition_only_buf_index_;
-    /* !PAPER */
-    if (exposition_only_buf_index_ == static_cast<std::int8_t>(exposition_only_buf_.size())) {
-    /* PAPER */
-    /* PAPER:     if (exposition_only_buf_index_ == exposition_only_buf_.size()) { */
+    if (exposition_only_buf_index_ == exposition_only_buf_.size()) {
       if constexpr (std::ranges::forward_range<exposition_only_Base>) {
         exposition_only_buf_index_ = 0;
         std::ranges::advance(exposition_only_current_, exposition_only_to_increment_);
@@ -991,7 +989,7 @@ public:
     if constexpr (std::ranges::forward_range<exposition_only_Base>) {
       return x.exposition_only_current_ == y.exposition_only_end_;
     } else {
-      return x.exposition_only_current_ == y.exposition_only_end_ && x.exposition_only_buf_index_ == -1;
+      return x.exposition_only_current_ == y.exposition_only_end_ && x.exposition_only_buf_.empty();
     }
   }
 };

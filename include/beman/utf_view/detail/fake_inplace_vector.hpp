@@ -40,6 +40,9 @@ public:
   constexpr std::size_t size() const {
     return size_;
   }
+  constexpr bool empty() const {
+    return size_ == 0;
+  }
   static constexpr std::size_t max_size() {
     return N;
   }
