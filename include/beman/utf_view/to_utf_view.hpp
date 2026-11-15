@@ -311,14 +311,6 @@ public:
   constexpr exposition_only_iterator()
     requires std::default_initializable<std::ranges::iterator_t<exposition_only_Base>> = default;
 
-  constexpr exposition_only_iterator(exposition_only_iterator const&)
-    requires std::copyable<std::ranges::iterator_t<exposition_only_Base>> = default;
-  constexpr exposition_only_iterator& operator=(
-      exposition_only_iterator const&)
-    requires std::copyable<std::ranges::iterator_t<exposition_only_Base>> = default;
-  constexpr exposition_only_iterator(exposition_only_iterator&&) = default;
-  constexpr exposition_only_iterator& operator=(exposition_only_iterator&&) = default;
-
 private:
   constexpr exposition_only_iterator(
       std::ranges::iterator_t<exposition_only_Base> begin,
