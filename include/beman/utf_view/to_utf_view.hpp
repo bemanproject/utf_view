@@ -68,16 +68,16 @@ namespace detail {
     return 0xDC00 <= c && c <= 0xDFFF;
   }
 
-  template<typename T, exposition_only_code_unit ToType>
+  template<typename T, exposition_only_code_unit charT>
   struct iter_category_impl {};
 
-  template<std::ranges::forward_range R, exposition_only_code_unit ToType>
-  struct iter_category_impl<R, ToType> {
+  template<std::ranges::forward_range R, exposition_only_code_unit charT>
+  struct iter_category_impl<R, charT> {
     static consteval auto impl() {
       using category = typename std::iterator_traits<std::ranges::iterator_t<R>>::iterator_category;
       if constexpr (std::derived_from<category, std::random_access_iterator_tag>
                     && std::same_as<char32_t, std::ranges::range_value_t<R>>
-                    && std::same_as<char32_t, ToType>) {
+                    && std::same_as<char32_t, charT>) {
         return std::random_access_iterator_tag{};
       } else if constexpr (std::derived_from<category, std::bidirectional_iterator_tag>) {
         return std::bidirectional_iterator_tag{};
@@ -112,9 +112,9 @@ enum class to_utf_view_kind : bool {
   expected
 };
 
-template <std::ranges::input_range V, to_utf_view_kind E, exposition_only_code_unit ToType>
+template <std::ranges::input_range V, to_utf_view_kind K, exposition_only_code_unit charT>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
-class to_utf_view : public std::ranges::view_interface<to_utf_view<V, E, ToType>> {
+class to_utf_view : public std::ranges::view_interface<to_utf_view<V, K, charT>> {
 private:
   template<bool> struct exposition_only_iterator; // @*exposition only*@
   template<bool> struct exposition_only_sentinel; // @*exposition only*@
@@ -206,14 +206,14 @@ public:
   constexpr auto size()
     requires std::ranges::sized_range<V> &&
              std::same_as<char32_t, std::ranges::range_value_t<V>> &&
-             std::same_as<char32_t, ToType> {
+             std::same_as<char32_t, charT> {
     return std::ranges::size(exposition_only_base_);
   }
 
   constexpr auto size() const
     requires std::ranges::sized_range<const V> &&
              std::same_as<char32_t, std::ranges::range_value_t<const V>> &&
-             std::same_as<char32_t, ToType> {
+             std::same_as<char32_t, charT> {
     return std::ranges::size(exposition_only_base_);
   }
 
@@ -231,13 +231,13 @@ public:
   /* PAPER */
 };
 
-template <std::ranges::input_range V, to_utf_view_kind E, exposition_only_code_unit ToType>
+template <std::ranges::input_range V, to_utf_view_kind K, exposition_only_code_unit charT>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 template <bool Const>
-/* PAPER:   class to_utf_view<V, E, ToType>::@*iterator*@ { */
+/* PAPER:   class to_utf_view<V, K, charT>::@*iterator*@ { */
 /* !PAPER */
-struct to_utf_view<V, E, ToType>::exposition_only_iterator
-  : detail::iter_category_impl<V, ToType> {
+struct to_utf_view<V, K, charT>::exposition_only_iterator
+  : detail::iter_category_impl<V, charT> {
 /* PAPER */
 private:
   using exposition_only_Base = exposition_only_maybe_const<Const, V>; // @*exposition only*@
@@ -246,7 +246,7 @@ private:
   static consteval auto iter_concept_impl() {
     if constexpr (std::ranges::random_access_range<exposition_only_Base>
                   && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-                  && std::same_as<char32_t, ToType>) {
+                  && std::same_as<char32_t, charT>) {
       return std::random_access_iterator_tag{};
     } else if constexpr (std::ranges::bidirectional_range<exposition_only_Base>) {
       return std::bidirectional_iterator_tag{};
@@ -268,7 +268,7 @@ public:
   using iterator_concept = decltype(iter_concept_impl());
   /* PAPER */
   using value_type =
-      std::conditional_t<E == to_utf_view_kind::expected, std::expected<ToType, utf_transcoding_error>, ToType>;
+      std::conditional_t<K == to_utf_view_kind::expected, std::expected<charT, utf_transcoding_error>, charT>;
   using reference_type = value_type;
   using difference_type = std::ranges::range_difference_t<exposition_only_Base>;
 
@@ -288,9 +288,9 @@ public: // MSVC has some bug with their implementation of friendship
 /* PAPER:   sentinel_t<exposition_only_Base> @*end_*@; // @*exposition only*@ */
 
   detail::fake_inplace_vector<value_type,
-                              std::same_as<ToType, char8_t> ? 4 : std::same_as<ToType, char16_t> ? 2 : 1>
+                              std::same_as<charT, char8_t> ? 4 : std::same_as<charT, char16_t> ? 2 : 1>
       exposition_only_buf_{}; // @*exposition only*@
-/* PAPER:   inplace_vector<value_type, same_as<ToType, char8_t> ? 4 : same_as<ToType, char16_t> ? 2 : 1> @*buf_*@{}; // @*exposition only*@ */
+/* PAPER:   inplace_vector<value_type, same_as<charT, char8_t> ? 4 : same_as<charT, char16_t> ? 2 : 1> @*buf_*@{}; // @*exposition only*@ */
 /* PAPER */
 
   std::int8_t exposition_only_buf_index_{}; // @*exposition only*@
@@ -299,7 +299,7 @@ public: // MSVC has some bug with their implementation of friendship
   /* !PAPER */
   std::expected<void, utf_transcoding_error> success_{};
 
-  template <std::ranges::input_range V2, to_utf_view_kind E2, exposition_only_code_unit ToType2>
+  template <std::ranges::input_range V2, to_utf_view_kind K2, exposition_only_code_unit charT2>
     requires std::ranges::view<V2> && exposition_only_code_unit<std::ranges::range_value_t<V2>>
   friend class to_utf_view;
 
@@ -364,7 +364,7 @@ public:
   /* PAPER:   constexpr value_type operator*() const; */
   /* !PAPER */
   constexpr value_type operator*() const {
-    if constexpr (E == to_utf_view_kind::expected) {
+    if constexpr (K == to_utf_view_kind::expected) {
       if (!success_.has_value()) {
         return std::unexpected{success_.error()};
       }
@@ -373,13 +373,13 @@ public:
   }
   /* PAPER */
 
-  constexpr exposition_only_iterator& operator++() requires(E == to_utf_view_kind::expected)
+  constexpr exposition_only_iterator& operator++() requires(K == to_utf_view_kind::expected)
   {
     if (!exposition_only_success()) {
       /* !PAPER */
       assert(exposition_only_buf_index_ == 0);
       /* PAPER */
-      if constexpr (std::is_same_v<ToType, char8_t>) {
+      if constexpr (std::is_same_v<charT, char8_t>) {
         exposition_only_advance_one();
         exposition_only_advance_one();
       }
@@ -388,7 +388,7 @@ public:
     return *this;
   }
 
-  constexpr exposition_only_iterator& operator++() requires(E == to_utf_view_kind::replacement)
+  constexpr exposition_only_iterator& operator++() requires(K == to_utf_view_kind::replacement)
   {
     exposition_only_advance_one();
     return *this;
@@ -433,7 +433,7 @@ public:
       exposition_only_iterator const& lhs, exposition_only_iterator const& rhs)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, ToType>
+             && std::same_as<char32_t, charT>
   {
     return lhs.exposition_only_current_ <=> rhs.exposition_only_current_;
   }
@@ -442,7 +442,7 @@ public:
       exposition_only_iterator& it, difference_type const n)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, ToType>
+             && std::same_as<char32_t, charT>
   {
     it.exposition_only_current_ += n;
     it.exposition_only_reseat();
@@ -453,7 +453,7 @@ public:
       exposition_only_iterator it, difference_type const n)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, ToType>
+             && std::same_as<char32_t, charT>
   {
     it += n;
     return it;
@@ -463,7 +463,7 @@ public:
       difference_type const n, exposition_only_iterator it)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, ToType>
+             && std::same_as<char32_t, charT>
   {
     it += n;
     return it;
@@ -473,7 +473,7 @@ public:
       exposition_only_iterator& it, difference_type const n)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, ToType>
+             && std::same_as<char32_t, charT>
   {
     it.exposition_only_current_ -= n;
     it.exposition_only_reseat();
@@ -484,7 +484,7 @@ public:
       exposition_only_iterator it, difference_type const n)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, ToType>
+             && std::same_as<char32_t, charT>
   {
     it -= n;
     return it;
@@ -495,7 +495,7 @@ public:
       exposition_only_iterator const& rhs)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, ToType>
+             && std::same_as<char32_t, charT>
   {
     return lhs.exposition_only_current_ - rhs.exposition_only_current_;
   }
@@ -503,7 +503,7 @@ public:
   constexpr value_type operator[](difference_type const n) const
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, ToType>
+             && std::same_as<char32_t, charT>
   {
     return *(*this + n);
   }
@@ -545,11 +545,11 @@ private:
     }
   }
 
-  /* PAPER:       constexpr expected<void, utf_transcoding_error> @*success*@() const noexcept requires(E == to_utf_view_kind::expected); // @*exposition only*@ */
+  /* PAPER:       constexpr expected<void, utf_transcoding_error> @*success*@() const noexcept requires(K == to_utf_view_kind::expected); // @*exposition only*@ */
   /* !PAPER */
 
   constexpr bool exposition_only_success() const noexcept // @*exposition only*@
-    requires(E == to_utf_view_kind::expected)
+    requires(K == to_utf_view_kind::expected)
   {
     return !!success_;
   }
@@ -755,9 +755,9 @@ private:
     exposition_only_to_increment_ = to_incr;
     exposition_only_buf_index_ = 0;
     exposition_only_buf_.clear();
-    if constexpr (std::is_same_v<ToType, char32_t>) {
+    if constexpr (std::is_same_v<charT, char32_t>) {
       exposition_only_buf_.push_back(c);
-    } else if constexpr (std::is_same_v<ToType, char16_t>) {
+    } else if constexpr (std::is_same_v<charT, char16_t>) {
       if (c <= std::numeric_limits<char16_t>::max()) {
         exposition_only_buf_.push_back(static_cast<char16_t>(c));
       } else {
@@ -768,7 +768,7 @@ private:
         exposition_only_buf_.push_back(lead);
         exposition_only_buf_.push_back(trail);
       }
-    } else if constexpr (std::is_same_v<ToType, char8_t>) {
+    } else if constexpr (std::is_same_v<charT, char8_t>) {
       int bits = std::bit_width(static_cast<std::uint32_t>(c));
       if (bits <= 7) [[likely]] {
         exposition_only_buf_.push_back(static_cast<char8_t>(c));
@@ -954,7 +954,7 @@ private:
     exposition_only_current_ = read_reverse_impl_result.new_curr;
     assert(exposition_only_buf_.size());
     exposition_only_buf_index_ = exposition_only_buf_.size() - 1;
-    if constexpr (E == to_utf_view_kind::expected) {
+    if constexpr (K == to_utf_view_kind::expected) {
       if (!success_.has_value()) {
         exposition_only_buf_index_ = 0;
       }
@@ -964,10 +964,10 @@ private:
   /* PAPER */
 };
 
-template <std::ranges::input_range V, to_utf_view_kind E, exposition_only_code_unit ToType>
+template <std::ranges::input_range V, to_utf_view_kind K, exposition_only_code_unit charT>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 template <bool Const>
-struct to_utf_view<V, E, ToType>::exposition_only_sentinel {
+struct to_utf_view<V, K, charT>::exposition_only_sentinel {
 private:
   using exposition_only_Base = exposition_only_maybe_const<Const, V>; // @*exposition only*@
   std::ranges::sentinel_t<exposition_only_Base> exposition_only_end_ = std::ranges::sentinel_t<exposition_only_Base>();
@@ -1004,8 +1004,8 @@ namespace detail {
   template <class T>
   inline constexpr bool is_to_utf_view_v = false;
 
-  template <class R, auto E, class Tag>
-  inline constexpr bool is_to_utf_view_v<to_utf_view<R, E, Tag>> = true;
+  template <class R, auto K, class Tag>
+  inline constexpr bool is_to_utf_view_v<to_utf_view<R, K, Tag>> = true;
 
   template <class T>
   inline constexpr bool is_to_utf_subrange_v = false;
@@ -1014,37 +1014,37 @@ namespace detail {
   inline constexpr bool is_to_utf_subrange_v<std::ranges::subrange<I, I, std::ranges::subrange_kind::unsized>> =
     requires { typename I::is_to_utf_view_iterator; };
 
-  template <to_utf_view_kind E, exposition_only_code_unit ToType>
-  struct to_utf_impl : std::ranges::range_adaptor_closure<to_utf_impl<E, ToType>> {
+  template <to_utf_view_kind K, exposition_only_code_unit charT>
+  struct to_utf_impl : std::ranges::range_adaptor_closure<to_utf_impl<K, charT>> {
     template <std::ranges::range R>
     requires is_not_array_of_char<R>
     constexpr auto operator()(R&& r) const {
       using T = std::remove_cvref_t<R>;
       if constexpr (detail::is_empty_view<T>) {
-        if constexpr (E == to_utf_view_kind::replacement) {
-          return std::ranges::empty_view<ToType>{};
+        if constexpr (K == to_utf_view_kind::replacement) {
+          return std::ranges::empty_view<charT>{};
         } else {
-          return std::ranges::empty_view<std::expected<ToType, utf_transcoding_error>>{};
+          return std::ranges::empty_view<std::expected<charT, utf_transcoding_error>>{};
         }
       } else if constexpr (detail::is_to_utf_view_v<T>) {
-        return to_utf_view<std::views::all_t<decltype(std::forward<R>(r).base())>, E, ToType>(
+        return to_utf_view<std::views::all_t<decltype(std::forward<R>(r).base())>, K, charT>(
             std::forward<R>(r).base());
       } else if constexpr (detail::is_to_utf_subrange_v<T>) {
         auto sub = std::ranges::subrange(r.begin().base(), r.end().base());
-        return to_utf_view<std::views::all_t<decltype(sub)>, E, ToType>(std::move(sub));
+        return to_utf_view<std::views::all_t<decltype(sub)>, K, charT>(std::move(sub));
       } else {
-        return to_utf_view<std::views::all_t<R>, E, ToType>(std::forward<R>(r));
+        return to_utf_view<std::views::all_t<R>, K, charT>(std::forward<R>(r));
       }
     }
   };
 
 } // namespace detail
 
-template <exposition_only_code_unit ToType>
-inline constexpr detail::to_utf_impl<to_utf_view_kind::replacement, ToType> to_utf;
+template <exposition_only_code_unit charT>
+inline constexpr detail::to_utf_impl<to_utf_view_kind::replacement, charT> to_utf;
 
-template <exposition_only_code_unit ToType>
-inline constexpr detail::to_utf_impl<to_utf_view_kind::expected, ToType> to_utf_or_error;
+template <exposition_only_code_unit charT>
+inline constexpr detail::to_utf_impl<to_utf_view_kind::expected, charT> to_utf_or_error;
 
 inline constexpr auto to_utf8 = to_utf<char8_t>;
 
@@ -1060,8 +1060,8 @@ inline constexpr auto to_utf32_or_error = to_utf_or_error<char32_t>;
 
 /* PAPER: namespace views {                                                                     */
 /* PAPER:                                                                                       */
-/* PAPER:   template<@*code-unit*@ ToType> inline constexpr @*unspecified*@ to_utf = @*unspecified*@;          */
-/* PAPER:   template<@*code-unit*@ ToType> inline constexpr @*unspecified*@ to_utf_or_error = @*unspecified*@; */
+/* PAPER:   template<@*code-unit*@ charT> inline constexpr @*unspecified*@ to_utf = @*unspecified*@;          */
+/* PAPER:   template<@*code-unit*@ charT> inline constexpr @*unspecified*@ to_utf_or_error = @*unspecified*@; */
 /* PAPER:   inline constexpr auto to_utf8 = to_utf<char8_t>;                                    */
 /* PAPER:   inline constexpr auto to_utf8_or_error = to_utf_or_error<char8_t>;                  */
 /* PAPER:   inline constexpr auto to_utf16 = to_utf<char16_t>;                                  */
@@ -1075,14 +1075,14 @@ inline constexpr auto to_utf32_or_error = to_utf_or_error<char32_t>;
 
 } // namespace beman::utf_view
 
-template <class V, beman::utf_view::to_utf_view_kind E, class ToType>
-inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf_view<V, E, ToType>> =
+template <class V, beman::utf_view::to_utf_view_kind K, class charT>
+inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf_view<V, K, charT>> =
     std::ranges::enable_borrowed_range<V>;
 
 /* PAPER: namespace std::ranges {                                                                              */
 /* PAPER:                                                                                                      */
-/* PAPER:   template <class V, to_utf_view_kind E, class ToType>                                               */
-/* PAPER:   inline constexpr bool enable_borrowed_range<to_utf_view<V, E, ToType>> = enable_borrowed_range<V>; */
+/* PAPER:   template <class V, to_utf_view_kind K, class charT>                                               */
+/* PAPER:   inline constexpr bool enable_borrowed_range<to_utf_view<V, K, charT>> = enable_borrowed_range<V>; */
 /* PAPER:                                                                                                      */
 /* PAPER: }                                                                                                    */
 
