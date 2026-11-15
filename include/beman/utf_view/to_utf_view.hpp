@@ -278,26 +278,26 @@ public: // MSVC has some bug with their implementation of friendship
 #endif
 /* !PAPER */
   [[no_unique_address]] std::conditional_t<std::ranges::bidirectional_range<exposition_only_Base>, std::ranges::iterator_t<exposition_only_Base>, std::monostate> exposition_only_begin_{};
-/* PAPER:   iterator_t<exposition_only_Base> @*begin_*@{}; // @*exposition only*@, present only if exposition_only_Base */
-/* PAPER:                              // models bidirectional_range */
+/* PAPER:   iterator_t<exposition_only_Base> @*begin_*@ = iterator_t<exposition_only_Base>(); // @*exposition only*@, present only if exposition_only_Base */
+/* PAPER:                                                 // models bidirectional_range */
 /* PAPER */
-  std::ranges::iterator_t<exposition_only_Base> exposition_only_current_{}; // @*exposition only*@
+  std::ranges::iterator_t<exposition_only_Base> exposition_only_current_ = std::ranges::iterator_t<exposition_only_Base>(); // @*exposition only*@
 /* !PAPER */
-  [[no_unique_address]] std::ranges::sentinel_t<exposition_only_Base> exposition_only_end_{}; // @*exposition only*@
-/* PAPER:   sentinel_t<exposition_only_Base> @*end_*@; // @*exposition only*@ */
+  [[no_unique_address]] std::ranges::sentinel_t<exposition_only_Base> exposition_only_end_ = std::ranges::sentinel_t<exposition_only_Base>(); // @*exposition only*@
+/* PAPER:   sentinel_t<exposition_only_Base> @*end_*@ = sentinel_t<exposition_only_Base>(); // @*exposition only*@ */
 
   detail::fake_inplace_vector<charT,
                               std::same_as<charT, char8_t> ? 4 : std::same_as<charT, char16_t> ? 2 : 1>
       exposition_only_buf_{}; // @*exposition only*@
-/* PAPER:   inplace_vector<charT, same_as<charT, char8_t> ? 4 : same_as<charT, char16_t> ? 2 : 1> @*buf_*@{}; // @*exposition only*@ */
+/* PAPER:   inplace_vector<charT, same_as<charT, char8_t> ? 4 : same_as<charT, char16_t> ? 2 : 1> @*buf_*@; // @*exposition only*@ */
 /* PAPER */
 
   /* !PAPER */
-  std::uint8_t exposition_only_buf_index_{}; // @*exposition only*@
-  std::uint8_t exposition_only_to_increment_{}; // @*exposition only*@
+  std::uint8_t exposition_only_buf_index_ = 0; // @*exposition only*@
+  std::uint8_t exposition_only_to_increment_ = 0; // @*exposition only*@
   /* PAPER */
-  /* PAPER:   size_t @*buf_index_*@{}; // @*exposition only*@ */
-  /* PAPER:   size_t @*to_increment_*@{}; // @*exposition only*@ */
+  /* PAPER:   size_t @*buf_index_*@ = 0; // @*exposition only*@ */
+  /* PAPER:   size_t @*to_increment_*@ = 0; // @*exposition only*@ */
 
   /* !PAPER */
   std::expected<void, utf_transcoding_error> success_{};
