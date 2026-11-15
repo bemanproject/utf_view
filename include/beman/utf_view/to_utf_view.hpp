@@ -153,9 +153,7 @@ public:
     }
   }
   constexpr exposition_only_iterator<true> begin() const
-      requires std::ranges::range<const V> &&
-               ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
-                (!std::ranges::forward_range<const V>)) {
+      requires std::ranges::range<const V> {
     if constexpr (std::ranges::bidirectional_range<const V>) {
       return exposition_only_iterator<true>(
           std::ranges::begin(exposition_only_base_),
