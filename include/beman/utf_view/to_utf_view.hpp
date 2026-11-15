@@ -292,8 +292,12 @@ public: // MSVC has some bug with their implementation of friendship
 /* PAPER:   inplace_vector<charT, same_as<charT, char8_t> ? 4 : same_as<charT, char16_t> ? 2 : 1> @*buf_*@{}; // @*exposition only*@ */
 /* PAPER */
 
+  /* !PAPER */
   std::uint8_t exposition_only_buf_index_{}; // @*exposition only*@
   std::uint8_t exposition_only_to_increment_{}; // @*exposition only*@
+  /* PAPER */
+  /* PAPER:   size_t @*buf_index_*@{}; // @*exposition only*@ */
+  /* PAPER:   size_t @*to_increment_*@{}; // @*exposition only*@ */
 
   /* !PAPER */
   std::expected<void, utf_transcoding_error> success_{};
