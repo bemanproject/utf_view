@@ -140,8 +140,6 @@ public:
     return std::move(exposition_only_base_);
   }
 
-  /* !PAPER */
-  /* PAPER:     constexpr @*iterator*@<false> begin(); */
   constexpr exposition_only_iterator<false> begin() {
     if constexpr (std::ranges::bidirectional_range<V>) {
       return exposition_only_iterator<false>(
@@ -154,7 +152,6 @@ public:
           std::ranges::end(exposition_only_base_));
     }
   }
-  /* PAPER */
   constexpr exposition_only_iterator<true> begin() const
       requires std::ranges::range<const V> &&
                ((std::same_as<std::ranges::range_value_t<V>, char32_t>) ||
@@ -581,7 +578,7 @@ private:
     /* PAPER:     if (exposition_only_buf_index_ == exposition_only_buf_.size()) { */
       if constexpr (std::ranges::forward_range<exposition_only_Base>) {
         exposition_only_buf_index_ = 0;
-        std::advance(exposition_only_current_, exposition_only_to_increment_);
+        std::ranges::advance(exposition_only_current_, exposition_only_to_increment_);
       }
       exposition_only_reseat();
     }

@@ -20,6 +20,25 @@ def convert_snake_to_kebab(text):
     return result
 
 
+# The draft spells calls to the range access customization point objects and
+# the range iterator operations as `ranges::begin(x)`, etc., while types and
+# concepts from std::ranges are unqualified. Inside a view class an unqualified
+# `begin(x)` would also find the member function.
+RANGES_CALLABLES = (
+    "begin", "end", "cbegin", "cend", "rbegin", "rend", "crbegin", "crend",
+    "size", "ssize", "reserve_hint", "empty", "data", "cdata",
+    "advance", "distance", "next", "prev",
+    "iter_move", "iter_swap", "swap",
+)
+
+RANGES_CALL_PATTERN = re.compile(
+    r'\bstd::ranges::(' + '|'.join(RANGES_CALLABLES) + r')(?=\s*\()')
+
+
+def keep_ranges_qualifier_on_calls(text):
+    return RANGES_CALL_PATTERN.sub(r'ranges::\1', text)
+
+
 def process_file(file_path):
     in_paper_section = False
     result_lines = []
@@ -32,12 +51,13 @@ def process_file(file_path):
                 result_lines.append("\n")
                 continue
 
+            line = keep_ranges_qualifier_on_calls(line)
             line = line.replace("std::ranges::", "")
             line = line.replace("std::", "")
             line = line.replace("detail::", "")
             line = line.replace("boost::stl_interfaces::", "")
             line = line.replace("CONSTEXPR_UNLESS_MSVC", "constexpr")
-            line = line.replace("move", "std::move")
+            line = re.sub(r'\bmove\(', 'std::move(', line)
 
             if "/* !PAPER */" in line:
                 in_paper_section = False
