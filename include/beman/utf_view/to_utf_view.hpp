@@ -425,7 +425,7 @@ public:
   }
 
   friend constexpr auto operator<=>(
-      exposition_only_iterator const& lhs, exposition_only_iterator const& rhs)
+      const exposition_only_iterator& lhs, const exposition_only_iterator& rhs)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, charT>
@@ -434,7 +434,7 @@ public:
   }
 
   friend constexpr exposition_only_iterator& operator+=(
-      exposition_only_iterator& it, difference_type const n)
+      exposition_only_iterator& it, difference_type n)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, charT>
@@ -445,7 +445,7 @@ public:
   }
 
   friend constexpr exposition_only_iterator operator+(
-      exposition_only_iterator it, difference_type const n)
+      exposition_only_iterator it, difference_type n)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, charT>
@@ -455,7 +455,7 @@ public:
   }
 
   friend constexpr exposition_only_iterator operator+(
-      difference_type const n, exposition_only_iterator it)
+      difference_type n, exposition_only_iterator it)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, charT>
@@ -465,7 +465,7 @@ public:
   }
 
   friend constexpr exposition_only_iterator& operator-=(
-      exposition_only_iterator& it, difference_type const n)
+      exposition_only_iterator& it, difference_type n)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, charT>
@@ -476,7 +476,7 @@ public:
   }
 
   friend constexpr exposition_only_iterator operator-(
-      exposition_only_iterator it, difference_type const n)
+      exposition_only_iterator it, difference_type n)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, charT>
@@ -486,8 +486,8 @@ public:
   }
 
   friend constexpr difference_type operator-(
-      exposition_only_iterator const& lhs,
-      exposition_only_iterator const& rhs)
+      const exposition_only_iterator& lhs,
+      const exposition_only_iterator& rhs)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, charT>
@@ -495,7 +495,7 @@ public:
     return lhs.exposition_only_current_ - rhs.exposition_only_current_;
   }
 
-  constexpr value_type operator[](difference_type const n) const
+  constexpr value_type operator[](difference_type n) const
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, charT>
