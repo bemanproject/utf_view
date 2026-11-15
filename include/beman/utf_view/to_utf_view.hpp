@@ -534,19 +534,9 @@ private:
     It orig;
   };
 
-  constexpr std::ranges::iterator_t<exposition_only_Base> begin() const
-    requires std::ranges::bidirectional_range<exposition_only_Base>
-  {
-    return exposition_only_begin_;
-  }
-
   /* PAPER */
-  constexpr std::ranges::sentinel_t<exposition_only_Base> exposition_only_end() const { // @*exposition only*@
-    return exposition_only_end_;
-  }
-
   constexpr void exposition_only_reseat() { // @*exposition only*@
-    if (exposition_only_current_ != exposition_only_end())
+    if (exposition_only_current_ != exposition_only_end_)
       exposition_only_read();
     else {
       exposition_only_to_increment_ = 0;
@@ -692,7 +682,7 @@ private:
 
   constexpr decode_code_point_result decode_code_point_utf8() {
     guard<std::ranges::iterator_t<exposition_only_Base>> g{exposition_only_current_, exposition_only_current_};
-    return decode_code_point_utf8_impl(exposition_only_current_, exposition_only_end());
+    return decode_code_point_utf8_impl(exposition_only_current_, exposition_only_end_);
   }
 
   static constexpr decode_code_point_result decode_code_point_utf16_impl(
@@ -733,7 +723,7 @@ private:
 
   constexpr decode_code_point_result decode_code_point_utf16() {
     guard<std::ranges::iterator_t<exposition_only_Base>> g{exposition_only_current_, exposition_only_current_};
-    return decode_code_point_utf16_impl(exposition_only_current_, exposition_only_end());
+    return decode_code_point_utf16_impl(exposition_only_current_, exposition_only_end_);
   }
 
   static constexpr decode_code_point_result decode_code_point_utf32_impl(
@@ -826,14 +816,14 @@ private:
   };
 
   constexpr read_reverse_impl_result read_reverse_utf8() const {
-    assert(exposition_only_current_ != begin());
+    assert(exposition_only_current_ != exposition_only_begin_);
     auto it{exposition_only_current_};
     auto const orig{it};
     unsigned reversed{};
     do {
       --it;
       ++reversed;
-    } while (it != begin() && detail::continuation(*it) && reversed < 4);
+    } while (it != exposition_only_begin_ && detail::continuation(*it) && reversed < 4);
     if (detail::continuation(*it)) {
       auto new_curr{orig};
       --new_curr;
@@ -858,7 +848,7 @@ private:
       } else {
         auto lead{it};
         decode_code_point_result const decode_result{
-            decode_code_point_utf8_impl(it, exposition_only_end())};
+            decode_code_point_utf8_impl(it, exposition_only_end_)};
         if (decode_result.success ||
             decode_result.success ==
                 std::unexpected{utf_transcoding_error::truncated_utf8_sequence}) {
@@ -897,7 +887,7 @@ private:
   }
 
   constexpr read_reverse_impl_result read_reverse_utf16() const {
-    assert(exposition_only_current_ != begin());
+    assert(exposition_only_current_ != exposition_only_begin_);
     auto it{exposition_only_current_};
     auto const orig{it};
     --it;
@@ -908,7 +898,7 @@ private:
                                  utf_transcoding_error::unpaired_high_surrogate}}},
               .new_curr{it}};
     } else if (detail::low_surrogate(*it)) {
-      if (it == begin()) {
+      if (it == exposition_only_begin_) {
         return {.decode_result{.c{U'\uFFFD'},
                                .to_incr{1},
                                .success{std::unexpected{
@@ -918,7 +908,7 @@ private:
         --it;
         if (detail::high_surrogate(*it)) {
           auto lead{it};
-          return {.decode_result{decode_code_point_utf16_impl(it, exposition_only_end())},
+          return {.decode_result{decode_code_point_utf16_impl(it, exposition_only_end_)},
                   .new_curr{lead}};
         } else {
           auto new_curr{orig};
@@ -937,7 +927,7 @@ private:
   }
 
   constexpr read_reverse_impl_result read_reverse_utf32() const {
-    assert(exposition_only_current_ != begin());
+    assert(exposition_only_current_ != exposition_only_begin_);
     auto it{exposition_only_current_};
     auto const orig{it};
     --it;
