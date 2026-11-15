@@ -269,7 +269,6 @@ public:
   /* PAPER */
   using value_type =
       std::conditional_t<K == to_utf_view_kind::expected, std::expected<charT, utf_transcoding_error>, charT>;
-  using reference_type = value_type;
   using difference_type = std::ranges::range_difference_t<exposition_only_Base>;
 
 private:
