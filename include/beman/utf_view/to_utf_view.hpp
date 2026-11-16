@@ -418,6 +418,26 @@ public:
     return retval;
   }
 
+  constexpr exposition_only_iterator& operator+=(difference_type n)
+    requires std::ranges::random_access_range<exposition_only_Base>
+             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
+             && std::same_as<char32_t, charT>
+  {
+    exposition_only_current_ += n;
+    exposition_only_reseat();
+    return *this;
+  }
+
+  constexpr exposition_only_iterator& operator-=(difference_type n)
+    requires std::ranges::random_access_range<exposition_only_Base>
+             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
+             && std::same_as<char32_t, charT>
+  {
+    exposition_only_current_ -= n;
+    exposition_only_reseat();
+    return *this;
+  }
+
   friend constexpr bool operator==(const exposition_only_iterator& lhs,
                                    const exposition_only_iterator& rhs)
     requires std::equality_comparable<std::ranges::iterator_t<exposition_only_Base>>
@@ -471,17 +491,6 @@ public:
     return lhs.exposition_only_current_ <=> rhs.exposition_only_current_;
   }
 
-  friend constexpr exposition_only_iterator& operator+=(
-      exposition_only_iterator& it, difference_type n)
-    requires std::ranges::random_access_range<exposition_only_Base>
-             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, charT>
-  {
-    it.exposition_only_current_ += n;
-    it.exposition_only_reseat();
-    return it;
-  }
-
   friend constexpr exposition_only_iterator operator+(
       exposition_only_iterator it, difference_type n)
     requires std::ranges::random_access_range<exposition_only_Base>
@@ -499,17 +508,6 @@ public:
              && std::same_as<char32_t, charT>
   {
     it += n;
-    return it;
-  }
-
-  friend constexpr exposition_only_iterator& operator-=(
-      exposition_only_iterator& it, difference_type n)
-    requires std::ranges::random_access_range<exposition_only_Base>
-             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, charT>
-  {
-    it.exposition_only_current_ -= n;
-    it.exposition_only_reseat();
     return it;
   }
 
