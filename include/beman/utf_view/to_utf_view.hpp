@@ -390,14 +390,14 @@ public:
     return *this;
   }
 
-  constexpr auto operator++(int) {
-    if constexpr (std::is_same_v<iterator_concept, std::input_iterator_tag>) {
-      ++*this;
-    } else {
-      auto retval = *this;
-      ++*this;
-      return retval;
-    }
+  constexpr void operator++(int) { ++*this; }
+
+  constexpr exposition_only_iterator operator++(int)
+    requires std::ranges::forward_range<exposition_only_Base>
+  {
+    auto retval = *this;
+    ++*this;
+    return retval;
   }
 
   constexpr exposition_only_iterator& operator--()
