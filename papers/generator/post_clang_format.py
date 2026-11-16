@@ -41,25 +41,46 @@ def keep_ranges_qualifier_on_calls(text):
 
 
 # A function whose specification is "Effects: Equivalent to:" followed by its
-# body is marked up like this, outside of a PAPER section:
+# body is wrapped in a pair of comments:
 #
-#   constexpr void exposition_only_f() {
-#     /* EFFECTS:   constexpr void @*f*@(); // @*exposition only*@ */
+#   /* EFFECTS */
+#   constexpr void exposition_only_f() { // @*exposition only*@
 #     g();
-#     /* !EFFECTS */
 #   }
+#   /* !EFFECTS */
 #
-# The declaration in the EFFECTS comment goes into the synopsis, like a
-# "PAPER:" line. The lines up to the !EFFECTS comment are the body. Each such
-# function gets a block after the synopsis, in the order they appear.
-def format_effects(declaration, body_lines):
+# Its declaration goes into the synopsis in place of its definition, and it
+# gets a block after the synopsis, in the order such functions appear.
+def split_function(lines):
+    # The declaration is everything up to the brace that opens the body, which
+    # is at the end of a line, possibly followed by a comment.
+    for i, line in enumerate(lines):
+        code, has_comment, comment = line.rstrip("\n").partition("//")
+        code = code.rstrip()
+        if code.endswith("{"):
+            break
+    declaration = lines[:i]
+    code = code[:-1].rstrip()
+    if code:
+        declaration.append(code + ";" + (" //" + comment if has_comment else "") + "\n")
+    else:
+        declaration[-1] = declaration[-1].rstrip("\n") + ";\n"
+    # The body ends before the closing brace, which is the last line.
+    body = lines[i + 1:]
+    while not body[-1].strip():
+        body.pop()
+    body.pop()
+    return declaration, body
+
+
+def format_effects(declaration, body):
     return [
         "\n```cpp\n",
-        declaration.strip() + "\n",
+        textwrap.dedent("".join(declaration)),
         "```\n\n",
         "_Effects_: Equivalent to:\n\n",
         "```cpp\n",
-        textwrap.dedent("".join(body_lines)),
+        textwrap.dedent("".join(body)),
         "```\n",
     ]
 
@@ -68,8 +89,7 @@ def process_file(file_path):
     in_paper_section = False
     result_lines = []
     effects_lines = []
-    effects_declaration = None
-    effects_body = []
+    effects_function = None
 
     with open(file_path, 'r') as file:
         for line in file:
@@ -77,16 +97,6 @@ def process_file(file_path):
             if "/* PAPER: " in line:
                 result_lines.append(line[line.find("/* PAPER:") + len("/* PAPER: "):-4])
                 result_lines.append("\n")
-                continue
-            if "/* EFFECTS: " in line:
-                effects_declaration = line[line.find("/* EFFECTS:") + len("/* EFFECTS: "):-4]
-                result_lines.append(effects_declaration)
-                result_lines.append("\n")
-                continue
-            if "/* !EFFECTS */" in line:
-                effects_lines += format_effects(effects_declaration, effects_body)
-                effects_declaration = None
-                effects_body = []
                 continue
 
             line = keep_ranges_qualifier_on_calls(line)
@@ -104,8 +114,19 @@ def process_file(file_path):
                 in_paper_section = True
                 continue
 
-            if effects_declaration is not None:
-                effects_body.append(line)
+            if "/* !EFFECTS */" in line:
+                declaration, body = split_function(effects_function)
+                if in_paper_section:
+                    result_lines += declaration
+                effects_lines += format_effects(declaration, body)
+                effects_function = None
+                continue
+            elif "/* EFFECTS */" in line:
+                effects_function = []
+                continue
+
+            if effects_function is not None:
+                effects_function.append(line)
             elif in_paper_section:
                 result_lines.append(line)
 
