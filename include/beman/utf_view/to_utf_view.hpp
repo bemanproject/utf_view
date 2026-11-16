@@ -103,26 +103,14 @@ namespace detail {
     return 0xDC00 <= c && c <= 0xDFFF;
   }
 
-  template<typename T, exposition_only_code_unit charT>
+  // The transcoding iterator's operator* returns a prvalue, so in the C++17
+  // iterator model it can never be more than an input iterator.
+  template<typename T>
   struct iter_category_impl {};
 
-  template<std::ranges::forward_range R, exposition_only_code_unit charT>
-  struct iter_category_impl<R, charT> {
-    static consteval auto impl() {
-      using category = typename std::iterator_traits<std::ranges::iterator_t<R>>::iterator_category;
-      if constexpr (std::derived_from<category, std::random_access_iterator_tag>
-                    && std::same_as<char32_t, std::ranges::range_value_t<R>>
-                    && std::same_as<char32_t, charT>) {
-        return std::random_access_iterator_tag{};
-      } else if constexpr (std::derived_from<category, std::bidirectional_iterator_tag>) {
-        return std::bidirectional_iterator_tag{};
-      } else if constexpr (std::derived_from<category, std::forward_iterator_tag>) {
-        return std::forward_iterator_tag{};
-      } else {
-        return category{};
-      }
-    }
-    using iterator_category = decltype(impl());
+  template<std::ranges::forward_range R>
+  struct iter_category_impl<R> {
+    using iterator_category = std::input_iterator_tag;
   };
 
 } // namespace detail
@@ -272,7 +260,7 @@ template <bool Const>
 /* PAPER:   class to_utf_view<V, K, charT>::@*iterator*@ { */
 /* !PAPER */
 struct to_utf_view<V, K, charT>::exposition_only_iterator
-  : detail::iter_category_impl<V, charT> {
+  : detail::iter_category_impl<exposition_only_maybe_const<Const, V>> {
 /* PAPER */
 private:
   using exposition_only_Base = exposition_only_maybe_const<Const, V>; // @*exposition only*@
@@ -295,7 +283,7 @@ private:
 /* PAPER */
 public:
   /* PAPER:   using iterator_concept = @*see below*@; */
-  /* PAPER:   using iterator_category = @*see below*@;  // @*not always present*@ */
+  /* PAPER:   using iterator_category = input_iterator_tag;  // present only if exposition_only_Base models forward_range */
   /* !PAPER */
 
   using is_to_utf_view_iterator = void;
