@@ -438,62 +438,62 @@ public:
     return *this;
   }
 
-  friend constexpr bool operator==(const exposition_only_iterator& lhs,
-                                   const exposition_only_iterator& rhs)
+  friend constexpr bool operator==(const exposition_only_iterator& x,
+                                   const exposition_only_iterator& y)
     requires std::equality_comparable<std::ranges::iterator_t<exposition_only_Base>>
   {
     if constexpr (std::ranges::forward_range<exposition_only_Base>) {
-      return lhs.exposition_only_current_ == rhs.exposition_only_current_ && lhs.exposition_only_buf_index_ == rhs.exposition_only_buf_index_;
+      return x.exposition_only_current_ == y.exposition_only_current_ && x.exposition_only_buf_index_ == y.exposition_only_buf_index_;
     } else {
-      return lhs.exposition_only_current_ == rhs.exposition_only_current_ && lhs.exposition_only_buf_index_ == rhs.exposition_only_buf_index_ &&
-        lhs.exposition_only_buf_.empty() == rhs.exposition_only_buf_.empty();
+      return x.exposition_only_current_ == y.exposition_only_current_ && x.exposition_only_buf_index_ == y.exposition_only_buf_index_ &&
+        x.exposition_only_buf_.empty() == y.exposition_only_buf_.empty();
     }
   }
 
   friend constexpr bool operator<(
-      const exposition_only_iterator& lhs, const exposition_only_iterator& rhs)
+      const exposition_only_iterator& x, const exposition_only_iterator& y)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, charT>
   {
-    return lhs.exposition_only_current_ < rhs.exposition_only_current_;
+    return x.exposition_only_current_ < y.exposition_only_current_;
   }
 
   friend constexpr bool operator>(
-      const exposition_only_iterator& lhs, const exposition_only_iterator& rhs)
+      const exposition_only_iterator& x, const exposition_only_iterator& y)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, charT>
   {
-    return rhs < lhs;
+    return y < x;
   }
 
   friend constexpr bool operator<=(
-      const exposition_only_iterator& lhs, const exposition_only_iterator& rhs)
+      const exposition_only_iterator& x, const exposition_only_iterator& y)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, charT>
   {
-    return !(rhs < lhs);
+    return !(y < x);
   }
 
   friend constexpr bool operator>=(
-      const exposition_only_iterator& lhs, const exposition_only_iterator& rhs)
+      const exposition_only_iterator& x, const exposition_only_iterator& y)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, charT>
   {
-    return !(lhs < rhs);
+    return !(x < y);
   }
 
   friend constexpr auto operator<=>(
-      const exposition_only_iterator& lhs, const exposition_only_iterator& rhs)
+      const exposition_only_iterator& x, const exposition_only_iterator& y)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, charT>
              && std::three_way_comparable<std::ranges::iterator_t<exposition_only_Base>>
   {
-    return lhs.exposition_only_current_ <=> rhs.exposition_only_current_;
+    return x.exposition_only_current_ <=> y.exposition_only_current_;
   }
 
   friend constexpr exposition_only_iterator operator+(
@@ -527,17 +527,17 @@ public:
   }
 
   friend constexpr difference_type operator-(
-      const exposition_only_iterator& lhs,
-      const exposition_only_iterator& rhs)
+      const exposition_only_iterator& x,
+      const exposition_only_iterator& y)
     requires std::sized_sentinel_for<std::ranges::iterator_t<exposition_only_Base>, std::ranges::iterator_t<exposition_only_Base>>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, charT>
   {
     if constexpr (std::ranges::forward_range<exposition_only_Base>) {
-      return lhs.exposition_only_current_ - rhs.exposition_only_current_;
+      return x.exposition_only_current_ - y.exposition_only_current_;
     } else {
-      return (lhs.exposition_only_current_ - rhs.exposition_only_current_) - (lhs.exposition_only_buf_.empty() ? 0 : 1) +
-        (rhs.exposition_only_buf_.empty() ? 0 : 1);
+      return (x.exposition_only_current_ - y.exposition_only_current_) - (x.exposition_only_buf_.empty() ? 0 : 1) +
+        (y.exposition_only_buf_.empty() ? 0 : 1);
     }
   }
 
