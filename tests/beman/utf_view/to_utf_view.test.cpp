@@ -1915,6 +1915,96 @@ CONSTEXPR_UNLESS_MSVC bool utf32_self_transcode_test() {
   if (!test2(to_utf32) || !test2(to_utf32_or_error)) {
     return false;
   }
+  // Iterator difference only requires the underlying iterators to be sized,
+  // not random access
+  constexpr auto test3{
+    [](auto const cpo) {
+      std::initializer_list<char32_t> const arr{
+        {U'\u0051'}, {U'\u03D5'}, {U'\u5B66'}, {U'\x00021A87'}};
+      auto sized_forward_utf_view{
+        std::ranges::subrange{
+          std::counted_iterator{test_forward_iterator(arr), 4},
+          std::default_sentinel}
+        | cpo};
+      using view_type = decltype(sized_forward_utf_view);
+      using iterator_type = std::ranges::iterator_t<view_type>;
+      static_assert(std::ranges::forward_range<view_type>);
+      static_assert(!std::ranges::bidirectional_range<view_type>);
+      static_assert(std::sized_sentinel_for<iterator_type, iterator_type>);
+      auto it1{sized_forward_utf_view.begin()};
+      auto it2{sized_forward_utf_view.begin()};
+      if ((it1 - it2) != 0) {
+        return false;
+      }
+      ++it1;
+      ++it1;
+      if ((it1 - it2) != 2 || (it2 - it1) != -2) {
+        return false;
+      }
+      ++it1;
+      ++it1;
+      if (it1 != sized_forward_utf_view.end() || (it1 - it2) != 4) {
+        return false;
+      }
+      return true;
+    }};
+  if (!test3(to_utf32) || !test3(to_utf32_or_error)) {
+    return false;
+  }
+  // For an input-only range, the underlying iterator is one element ahead of
+  // the transcoding iterator's position unless the latter is past the end
+  constexpr auto test4{
+    [](auto const cpo) {
+      std::initializer_list<char32_t> const arr{
+        {U'\u0051'}, {U'\u03D5'}, {U'\u5B66'}, {U'\x00021A87'}};
+      using counted = std::counted_iterator<test_copyable_input_iterator<char32_t>>;
+      auto sized_input_utf_view{
+        std::ranges::subrange{
+          counted{test_copyable_input_iterator(arr), 4},
+          counted{test_copyable_input_iterator(arr), 0}}
+        | cpo};
+      using view_type = decltype(sized_input_utf_view);
+      using iterator_type = std::ranges::iterator_t<view_type>;
+      static_assert(std::ranges::common_range<view_type>);
+      static_assert(!std::ranges::forward_range<view_type>);
+      static_assert(std::sized_sentinel_for<iterator_type, iterator_type>);
+      auto const begin{sized_input_utf_view.begin()};
+      auto const end{sized_input_utf_view.end()};
+      auto it{sized_input_utf_view.begin()};
+      for (std::ptrdiff_t i{}; i != 4; ++i) {
+        if ((it - begin) != i || (begin - it) != -i || (end - it) != 4 - i
+            || (it - end) != i - 4) {
+          return false;
+        }
+        ++it;
+      }
+      if (it != end || (it - end) != 0 || (it - begin) != 4 || (end - begin) != 4) {
+        return false;
+      }
+      auto empty_utf_view{
+        std::ranges::subrange{
+          counted{test_copyable_input_iterator(arr), 0},
+          counted{test_copyable_input_iterator(arr), 0}}
+        | cpo};
+      if ((empty_utf_view.end() - empty_utf_view.begin()) != 0) {
+        return false;
+      }
+      return true;
+    }};
+  if (!test4(to_utf32) || !test4(to_utf32_or_error)) {
+    return false;
+  }
+  {
+    // Not provided unless transcoding from UTF-32 to UTF-32
+    static_assert(
+      !std::sized_sentinel_for<
+        std::ranges::iterator_t<decltype(U"a"sv | to_utf8)>,
+        std::ranges::iterator_t<decltype(U"a"sv | to_utf8)>>);
+    static_assert(
+      !std::sized_sentinel_for<
+        std::ranges::iterator_t<decltype(u8"a"sv | to_utf32)>,
+        std::ranges::iterator_t<decltype(u8"a"sv | to_utf32)>>);
+  }
   if (!test1(
          to_utf32_or_error,
          [](char32_t const c){

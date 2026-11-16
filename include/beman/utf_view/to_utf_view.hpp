@@ -529,11 +529,16 @@ public:
   friend constexpr difference_type operator-(
       const exposition_only_iterator& lhs,
       const exposition_only_iterator& rhs)
-    requires std::ranges::random_access_range<exposition_only_Base>
+    requires std::sized_sentinel_for<std::ranges::iterator_t<exposition_only_Base>, std::ranges::iterator_t<exposition_only_Base>>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
              && std::same_as<char32_t, charT>
   {
-    return lhs.exposition_only_current_ - rhs.exposition_only_current_;
+    if constexpr (std::ranges::forward_range<exposition_only_Base>) {
+      return lhs.exposition_only_current_ - rhs.exposition_only_current_;
+    } else {
+      return (lhs.exposition_only_current_ - rhs.exposition_only_current_) - (lhs.exposition_only_buf_.empty() ? 0 : 1) +
+        (rhs.exposition_only_buf_.empty() ? 0 : 1);
+    }
   }
 
   constexpr value_type operator[](difference_type n) const
