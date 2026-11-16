@@ -1547,6 +1547,178 @@ constexpr bool input_range_equality_test() {
   return true;
 }
 
+// Presents a test_bidi_iterator as an iterator of the weaker category Tag.
+// Converts from the same iterator presented as any other category.
+template <typename CharT, typename Tag>
+struct weakened_iterator {
+  using value_type = CharT;
+  using difference_type = std::ptrdiff_t;
+  using iterator_concept = Tag;
+  weakened_iterator() = default;
+  constexpr explicit weakened_iterator(test_bidi_iterator<CharT> it_in)
+      : it{it_in} { }
+  template <typename OtherTag>
+  constexpr weakened_iterator(weakened_iterator<CharT, OtherTag> other)
+      : it{other.it} { }
+  constexpr CharT const& operator*() const {
+    return *it;
+  }
+  constexpr weakened_iterator& operator++() {
+    ++it;
+    return *this;
+  }
+  constexpr void operator++(int)
+    requires std::same_as<Tag, std::input_iterator_tag>
+  {
+    ++it;
+  }
+  constexpr weakened_iterator operator++(int)
+    requires (!std::same_as<Tag, std::input_iterator_tag>)
+  {
+    auto ret = *this;
+    ++it;
+    return ret;
+  }
+  constexpr weakened_iterator& operator--()
+    requires std::same_as<Tag, std::bidirectional_iterator_tag>
+  {
+    --it;
+    return *this;
+  }
+  constexpr weakened_iterator operator--(int)
+    requires std::same_as<Tag, std::bidirectional_iterator_tag>
+  {
+    auto ret = *this;
+    --it;
+    return ret;
+  }
+  friend constexpr bool operator==(weakened_iterator const& lhs,
+                                   std::default_sentinel_t const&) {
+    return lhs.it == std::default_sentinel;
+  }
+  friend constexpr bool operator==(weakened_iterator const&,
+                                   weakened_iterator const&) = default;
+
+  test_bidi_iterator<CharT> it;
+};
+
+// A view that models a different range category when it is const.
+template <typename Tag, typename ConstTag>
+struct differently_const_view
+    : std::ranges::view_interface<differently_const_view<Tag, ConstTag>> {
+  constexpr weakened_iterator<char8_t, Tag> begin() {
+    return weakened_iterator<char8_t, Tag>{first};
+  }
+  constexpr weakened_iterator<char8_t, ConstTag> begin() const {
+    return weakened_iterator<char8_t, ConstTag>{first};
+  }
+  constexpr std::default_sentinel_t end() const {
+    return std::default_sentinel;
+  }
+  test_bidi_iterator<char8_t> first;
+};
+
+template <typename Tag, typename ConstTag>
+constexpr bool const_iterator_conversion_exists{
+  [] {
+    using base_view = differently_const_view<Tag, ConstTag>;
+    // The underlying iterators and sentinels always convert
+    static_assert(
+      std::convertible_to<
+        std::ranges::iterator_t<base_view>, std::ranges::iterator_t<const base_view>>);
+    static_assert(
+      std::convertible_to<
+        std::ranges::sentinel_t<base_view>, std::ranges::sentinel_t<const base_view>>);
+    using view_type = to_utf_view<base_view, to_utf_view_kind::replacement, char32_t>;
+    return std::convertible_to<
+      std::ranges::iterator_t<view_type>, std::ranges::iterator_t<const view_type>>;
+  }()};
+
+static_assert(std::ranges::bidirectional_range<
+              differently_const_view<std::bidirectional_iterator_tag, std::input_iterator_tag>>);
+static_assert(!std::ranges::forward_range<
+              const differently_const_view<std::bidirectional_iterator_tag, std::input_iterator_tag>>);
+static_assert(std::ranges::forward_range<
+              const differently_const_view<std::bidirectional_iterator_tag, std::forward_iterator_tag>>);
+static_assert(!std::ranges::bidirectional_range<
+              const differently_const_view<std::bidirectional_iterator_tag, std::forward_iterator_tag>>);
+
+// The transcoding iterator's members mean different things depending on
+// whether the underlying range is a forward range and on whether it is a
+// bidirectional range, so the conversion to the const iterator is only
+// available when the view and the const view agree on both.
+static_assert(
+  const_iterator_conversion_exists<std::input_iterator_tag, std::input_iterator_tag>);
+static_assert(
+  const_iterator_conversion_exists<std::forward_iterator_tag, std::forward_iterator_tag>);
+static_assert(
+  const_iterator_conversion_exists<
+    std::bidirectional_iterator_tag, std::bidirectional_iterator_tag>);
+// Disagreement on forward_range: current_ is either at the iterator's
+// position or ahead of it
+static_assert(
+  !const_iterator_conversion_exists<std::forward_iterator_tag, std::input_iterator_tag>);
+static_assert(
+  !const_iterator_conversion_exists<std::input_iterator_tag, std::forward_iterator_tag>);
+// Disagreement on bidirectional_range: begin_ is either present or absent
+static_assert(
+  !const_iterator_conversion_exists<
+    std::bidirectional_iterator_tag, std::forward_iterator_tag>);
+static_assert(
+  !const_iterator_conversion_exists<
+    std::forward_iterator_tag, std::bidirectional_iterator_tag>);
+
+constexpr bool const_iterator_conversion_test() {
+  using namespace std::string_view_literals;
+  // An iterator into a view converts to an iterator into the const view, at
+  // the same position, but not the other way around
+  constexpr auto test{
+    [](auto v) {
+      using view_type = decltype(v);
+      using iterator_type = std::ranges::iterator_t<view_type>;
+      using const_iterator_type = std::ranges::iterator_t<const view_type>;
+      static_assert(!std::same_as<iterator_type, const_iterator_type>);
+      static_assert(std::convertible_to<iterator_type, const_iterator_type>);
+      static_assert(!std::convertible_to<const_iterator_type, iterator_type>);
+      auto it{v.begin()};
+      auto const_it{std::as_const(v).begin()};
+      while (it != v.end()) {
+        const_iterator_type converted{it};
+        if (converted != const_it || *converted != *const_it) {
+          return false;
+        }
+        ++converted;
+        ++it;
+        ++const_it;
+        if (converted != const_it) {
+          return false;
+        }
+      }
+      const_iterator_type converted_end{it};
+      if (converted_end != const_it || converted_end != std::as_const(v).end()) {
+        return false;
+      }
+      return true;
+    }};
+  // Transcoding to a variable-width encoding, so that the conversion happens
+  // in the middle of the buffer too
+  if (!test(U"\u0051\u03D5\u5B66\x00021A87"sv | to_utf8)) {
+    return false;
+  }
+  if (!test(u8"\u0051\u03D5\xFF\u5B66"sv | to_utf16_or_error)) {
+    return false;
+  }
+  // An input-only range
+  std::initializer_list<char8_t> const arr{u8'a', u8'b', u8'c'};
+  using counted = std::counted_iterator<test_copyable_input_iterator<char8_t>>;
+  if (!test(std::ranges::subrange{counted{test_copyable_input_iterator(arr), 3},
+                                  counted{test_copyable_input_iterator(arr), 0}}
+            | to_utf32)) {
+    return false;
+  }
+  return true;
+}
+
 constexpr bool base_code_units_test() {
   auto const subrange_equal{
     []<typename Subrange>(Subrange const& s1, Subrange const& s2) {
@@ -2215,6 +2387,9 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
     return false;
   }
   if (!input_range_equality_test()) {
+    return false;
+  }
+  if (!const_iterator_conversion_test()) {
     return false;
   }
   if (!base_code_units_test()) {

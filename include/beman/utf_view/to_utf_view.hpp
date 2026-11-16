@@ -333,11 +333,36 @@ public: // MSVC has some bug with their implementation of friendship
     requires std::ranges::view<V2> && exposition_only_code_unit<std::ranges::range_value_t<V2>>
   friend class to_utf_view;
 
+  template <bool>
+  friend struct exposition_only_iterator;
+
   /* PAPER */
 public:
   constexpr exposition_only_iterator()
     requires std::default_initializable<std::ranges::iterator_t<exposition_only_Base>> = default;
 
+  /* PAPER:   constexpr exposition_only_iterator(exposition_only_iterator<!Const> i) */
+  /* PAPER:     requires Const && convertible_to<iterator_t<V>, iterator_t<exposition_only_Base>> && */
+  /* PAPER:              convertible_to<sentinel_t<V>, sentinel_t<exposition_only_Base>> && */
+  /* PAPER:              (forward_range<V> == forward_range<exposition_only_Base>) && */
+  /* PAPER:              (bidirectional_range<V> == bidirectional_range<exposition_only_Base>); */
+  /* PAPER: */
+  /* !PAPER */
+  constexpr exposition_only_iterator(exposition_only_iterator<!Const> i)
+    requires Const
+             && std::convertible_to<std::ranges::iterator_t<V>, std::ranges::iterator_t<exposition_only_Base>>
+             && std::convertible_to<std::ranges::sentinel_t<V>, std::ranges::sentinel_t<exposition_only_Base>>
+             && (std::ranges::forward_range<V> == std::ranges::forward_range<exposition_only_Base>)
+             && (std::ranges::bidirectional_range<V> == std::ranges::bidirectional_range<exposition_only_Base>)
+  : exposition_only_begin_(std::move(i.exposition_only_begin_)),
+    exposition_only_current_(std::move(i.exposition_only_current_)),
+    exposition_only_end_(std::move(i.exposition_only_end_)),
+    exposition_only_buf_(i.exposition_only_buf_),
+    exposition_only_buf_index_(i.exposition_only_buf_index_),
+    exposition_only_to_increment_(i.exposition_only_to_increment_)
+  {}
+
+  /* PAPER */
 private:
   /* PAPER:   constexpr exposition_only_iterator(iterator_t<exposition_only_Base> begin, iterator_t<exposition_only_Base> current, sentinel_t<exposition_only_Base> end) // @*exposition only*@ */
   /* PAPER:     requires bidirectional_range<exposition_only_Base>; */
