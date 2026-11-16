@@ -442,7 +442,12 @@ public:
                                    const exposition_only_iterator& rhs)
     requires std::equality_comparable<std::ranges::iterator_t<exposition_only_Base>>
   {
-    return lhs.exposition_only_current_ == rhs.exposition_only_current_ && lhs.exposition_only_buf_index_ == rhs.exposition_only_buf_index_;
+    if constexpr (std::ranges::forward_range<exposition_only_Base>) {
+      return lhs.exposition_only_current_ == rhs.exposition_only_current_ && lhs.exposition_only_buf_index_ == rhs.exposition_only_buf_index_;
+    } else {
+      return lhs.exposition_only_current_ == rhs.exposition_only_current_ && lhs.exposition_only_buf_index_ == rhs.exposition_only_buf_index_ &&
+        lhs.exposition_only_buf_.empty() == rhs.exposition_only_buf_.empty();
+    }
   }
 
   friend constexpr bool operator<(
