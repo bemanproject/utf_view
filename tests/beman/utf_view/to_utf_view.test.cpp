@@ -1823,6 +1823,9 @@ constexpr bool base_code_units_test() {
   return true;
 }
 
+template <typename T>
+concept has_iterator_category = requires { typename T::iterator_category; };
+
 CONSTEXPR_UNLESS_MSVC bool utf32_self_transcode_test() {
   using namespace std::string_view_literals;
   constexpr auto test1{
@@ -2023,10 +2026,30 @@ CONSTEXPR_UNLESS_MSVC bool utf32_self_transcode_test() {
   auto const from_u32sv{
     U"\u0051\u03D5\u5B66\x00021A87"sv
     | to_utf32};
+  // operator* returns a prvalue, so the iterator is only ever a C++17 input
+  // iterator, whatever range category the view models
   static_assert(
     std::is_same_v<
         decltype(from_u32sv.begin())::iterator_category,
-        std::random_access_iterator_tag>);
+        std::input_iterator_tag>);
+  static_assert(
+    std::is_same_v<
+        std::iterator_traits<decltype(from_u32sv.begin())>::iterator_category,
+        std::input_iterator_tag>);
+  static_assert(std::ranges::random_access_range<decltype(from_u32sv)>);
+  static_assert(
+    std::is_same_v<
+        decltype((u8"a"sv | to_utf16).begin())::iterator_category,
+        std::input_iterator_tag>);
+  static_assert(std::ranges::bidirectional_range<decltype(u8"a"sv | to_utf16)>);
+  // iterator_category is only present for forward ranges
+  static_assert(has_iterator_category<decltype(from_u32sv.begin())>);
+  static_assert(
+    !has_iterator_category<
+      std::ranges::iterator_t<
+        to_utf_view<
+          std::ranges::subrange<test_input_iterator<char8_t>, std::default_sentinel_t>,
+          to_utf_view_kind::replacement, char32_t>>>);
   auto const from_transformed_u32sv{
     U"\u0051\u03D5\u5B66\x00021A87"sv
     | std::views::transform([](char32_t const c) { return c; })
