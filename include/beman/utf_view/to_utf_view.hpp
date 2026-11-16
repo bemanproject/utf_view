@@ -580,6 +580,9 @@ public:
 
 private:
   /* !PAPER */
+#ifdef _MSC_VER
+public: // MSVC has some bug with their implementation of friendship
+#endif
 
   struct decode_code_point_result {
     char32_t c;
