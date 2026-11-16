@@ -1507,6 +1507,35 @@ constexpr bool input_range_equality_test() {
   if (it1 == it2) {
     return false;
   }
+  // For a common input-only range, the iterator at the final element and the
+  // past-the-end iterator hold the same underlying iterator, but must not
+  // compare equal
+  constexpr auto count_elements{
+    []<typename CharT>(std::initializer_list<CharT> const& list, auto const cpo) {
+      using counted = std::counted_iterator<test_copyable_input_iterator<CharT>>;
+      auto v{
+        std::ranges::subrange{
+          counted{test_copyable_input_iterator(list),
+                  static_cast<std::ptrdiff_t>(list.size())},
+          counted{test_copyable_input_iterator(list), 0}}
+        | cpo};
+      static_assert(std::ranges::common_range<decltype(v)>);
+      static_assert(!std::ranges::forward_range<decltype(v)>);
+      std::ptrdiff_t result{};
+      for (auto it{v.begin()}; it != v.end(); ++it) {
+        ++result;
+      }
+      return result;
+    }};
+  std::initializer_list<char8_t> const u8arr{u8'a', u8'b', u8'c'};
+  std::initializer_list<char32_t> const u32arr{U'a', U'b', U'c'};
+  std::initializer_list<char32_t> const u32empty{};
+  if (count_elements(u8arr, to_utf32) != 3 || count_elements(u32arr, to_utf32) != 3
+      || count_elements(u32arr, to_utf8_or_error) != 3
+      || count_elements(u32arr, to_utf16) != 3
+      || count_elements(u32empty, to_utf8) != 0) {
+    return false;
+  }
   return true;
 }
 
