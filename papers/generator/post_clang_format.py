@@ -4,6 +4,7 @@
 
 import re
 import sys
+import textwrap
 
 def convert_snake_to_kebab(text):
     def snake_to_kebab(match):
@@ -39,9 +40,36 @@ def keep_ranges_qualifier_on_calls(text):
     return RANGES_CALL_PATTERN.sub(r'ranges::\1', text)
 
 
+# A function whose specification is "Effects: Equivalent to:" followed by its
+# body is marked up like this, outside of a PAPER section:
+#
+#   constexpr void exposition_only_f() {
+#     /* EFFECTS:   constexpr void @*f*@(); // @*exposition only*@ */
+#     g();
+#     /* !EFFECTS */
+#   }
+#
+# The declaration in the EFFECTS comment goes into the synopsis, like a
+# "PAPER:" line. The lines up to the !EFFECTS comment are the body. Each such
+# function gets a block after the synopsis, in the order they appear.
+def format_effects(declaration, body_lines):
+    return [
+        "\n```cpp\n",
+        declaration.strip() + "\n",
+        "```\n\n",
+        "_Effects_: Equivalent to:\n\n",
+        "```cpp\n",
+        textwrap.dedent("".join(body_lines)),
+        "```\n",
+    ]
+
+
 def process_file(file_path):
     in_paper_section = False
     result_lines = []
+    effects_lines = []
+    effects_declaration = None
+    effects_body = []
 
     with open(file_path, 'r') as file:
         for line in file:
@@ -49,6 +77,16 @@ def process_file(file_path):
             if "/* PAPER: " in line:
                 result_lines.append(line[line.find("/* PAPER:") + len("/* PAPER: "):-4])
                 result_lines.append("\n")
+                continue
+            if "/* EFFECTS: " in line:
+                effects_declaration = line[line.find("/* EFFECTS:") + len("/* EFFECTS: "):-4]
+                result_lines.append(effects_declaration)
+                result_lines.append("\n")
+                continue
+            if "/* !EFFECTS */" in line:
+                effects_lines += format_effects(effects_declaration, effects_body)
+                effects_declaration = None
+                effects_body = []
                 continue
 
             line = keep_ranges_qualifier_on_calls(line)
@@ -66,10 +104,12 @@ def process_file(file_path):
                 in_paper_section = True
                 continue
 
-            if in_paper_section:
+            if effects_declaration is not None:
+                effects_body.append(line)
+            elif in_paper_section:
                 result_lines.append(line)
 
-    return result_lines
+    return result_lines + effects_lines
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
