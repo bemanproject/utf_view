@@ -351,10 +351,17 @@ public:
     requires std::default_initializable<std::ranges::iterator_t<exposition_only_Base>> = default;
 
 private:
+  /* PAPER:   constexpr exposition_only_iterator(iterator_t<exposition_only_Base> begin, iterator_t<exposition_only_Base> current, sentinel_t<exposition_only_Base> end) // @*exposition only*@ */
+  /* PAPER:     requires bidirectional_range<exposition_only_Base>; */
+  /* PAPER: */
+  /* PAPER:   constexpr exposition_only_iterator(iterator_t<exposition_only_Base> current, sentinel_t<exposition_only_Base> end) // @*exposition only*@ */
+  /* PAPER:     requires (!bidirectional_range<exposition_only_Base>); */
+  /* PAPER: */
+  /* !PAPER */
   constexpr exposition_only_iterator(
       std::ranges::iterator_t<exposition_only_Base> begin,
       std::ranges::iterator_t<exposition_only_Base> current,
-      std::ranges::sentinel_t<exposition_only_Base> end) // @*exposition only*@
+      std::ranges::sentinel_t<exposition_only_Base> end)
     requires std::ranges::bidirectional_range<exposition_only_Base>
   : exposition_only_begin_(std::move(begin)),
     exposition_only_current_(std::move(current)),
@@ -365,7 +372,7 @@ private:
 
   constexpr exposition_only_iterator(
       std::ranges::iterator_t<exposition_only_Base> current,
-      std::ranges::sentinel_t<exposition_only_Base> end) // @*exposition only*@
+      std::ranges::sentinel_t<exposition_only_Base> end)
     requires (!std::ranges::bidirectional_range<exposition_only_Base>)
   : exposition_only_current_(std::move(current)),
     exposition_only_end_(end)
@@ -373,6 +380,7 @@ private:
     exposition_only_reseat();
   }
 
+  /* PAPER */
 public:
 
   constexpr const std::ranges::iterator_t<exposition_only_Base>& base() const& noexcept
@@ -407,6 +415,7 @@ public:
   }
   /* PAPER */
 
+  /* EFFECTS */
   constexpr exposition_only_iterator& operator++()
   {
     if (!exposition_only_buf_ || ++exposition_only_buf_index_ == exposition_only_buf_->size()) {
@@ -418,9 +427,11 @@ public:
     }
     return *this;
   }
+  /* !EFFECTS */
 
   constexpr void operator++(int) { ++*this; }
 
+  /* EFFECTS */
   constexpr exposition_only_iterator operator++(int)
     requires std::ranges::forward_range<exposition_only_Base>
   {
@@ -428,7 +439,9 @@ public:
     ++*this;
     return retval;
   }
+  /* !EFFECTS */
 
+  /* EFFECTS */
   constexpr exposition_only_iterator& operator--()
     requires std::ranges::bidirectional_range<exposition_only_Base>
   {
@@ -438,7 +451,9 @@ public:
       --exposition_only_buf_index_;
     return *this;
   }
+  /* !EFFECTS */
 
+  /* EFFECTS */
   constexpr exposition_only_iterator operator--(int)
     requires std::ranges::bidirectional_range<exposition_only_Base>
   {
@@ -446,7 +461,9 @@ public:
     --*this;
     return retval;
   }
+  /* !EFFECTS */
 
+  /* EFFECTS */
   constexpr exposition_only_iterator& operator+=(difference_type n)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
@@ -456,7 +473,9 @@ public:
     exposition_only_reseat();
     return *this;
   }
+  /* !EFFECTS */
 
+  /* EFFECTS */
   constexpr exposition_only_iterator& operator-=(difference_type n)
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
@@ -466,7 +485,9 @@ public:
     exposition_only_reseat();
     return *this;
   }
+  /* !EFFECTS */
 
+  /* EFFECTS */
   friend constexpr bool operator==(const exposition_only_iterator& x,
                                    const exposition_only_iterator& y)
     requires std::equality_comparable<std::ranges::iterator_t<exposition_only_Base>>
@@ -478,7 +499,9 @@ public:
         x.exposition_only_buf_empty() == y.exposition_only_buf_empty();
     }
   }
+  /* !EFFECTS */
 
+  /* EFFECTS */
   friend constexpr bool operator<(
       const exposition_only_iterator& x, const exposition_only_iterator& y)
     requires std::ranges::random_access_range<exposition_only_Base>
@@ -487,7 +510,9 @@ public:
   {
     return x.exposition_only_current_ < y.exposition_only_current_;
   }
+  /* !EFFECTS */
 
+  /* EFFECTS */
   friend constexpr bool operator>(
       const exposition_only_iterator& x, const exposition_only_iterator& y)
     requires std::ranges::random_access_range<exposition_only_Base>
@@ -496,7 +521,9 @@ public:
   {
     return y < x;
   }
+  /* !EFFECTS */
 
+  /* EFFECTS */
   friend constexpr bool operator<=(
       const exposition_only_iterator& x, const exposition_only_iterator& y)
     requires std::ranges::random_access_range<exposition_only_Base>
@@ -505,7 +532,9 @@ public:
   {
     return !(y < x);
   }
+  /* !EFFECTS */
 
+  /* EFFECTS */
   friend constexpr bool operator>=(
       const exposition_only_iterator& x, const exposition_only_iterator& y)
     requires std::ranges::random_access_range<exposition_only_Base>
@@ -514,7 +543,9 @@ public:
   {
     return !(x < y);
   }
+  /* !EFFECTS */
 
+  /* EFFECTS */
   friend constexpr auto operator<=>(
       const exposition_only_iterator& x, const exposition_only_iterator& y)
     requires std::ranges::random_access_range<exposition_only_Base>
@@ -524,7 +555,9 @@ public:
   {
     return x.exposition_only_current_ <=> y.exposition_only_current_;
   }
+  /* !EFFECTS */
 
+  /* EFFECTS */
   friend constexpr exposition_only_iterator operator+(
       exposition_only_iterator it, difference_type n)
     requires std::ranges::random_access_range<exposition_only_Base>
@@ -534,7 +567,9 @@ public:
     it += n;
     return it;
   }
+  /* !EFFECTS */
 
+  /* EFFECTS */
   friend constexpr exposition_only_iterator operator+(
       difference_type n, exposition_only_iterator it)
     requires std::ranges::random_access_range<exposition_only_Base>
@@ -544,7 +579,9 @@ public:
     it += n;
     return it;
   }
+  /* !EFFECTS */
 
+  /* EFFECTS */
   friend constexpr exposition_only_iterator operator-(
       exposition_only_iterator it, difference_type n)
     requires std::ranges::random_access_range<exposition_only_Base>
@@ -554,7 +591,9 @@ public:
     it -= n;
     return it;
   }
+  /* !EFFECTS */
 
+  /* EFFECTS */
   friend constexpr difference_type operator-(
       const exposition_only_iterator& x,
       const exposition_only_iterator& y)
@@ -569,7 +608,9 @@ public:
         (y.exposition_only_buf_empty() ? 0 : 1);
     }
   }
+  /* !EFFECTS */
 
+  /* EFFECTS */
   constexpr value_type operator[](difference_type n) const
     requires std::ranges::random_access_range<exposition_only_Base>
              && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
@@ -577,6 +618,7 @@ public:
   {
     return *(*this + n);
   }
+  /* !EFFECTS */
 
 private:
   /* !PAPER */
@@ -607,6 +649,7 @@ public: // MSVC has some bug with their implementation of friendship
   };
 
   /* PAPER */
+  /* EFFECTS */
   constexpr void exposition_only_reseat() { // @*exposition only*@
     if (exposition_only_current_ != exposition_only_end_)
       exposition_only_read();
@@ -618,6 +661,7 @@ public: // MSVC has some bug with their implementation of friendship
       }
     }
   }
+  /* !EFFECTS */
 
   constexpr bool exposition_only_buf_empty() const // @*exposition only*@
   {
@@ -1051,6 +1095,7 @@ public:
     return exposition_only_end_;
   }
 
+  /* EFFECTS */
   template<bool OtherConst>
     requires std::sentinel_for<std::ranges::sentinel_t<exposition_only_Base>, std::ranges::iterator_t<exposition_only_maybe_const<OtherConst, V>>>
   friend constexpr bool operator==(const exposition_only_iterator<OtherConst>& x, const exposition_only_sentinel& y) {
@@ -1060,6 +1105,7 @@ public:
       return x.exposition_only_current_ == y.exposition_only_end_ && x.exposition_only_buf_empty();
     }
   }
+  /* !EFFECTS */
 };
 
 /* !PAPER */
