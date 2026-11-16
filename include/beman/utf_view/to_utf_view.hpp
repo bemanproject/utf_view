@@ -61,6 +61,40 @@ namespace detail {
         : -1;
   }
 
+  // Stands in for std::expected<T, E> where the unexpected state can never
+  // occur, as is the case for the transcoding iterator's buffer when the view
+  // kind is to_utf_view_kind::replacement, so that neither the discriminator
+  // nor the checks for it cost anything.
+  template <typename T>
+  class always_has_value {
+  public:
+    constexpr bool has_value() const noexcept {
+      return true;
+    }
+    constexpr explicit operator bool() const noexcept {
+      return true;
+    }
+    constexpr T& operator*() noexcept {
+      return value_;
+    }
+    constexpr const T& operator*() const noexcept {
+      return value_;
+    }
+    constexpr T* operator->() noexcept {
+      return &value_;
+    }
+    constexpr const T* operator->() const noexcept {
+      return &value_;
+    }
+    constexpr T& emplace() noexcept {
+      value_ = T();
+      return value_;
+    }
+
+  private:
+    T value_{};
+  };
+
   constexpr bool high_surrogate(char16_t c) {
     return 0xD800 <= c && c <= 0xDBFF;
   }
@@ -287,10 +321,16 @@ public: // MSVC has some bug with their implementation of friendship
   [[no_unique_address]] std::ranges::sentinel_t<exposition_only_Base> exposition_only_end_ = std::ranges::sentinel_t<exposition_only_Base>(); // @*exposition only*@
 /* PAPER:   sentinel_t<exposition_only_Base> @*end_*@ = sentinel_t<exposition_only_Base>(); // @*exposition only*@ */
 
-  detail::fake_inplace_vector<charT,
-                              std::same_as<charT, char8_t> ? 4 : std::same_as<charT, char16_t> ? 2 : 1>
+  using buf_storage =
+      detail::fake_inplace_vector<charT,
+                                  std::same_as<charT, char8_t> ? 4 : std::same_as<charT, char16_t> ? 2 : 1>;
+  // The unexpected state only occurs for to_utf_view_kind::expected
+  std::conditional_t<K == to_utf_view_kind::expected,
+                     std::expected<buf_storage, utf_transcoding_error>,
+                     detail::always_has_value<buf_storage>>
       exposition_only_buf_{}; // @*exposition only*@
-/* PAPER:   inplace_vector<charT, same_as<charT, char8_t> ? 4 : same_as<charT, char16_t> ? 2 : 1> @*buf_*@; // @*exposition only*@ */
+/* PAPER:   expected<inplace_vector<charT, same_as<charT, char8_t> ? 4 : same_as<charT, char16_t> ? 2 : 1>, utf_transcoding_error> */
+/* PAPER:     @*buf_*@; // @*exposition only*@ */
 /* PAPER */
 
   /* !PAPER */
@@ -301,8 +341,6 @@ public: // MSVC has some bug with their implementation of friendship
   /* PAPER:   size_t @*to_increment_*@ = 0; // @*exposition only*@ */
 
   /* !PAPER */
-  std::expected<void, utf_transcoding_error> success_{};
-
   template <std::ranges::input_range V2, to_utf_view_kind K2, exposition_only_code_unit charT2>
     requires std::ranges::view<V2> && exposition_only_code_unit<std::ranges::range_value_t<V2>>
   friend class to_utf_view;
@@ -361,32 +399,23 @@ public:
   /* !PAPER */
   constexpr value_type operator*() const {
     if constexpr (K == to_utf_view_kind::expected) {
-      if (!success_.has_value()) {
-        return std::unexpected{success_.error()};
+      if (!exposition_only_buf_) {
+        return std::unexpected{exposition_only_buf_.error()};
       }
     }
-    return exposition_only_buf_[exposition_only_buf_index_];
+    return (*exposition_only_buf_)[exposition_only_buf_index_];
   }
   /* PAPER */
 
-  constexpr exposition_only_iterator& operator++() requires(K == to_utf_view_kind::expected)
+  constexpr exposition_only_iterator& operator++()
   {
-    if (!exposition_only_success()) {
-      /* !PAPER */
-      assert(exposition_only_buf_index_ == 0);
-      /* PAPER */
-      if constexpr (std::is_same_v<charT, char8_t>) {
-        exposition_only_advance_one();
-        exposition_only_advance_one();
+    if (!exposition_only_buf_ || ++exposition_only_buf_index_ == exposition_only_buf_->size()) {
+      if constexpr (std::ranges::forward_range<exposition_only_Base>) {
+        exposition_only_buf_index_ = 0;
+        std::ranges::advance(exposition_only_current_, exposition_only_to_increment_);
       }
+      exposition_only_reseat();
     }
-    exposition_only_advance_one();
-    return *this;
-  }
-
-  constexpr exposition_only_iterator& operator++() requires(K == to_utf_view_kind::replacement)
-  {
-    exposition_only_advance_one();
     return *this;
   }
 
@@ -446,7 +475,7 @@ public:
       return x.exposition_only_current_ == y.exposition_only_current_ && x.exposition_only_buf_index_ == y.exposition_only_buf_index_;
     } else {
       return x.exposition_only_current_ == y.exposition_only_current_ && x.exposition_only_buf_index_ == y.exposition_only_buf_index_ &&
-        x.exposition_only_buf_.empty() == y.exposition_only_buf_.empty();
+        x.exposition_only_buf_empty() == y.exposition_only_buf_empty();
     }
   }
 
@@ -536,8 +565,8 @@ public:
     if constexpr (std::ranges::forward_range<exposition_only_Base>) {
       return x.exposition_only_current_ - y.exposition_only_current_;
     } else {
-      return (x.exposition_only_current_ - y.exposition_only_current_) - (x.exposition_only_buf_.empty() ? 0 : 1) +
-        (y.exposition_only_buf_.empty() ? 0 : 1);
+      return (x.exposition_only_current_ - y.exposition_only_current_) - (x.exposition_only_buf_empty() ? 0 : 1) +
+        (y.exposition_only_buf_empty() ? 0 : 1);
     }
   }
 
@@ -581,33 +610,15 @@ private:
     else {
       exposition_only_to_increment_ = 0;
       if constexpr (!std::ranges::forward_range<exposition_only_Base>) {
-        exposition_only_buf_.clear();
+        exposition_only_buf_.emplace();
         exposition_only_buf_index_ = 0;
       }
     }
   }
 
-  /* PAPER:       constexpr expected<void, utf_transcoding_error> @*success*@() const noexcept requires(K == to_utf_view_kind::expected); // @*exposition only*@ */
-  /* !PAPER */
-
-  constexpr bool exposition_only_success() const noexcept // @*exposition only*@
-    requires(K == to_utf_view_kind::expected)
+  constexpr bool exposition_only_buf_empty() const // @*exposition only*@
   {
-    return !!success_;
-  }
-
-  /* PAPER */
-
-  constexpr void exposition_only_advance_one() // @*exposition only*@
-  {
-    ++exposition_only_buf_index_;
-    if (exposition_only_buf_index_ == exposition_only_buf_.size()) {
-      if constexpr (std::ranges::forward_range<exposition_only_Base>) {
-        exposition_only_buf_index_ = 0;
-        std::ranges::advance(exposition_only_current_, exposition_only_to_increment_);
-      }
-      exposition_only_reseat();
-    }
+    return exposition_only_buf_ && exposition_only_buf_->empty();
   }
 
   /* !PAPER */
@@ -793,47 +804,66 @@ private:
   constexpr void update(char32_t c, std::uint8_t to_incr) {
     exposition_only_to_increment_ = to_incr;
     exposition_only_buf_index_ = 0;
-    exposition_only_buf_.clear();
+    auto& buf{exposition_only_buf_.emplace()};
     if constexpr (std::is_same_v<charT, char32_t>) {
-      exposition_only_buf_.push_back(c);
+      buf.push_back(c);
     } else if constexpr (std::is_same_v<charT, char16_t>) {
       if (c <= std::numeric_limits<char16_t>::max()) {
-        exposition_only_buf_.push_back(static_cast<char16_t>(c));
+        buf.push_back(static_cast<char16_t>(c));
       } else {
         // From http://www.unicode.org/faq/utf_bom.html#utf16-4
         const char32_t lead_offset = 0xD800 - (0x10000 >> 10);
         char16_t lead = lead_offset + (c >> 10);
         char16_t trail = 0xDC00 + (c & 0x3FF);
-        exposition_only_buf_.push_back(lead);
-        exposition_only_buf_.push_back(trail);
+        buf.push_back(lead);
+        buf.push_back(trail);
       }
     } else if constexpr (std::is_same_v<charT, char8_t>) {
       int bits = std::bit_width(static_cast<std::uint32_t>(c));
       if (bits <= 7) [[likely]] {
-        exposition_only_buf_.push_back(static_cast<char8_t>(c));
+        buf.push_back(static_cast<char8_t>(c));
       } else if (bits <= 11) {
-        exposition_only_buf_.push_back(0xC0 | (c >> 6));
-        exposition_only_buf_.push_back(0x80 | (c & 0x3F));
+        buf.push_back(0xC0 | (c >> 6));
+        buf.push_back(0x80 | (c & 0x3F));
       } else if (bits <= 16) {
-        exposition_only_buf_.push_back(0xE0 | (c >> 12));
-        exposition_only_buf_.push_back(0x80 | ((c >> 6) & 0x3F));
-        exposition_only_buf_.push_back(0x80 | (c & 0x3F));
+        buf.push_back(0xE0 | (c >> 12));
+        buf.push_back(0x80 | ((c >> 6) & 0x3F));
+        buf.push_back(0x80 | (c & 0x3F));
       } else {
-        exposition_only_buf_.push_back(0xF0 | ((c >> 18) & 0x07));
-        exposition_only_buf_.push_back(0x80 | ((c >> 12) & 0x3F));
-        exposition_only_buf_.push_back(0x80 | ((c >> 6) & 0x3F));
-        exposition_only_buf_.push_back(0x80 | (c & 0x3F));
+        buf.push_back(0xF0 | ((c >> 18) & 0x07));
+        buf.push_back(0x80 | ((c >> 12) & 0x3F));
+        buf.push_back(0x80 | ((c >> 6) & 0x3F));
+        buf.push_back(0x80 | (c & 0x3F));
       }
     } else {
       static_assert(false);
     }
   }
 
+  // Record that the input subsequence was ill-formed, for
+  // to_utf_view_kind::expected.
+  constexpr void update_error(utf_transcoding_error e, std::uint8_t to_incr)
+    requires(K == to_utf_view_kind::expected)
+  {
+    exposition_only_to_increment_ = to_incr;
+    exposition_only_buf_index_ = 0;
+    exposition_only_buf_ = std::unexpected{e};
+  }
+
+  constexpr void update(decode_code_point_result const& decode_result) {
+    if constexpr (K == to_utf_view_kind::expected) {
+      if (!decode_result.success) {
+        update_error(decode_result.success.error(), decode_result.to_incr);
+        return;
+      }
+    }
+    update(decode_result.c, decode_result.to_incr);
+  }
+
   /* PAPER:       constexpr void exposition_only_read(); // @*exposition only*@ */
   /* PAPER: */
 
   constexpr void exposition_only_read() { // @*exposition only*@
-    success_.emplace();
     decode_code_point_result decode_result{};
     if constexpr (std::is_same_v<std::ranges::range_value_t<exposition_only_Base>, char8_t>)
       decode_result = decode_code_point_utf8();
@@ -844,8 +874,7 @@ private:
     } else {
       static_assert(false);
     }
-    update(decode_result.c, decode_result.to_incr);
-    success_ = decode_result.success;
+    update(decode_result);
   }
 
   struct read_reverse_impl_result {
@@ -977,7 +1006,6 @@ private:
   /* PAPER:       constexpr void exposition_only_read_reverse(); // @*exposition only*@ */
 
   constexpr void exposition_only_read_reverse() { // @*exposition only*@
-    success_.emplace();
     auto const read_reverse_impl_result{[&] {
       if constexpr (std::is_same_v<std::ranges::range_value_t<exposition_only_Base>, char8_t>) {
         return read_reverse_utf8();
@@ -987,16 +1015,11 @@ private:
         return read_reverse_utf32();
       }
     }()};
-    update(read_reverse_impl_result.decode_result.c,
-           read_reverse_impl_result.decode_result.to_incr);
-    success_ = read_reverse_impl_result.decode_result.success;
+    update(read_reverse_impl_result.decode_result);
     exposition_only_current_ = read_reverse_impl_result.new_curr;
-    assert(exposition_only_buf_.size());
-    exposition_only_buf_index_ = exposition_only_buf_.size() - 1;
-    if constexpr (K == to_utf_view_kind::expected) {
-      if (!success_.has_value()) {
-        exposition_only_buf_index_ = 0;
-      }
+    if (exposition_only_buf_) {
+      assert(exposition_only_buf_->size());
+      exposition_only_buf_index_ = exposition_only_buf_->size() - 1;
     }
   }
 
@@ -1031,7 +1054,7 @@ public:
     if constexpr (std::ranges::forward_range<exposition_only_Base>) {
       return x.exposition_only_current_ == y.exposition_only_end_;
     } else {
-      return x.exposition_only_current_ == y.exposition_only_end_ && x.exposition_only_buf_.empty();
+      return x.exposition_only_current_ == y.exposition_only_end_ && x.exposition_only_buf_empty();
     }
   }
 };
