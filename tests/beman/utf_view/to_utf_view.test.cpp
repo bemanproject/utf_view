@@ -100,6 +100,14 @@ static_assert(
                   test_random_access_iterator<char32_t>>,
               to_utf_view_kind::replacement, char32_t>>>);
 
+// A view that substitutes replacement characters never has an error to store,
+// so its iterator must not be made larger by the ability to hold one.
+static_assert(
+  sizeof(std::ranges::iterator_t<
+           to_utf_view<std::u8string_view, to_utf_view_kind::replacement, char32_t>>)
+  <= sizeof(std::ranges::iterator_t<
+             to_utf_view<std::u8string_view, to_utf_view_kind::expected, char32_t>>));
+
 // size() is only available when a UTF-32 -> UTF-32 view is transcoding a sized range.
 static_assert(std::ranges::sized_range<
               to_utf_view<std::u32string_view, to_utf_view_kind::replacement, char32_t>>);
