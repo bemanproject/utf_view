@@ -1209,8 +1209,8 @@ inline constexpr auto to_utf32_or_error = to_utf_or_error<char32_t>;
 
 /* PAPER: namespace views {                                                                     */
 /* PAPER:                                                                                       */
-/* PAPER:   template<@*code-unit*@ charT> inline constexpr @*unspecified*@ to_utf = @*unspecified*@;          */
-/* PAPER:   template<@*code-unit*@ charT> inline constexpr @*unspecified*@ to_utf_or_error = @*unspecified*@; */
+/* PAPER:   template<@*code-unit*@ charT> constexpr @*unspecified*@ to_utf = @*unspecified*@;                 */
+/* PAPER:   template<@*code-unit*@ charT> constexpr @*unspecified*@ to_utf_or_error = @*unspecified*@;        */
 /* PAPER:   inline constexpr auto to_utf8 = to_utf<char8_t>;                                    */
 /* PAPER:   inline constexpr auto to_utf8_or_error = to_utf_or_error<char8_t>;                  */
 /* PAPER:   inline constexpr auto to_utf16 = to_utf<char16_t>;                                  */
