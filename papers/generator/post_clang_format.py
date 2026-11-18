@@ -73,7 +73,14 @@ def split_function(lines):
     return declaration, body
 
 
+# A member is marked as exposition-only where it is declared in the synopsis,
+# and not again where it is described.
+def remove_exposition_only_comments(lines):
+    return [re.sub(r'[ \t]*// @\*exposition only\*@', '', line) for line in lines]
+
+
 def format_effects(declaration, body):
+    declaration = remove_exposition_only_comments(declaration)
     return [
         "\n```cpp\n",
         textwrap.dedent("".join(declaration)),
