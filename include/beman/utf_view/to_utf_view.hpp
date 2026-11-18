@@ -1225,13 +1225,6 @@ template <class V, beman::utf_view::to_utf_view_kind K, class charT>
 inline constexpr bool std::ranges::enable_borrowed_range<beman::utf_view::to_utf_view<V, K, charT>> =
     std::ranges::enable_borrowed_range<V>;
 
-/* PAPER: namespace std::ranges {                                                                              */
-/* PAPER:                                                                                                      */
-/* PAPER:   template <class V, to_utf_view_kind K, class charT>                                               */
-/* PAPER:   inline constexpr bool enable_borrowed_range<to_utf_view<V, K, charT>> = enable_borrowed_range<V>; */
-/* PAPER:                                                                                                      */
-/* PAPER: }                                                                                                    */
-
 #endif // BEMAN_UTF_VIEW_USE_MODULES() &&
        // !defined(BEMAN_UTF_VIEW_INCLUDED_FROM_INTERFACE_UNIT)
 
