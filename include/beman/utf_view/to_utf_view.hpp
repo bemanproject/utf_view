@@ -1099,12 +1099,17 @@ private:
   using exposition_only_Base = exposition_only_maybe_const<Const, V>; // @*exposition only*@
   std::ranges::sentinel_t<exposition_only_Base> exposition_only_end_ = std::ranges::sentinel_t<exposition_only_Base>();
 
+  /* !PAPER */
+  template <bool>
+  friend struct exposition_only_sentinel;
+
+  /* PAPER */
 public:
   exposition_only_sentinel() = default;
   constexpr explicit exposition_only_sentinel(std::ranges::sentinel_t<exposition_only_Base> end)
   : exposition_only_end_{end}
   {}
-  constexpr explicit exposition_only_sentinel(exposition_only_sentinel<!Const> i)
+  constexpr exposition_only_sentinel(exposition_only_sentinel<!Const> i)
     requires Const && std::convertible_to<std::ranges::sentinel_t<V>, std::ranges::sentinel_t<exposition_only_Base>>
   : exposition_only_end_{i.exposition_only_end_}
   {}

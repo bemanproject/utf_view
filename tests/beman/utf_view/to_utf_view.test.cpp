@@ -951,8 +951,31 @@ constexpr bool mixed_const_sentinel_test_impl() {
       return false;
     }
   }
+  {
+    // The sentinel of a mutable view converts implicitly to the sentinel of a const view
+    view_type view{mixed_category_view<MutableIsForward>{list}};
+    std::ranges::sentinel_t<const view_type> const converted = view.end();
+    std::u32string result;
+    for (auto it = std::as_const(view).begin(); it != converted; ++it) {
+      result.push_back(*it);
+    }
+    if (result != U"abc") {
+      return false;
+    }
+  }
   return true;
 }
+
+// A sentinel of a view converts implicitly to a sentinel of the const view, but not the
+// other way around
+using mixed_category_utf_view =
+    to_utf_view<mixed_category_view<false>, to_utf_view_kind::replacement, char32_t>;
+static_assert(!std::same_as<std::ranges::sentinel_t<mixed_category_utf_view>,
+                            std::ranges::sentinel_t<const mixed_category_utf_view>>);
+static_assert(std::convertible_to<std::ranges::sentinel_t<mixed_category_utf_view>,
+                                  std::ranges::sentinel_t<const mixed_category_utf_view>>);
+static_assert(!std::constructible_from<std::ranges::sentinel_t<mixed_category_utf_view>,
+                                       std::ranges::sentinel_t<const mixed_category_utf_view>>);
 
 constexpr bool mixed_const_sentinel_test() {
   return mixed_const_sentinel_test_impl<false>() && mixed_const_sentinel_test_impl<true>();
