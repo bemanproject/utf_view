@@ -16,5 +16,9 @@ static_assert(exposition_only_code_unit<char32_t>);
 static_assert(!exposition_only_code_unit<wchar_t>);
 static_assert(!exposition_only_code_unit<char>);
 static_assert(!exposition_only_code_unit<int>);
+static_assert(!exposition_only_code_unit<const char8_t>);
+static_assert(!exposition_only_code_unit<volatile char16_t>);
+static_assert(!exposition_only_code_unit<const volatile char32_t>);
+static_assert(!exposition_only_code_unit<char8_t&>);
 
 } // namespace beman::utf_view::detail::tests

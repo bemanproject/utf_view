@@ -29,9 +29,8 @@ namespace beman::utf_view {
 /* PAPER */
 
 template <class T>
-concept exposition_only_code_unit = std::same_as<std::remove_cv_t<T>, char8_t> ||
-    std::same_as<std::remove_cv_t<T>, char16_t> ||
-    std::same_as<std::remove_cv_t<T>, char32_t>;
+concept exposition_only_code_unit =
+    std::same_as<T, char8_t> || std::same_as<T, char16_t> || std::same_as<T, char32_t>;
 
 /* !PAPER */
 
