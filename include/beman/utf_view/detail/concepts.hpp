@@ -34,6 +34,12 @@ concept exposition_only_code_unit =
 
 /* !PAPER */
 
+template <class R>
+concept exposition_only_simple_view =
+    std::ranges::view<R> && std::ranges::range<const R> &&
+    std::same_as<std::ranges::iterator_t<R>, std::ranges::iterator_t<const R>> &&
+    std::same_as<std::ranges::sentinel_t<R>, std::ranges::sentinel_t<const R>>;
+
 namespace detail {
 
   template <class T>

@@ -175,7 +175,8 @@ public:
     return std::move(exposition_only_base_);
   }
 
-  constexpr exposition_only_iterator<false> begin() {
+  constexpr exposition_only_iterator<false> begin()
+      requires (!exposition_only_simple_view<V>) {
     if constexpr (std::ranges::bidirectional_range<V>) {
       return exposition_only_iterator<false>(
           std::ranges::begin(exposition_only_base_),
@@ -201,10 +202,12 @@ public:
     }
   }
 
-  constexpr exposition_only_sentinel<false> end() {
+  constexpr exposition_only_sentinel<false> end()
+      requires (!exposition_only_simple_view<V> && !std::ranges::common_range<V>) {
     return exposition_only_sentinel<false>(std::ranges::end(exposition_only_base_));
   }
-  constexpr exposition_only_iterator<false> end() requires std::ranges::common_range<V> {
+  constexpr exposition_only_iterator<false> end()
+      requires (!exposition_only_simple_view<V> && std::ranges::common_range<V>) {
     if constexpr (std::ranges::bidirectional_range<V>) {
       return exposition_only_iterator<false>(
           std::ranges::begin(exposition_only_base_),
