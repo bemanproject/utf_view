@@ -16,7 +16,7 @@ def convert_snake_to_kebab(text):
             kebab_case_word = word.replace('_', '-')
         return f"@*{kebab_case_word}*@"
 
-    pattern = r'\bexposition_only_[a-zA-Z_]+\b'
+    pattern = r'\bexposition_only_[a-zA-Z0-9_]+\b'
     result = re.sub(pattern, snake_to_kebab, text)
     return result
 

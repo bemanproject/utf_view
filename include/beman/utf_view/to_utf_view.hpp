@@ -135,6 +135,10 @@ enum class to_utf_view_kind : int {
   expected
 };
 
+template <class R, class charT>
+concept exposition_only_utf32_to_utf32 = // @*exposition only*@
+    std::same_as<std::ranges::range_value_t<R>, char32_t> && std::same_as<charT, char32_t>;
+
 template <std::ranges::input_range V, to_utf_view_kind K, exposition_only_code_unit charT>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 class to_utf_view : public std::ranges::view_interface<to_utf_view<V, K, charT>> {
@@ -248,15 +252,13 @@ public:
 
   constexpr auto size()
     requires std::ranges::sized_range<V> &&
-             std::same_as<char32_t, std::ranges::range_value_t<V>> &&
-             std::same_as<char32_t, charT> {
+             exposition_only_utf32_to_utf32<V, charT> {
     return std::ranges::size(exposition_only_base_);
   }
 
   constexpr auto size() const
     requires std::ranges::sized_range<const V> &&
-             std::same_as<char32_t, std::ranges::range_value_t<const V>> &&
-             std::same_as<char32_t, charT> {
+             exposition_only_utf32_to_utf32<const V, charT> {
     return std::ranges::size(exposition_only_base_);
   }
 
@@ -288,8 +290,7 @@ private:
 /* !PAPER */
   static consteval auto iter_concept_impl() {
     if constexpr (std::ranges::random_access_range<exposition_only_Base>
-                  && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-                  && std::same_as<char32_t, charT>) {
+                  && exposition_only_utf32_to_utf32<exposition_only_Base, charT>) {
       return std::random_access_iterator_tag{};
     } else if constexpr (std::ranges::bidirectional_range<exposition_only_Base>) {
       return std::bidirectional_iterator_tag{};
@@ -499,8 +500,7 @@ public:
   /* EFFECTS */
   constexpr exposition_only_iterator& operator+=(difference_type n)
     requires std::ranges::random_access_range<exposition_only_Base>
-             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, charT>
+             && exposition_only_utf32_to_utf32<exposition_only_Base, charT>
   {
     exposition_only_current_ += n;
     exposition_only_reseat();
@@ -511,8 +511,7 @@ public:
   /* EFFECTS */
   constexpr exposition_only_iterator& operator-=(difference_type n)
     requires std::ranges::random_access_range<exposition_only_Base>
-             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, charT>
+             && exposition_only_utf32_to_utf32<exposition_only_Base, charT>
   {
     exposition_only_current_ -= n;
     exposition_only_reseat();
@@ -538,8 +537,7 @@ public:
   friend constexpr bool operator<(
       const exposition_only_iterator& x, const exposition_only_iterator& y)
     requires std::ranges::random_access_range<exposition_only_Base>
-             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, charT>
+             && exposition_only_utf32_to_utf32<exposition_only_Base, charT>
   {
     return x.exposition_only_current_ < y.exposition_only_current_;
   }
@@ -549,8 +547,7 @@ public:
   friend constexpr bool operator>(
       const exposition_only_iterator& x, const exposition_only_iterator& y)
     requires std::ranges::random_access_range<exposition_only_Base>
-             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, charT>
+             && exposition_only_utf32_to_utf32<exposition_only_Base, charT>
   {
     return y < x;
   }
@@ -560,8 +557,7 @@ public:
   friend constexpr bool operator<=(
       const exposition_only_iterator& x, const exposition_only_iterator& y)
     requires std::ranges::random_access_range<exposition_only_Base>
-             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, charT>
+             && exposition_only_utf32_to_utf32<exposition_only_Base, charT>
   {
     return !(y < x);
   }
@@ -571,8 +567,7 @@ public:
   friend constexpr bool operator>=(
       const exposition_only_iterator& x, const exposition_only_iterator& y)
     requires std::ranges::random_access_range<exposition_only_Base>
-             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, charT>
+             && exposition_only_utf32_to_utf32<exposition_only_Base, charT>
   {
     return !(x < y);
   }
@@ -582,8 +577,7 @@ public:
   friend constexpr auto operator<=>(
       const exposition_only_iterator& x, const exposition_only_iterator& y)
     requires std::ranges::random_access_range<exposition_only_Base>
-             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, charT>
+             && exposition_only_utf32_to_utf32<exposition_only_Base, charT>
              && std::three_way_comparable<std::ranges::iterator_t<exposition_only_Base>>
   {
     return x.exposition_only_current_ <=> y.exposition_only_current_;
@@ -594,8 +588,7 @@ public:
   friend constexpr exposition_only_iterator operator+(
       exposition_only_iterator it, difference_type n)
     requires std::ranges::random_access_range<exposition_only_Base>
-             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, charT>
+             && exposition_only_utf32_to_utf32<exposition_only_Base, charT>
   {
     it += n;
     return it;
@@ -606,8 +599,7 @@ public:
   friend constexpr exposition_only_iterator operator+(
       difference_type n, exposition_only_iterator it)
     requires std::ranges::random_access_range<exposition_only_Base>
-             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, charT>
+             && exposition_only_utf32_to_utf32<exposition_only_Base, charT>
   {
     it += n;
     return it;
@@ -618,8 +610,7 @@ public:
   friend constexpr exposition_only_iterator operator-(
       exposition_only_iterator it, difference_type n)
     requires std::ranges::random_access_range<exposition_only_Base>
-             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, charT>
+             && exposition_only_utf32_to_utf32<exposition_only_Base, charT>
   {
     it -= n;
     return it;
@@ -631,8 +622,7 @@ public:
       const exposition_only_iterator& x,
       const exposition_only_iterator& y)
     requires std::sized_sentinel_for<std::ranges::iterator_t<exposition_only_Base>, std::ranges::iterator_t<exposition_only_Base>>
-             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, charT>
+             && exposition_only_utf32_to_utf32<exposition_only_Base, charT>
   {
     if constexpr (std::ranges::forward_range<exposition_only_Base>) {
       return x.exposition_only_current_ - y.exposition_only_current_;
@@ -646,8 +636,7 @@ public:
   /* EFFECTS */
   constexpr value_type operator[](difference_type n) const
     requires std::ranges::random_access_range<exposition_only_Base>
-             && std::same_as<char32_t, std::ranges::range_value_t<exposition_only_Base>>
-             && std::same_as<char32_t, charT>
+             && exposition_only_utf32_to_utf32<exposition_only_Base, charT>
   {
     return *(*this + n);
   }
