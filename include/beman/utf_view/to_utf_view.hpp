@@ -1117,7 +1117,7 @@ public:
   template<bool OtherConst>
     requires std::sentinel_for<std::ranges::sentinel_t<exposition_only_Base>, std::ranges::iterator_t<exposition_only_maybe_const<OtherConst, V>>>
   friend constexpr bool operator==(const exposition_only_iterator<OtherConst>& x, const exposition_only_sentinel& y) {
-    if constexpr (std::ranges::forward_range<exposition_only_Base>) {
+    if constexpr (std::ranges::forward_range<exposition_only_maybe_const<OtherConst, V>>) {
       return x.exposition_only_current_ == y.exposition_only_end_;
     } else {
       return x.exposition_only_current_ == y.exposition_only_end_ && x.exposition_only_buf_empty();

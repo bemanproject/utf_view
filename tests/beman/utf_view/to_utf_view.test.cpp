@@ -901,6 +901,63 @@ CONSTEXPR_UNLESS_MSVC bool wrapped_view_custom_sentinel_test() {
   return true;
 }
 
+// A view whose const and non-const iteration have different iterator categories
+template <bool MutableIsForward>
+struct mixed_category_view : std::ranges::view_interface<mixed_category_view<MutableIsForward>> {
+  using mutable_iterator = std::conditional_t<
+      MutableIsForward, test_forward_iterator<char8_t>, test_input_iterator<char8_t>>;
+  using const_iterator = std::conditional_t<
+      MutableIsForward, test_input_iterator<char8_t>, test_forward_iterator<char8_t>>;
+
+  constexpr explicit mixed_category_view(std::initializer_list<char8_t> const& list)
+      : list_(list) { }
+
+  constexpr mutable_iterator begin() { return mutable_iterator(list_); }
+  constexpr const_iterator begin() const { return const_iterator(list_); }
+  constexpr std::default_sentinel_t end() const { return std::default_sentinel; }
+
+  std::initializer_list<char8_t> list_;
+};
+
+static_assert(!std::ranges::forward_range<mixed_category_view<false>>);
+static_assert(std::ranges::forward_range<const mixed_category_view<false>>);
+static_assert(std::ranges::forward_range<mixed_category_view<true>>);
+static_assert(!std::ranges::forward_range<const mixed_category_view<true>>);
+
+// Compares the iterator of a mutable view against the sentinel of a const view (and vice
+// versa) where one of the underlying ranges is a forward range and the other isn't
+template <bool MutableIsForward>
+constexpr bool mixed_const_sentinel_test_impl() {
+  using view_type = to_utf_view<
+      mixed_category_view<MutableIsForward>, to_utf_view_kind::replacement, char32_t>;
+  std::initializer_list<char8_t> const list{u8'a', u8'b', u8'c'};
+  {
+    view_type view{mixed_category_view<MutableIsForward>{list}};
+    std::u32string result;
+    for (auto it = view.begin(); it != std::as_const(view).end(); ++it) {
+      result.push_back(*it);
+    }
+    if (result != U"abc") {
+      return false;
+    }
+  }
+  {
+    view_type view{mixed_category_view<MutableIsForward>{list}};
+    std::u32string result;
+    for (auto it = std::as_const(view).begin(); it != view.end(); ++it) {
+      result.push_back(*it);
+    }
+    if (result != U"abc") {
+      return false;
+    }
+  }
+  return true;
+}
+
+constexpr bool mixed_const_sentinel_test() {
+  return mixed_const_sentinel_test_impl<false>() && mixed_const_sentinel_test_impl<true>();
+}
+
 constexpr bool empty_test() {
   static_assert(std::is_same_v<decltype(std::views::empty<char8_t> | to_utf8),
                                std::ranges::empty_view<char8_t>>);
@@ -2425,6 +2482,9 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
   //   return false;
   // }
   if (!wrapped_view_custom_sentinel_test()) {
+    return false;
+  }
+  if (!mixed_const_sentinel_test()) {
     return false;
   }
   if (!empty_test()) {
