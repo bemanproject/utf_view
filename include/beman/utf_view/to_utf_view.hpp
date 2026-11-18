@@ -139,8 +139,15 @@ template <std::ranges::input_range V, to_utf_view_kind K, exposition_only_code_u
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 class to_utf_view : public std::ranges::view_interface<to_utf_view<V, K, charT>> {
 private:
-  template<bool> struct exposition_only_iterator; // @*exposition only*@
-  template<bool> struct exposition_only_sentinel; // @*exposition only*@
+  /* PAPER:   // [range.transcoding.iterator], class template to_utf_view::@*iterator*@ */
+  /* PAPER:   template<bool> class @*iterator*@; // @*exposition only*@ */
+  /* PAPER: */
+  /* PAPER:   // [range.transcoding.sentinel], class template to_utf_view::@*sentinel*@ */
+  /* PAPER:   template<bool> struct @*sentinel*@; // @*exposition only*@ */
+  /* !PAPER */
+  template<bool> struct exposition_only_iterator;
+  template<bool> struct exposition_only_sentinel;
+  /* PAPER */
 
   V exposition_only_base_ = V(); // @*exposition only*@
 
