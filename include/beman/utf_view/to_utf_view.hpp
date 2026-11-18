@@ -176,7 +176,7 @@ public:
     }
   }
   constexpr exposition_only_iterator<true> begin() const
-      requires std::ranges::range<const V> {
+      requires std::ranges::range<const V> && exposition_only_code_unit<std::ranges::range_value_t<const V>> {
     if constexpr (std::ranges::bidirectional_range<const V>) {
       return exposition_only_iterator<true>(
           std::ranges::begin(exposition_only_base_),
@@ -205,11 +205,11 @@ public:
     }
   }
   constexpr exposition_only_sentinel<true> end() const
-      requires std::ranges::range<const V> {
+      requires std::ranges::range<const V> && exposition_only_code_unit<std::ranges::range_value_t<const V>> {
     return exposition_only_sentinel<true>(std::ranges::end(exposition_only_base_));
   }
   constexpr exposition_only_iterator<true> end() const
-    requires std::ranges::common_range<const V> {
+    requires std::ranges::common_range<const V> && exposition_only_code_unit<std::ranges::range_value_t<const V>> {
     if constexpr (std::ranges::bidirectional_range<const V>) {
       return exposition_only_iterator<true>(
           std::ranges::begin(exposition_only_base_),

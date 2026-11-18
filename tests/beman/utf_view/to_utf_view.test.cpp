@@ -981,6 +981,42 @@ constexpr bool mixed_const_sentinel_test() {
   return mixed_const_sentinel_test_impl<false>() && mixed_const_sentinel_test_impl<true>();
 }
 
+// A view whose elements have a different type when the view is const
+template <class ConstElem>
+struct differently_typed_const_view
+    : std::ranges::view_interface<differently_typed_const_view<ConstElem>> {
+  constexpr test_forward_iterator<char8_t> begin() { return {}; }
+  constexpr test_forward_iterator<ConstElem> begin() const { return {}; }
+  constexpr std::default_sentinel_t end() const { return std::default_sentinel; }
+};
+
+static_assert(
+    std::same_as<std::ranges::range_value_t<differently_typed_const_view<int>>, char8_t>);
+static_assert(
+    std::same_as<std::ranges::range_value_t<const differently_typed_const_view<int>>, int>);
+
+template <class R>
+concept has_member_begin = requires(R& r) { r.begin(); };
+
+template <class R>
+concept has_member_end = requires(R& r) { r.end(); };
+
+// If the const view isn't a range of code units, the transcoding view isn't const-iterable
+using to_utf_view_of_const_int_view =
+    to_utf_view<differently_typed_const_view<int>, to_utf_view_kind::replacement, char32_t>;
+static_assert(std::ranges::forward_range<to_utf_view_of_const_int_view>);
+static_assert(!has_member_begin<const to_utf_view_of_const_int_view>);
+static_assert(!has_member_end<const to_utf_view_of_const_int_view>);
+static_assert(!std::ranges::range<const to_utf_view_of_const_int_view>);
+
+// If the const view is a range of a different code unit type, it still is
+using to_utf_view_of_const_char16_view = to_utf_view<
+    differently_typed_const_view<char16_t>, to_utf_view_kind::replacement, char32_t>;
+static_assert(std::ranges::forward_range<to_utf_view_of_const_char16_view>);
+static_assert(std::ranges::forward_range<const to_utf_view_of_const_char16_view>);
+static_assert(
+    std::same_as<std::ranges::range_value_t<const to_utf_view_of_const_char16_view>, char32_t>);
+
 constexpr bool empty_test() {
   static_assert(std::is_same_v<decltype(std::views::empty<char8_t> | to_utf8),
                                std::ranges::empty_view<char8_t>>);
