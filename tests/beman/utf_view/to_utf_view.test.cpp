@@ -917,6 +917,56 @@ constexpr bool empty_test() {
 }
 
 template <class R>
+concept has_member_empty = requires(R& r) { r.empty(); };
+
+template <class R>
+concept ranges_empty_works = requires(R& r) { std::ranges::empty(r); };
+
+constexpr bool is_not_nul(char8_t c) { return c != u8'\0'; }
+
+// The underlying view is input-only and unsized, so it can't report emptiness
+using to_utf_view_of_input_view = to_utf_view<
+    std::ranges::take_while_view<
+        std::ranges::subrange<test_input_iterator<char8_t>, std::default_sentinel_t>,
+        bool (*)(char8_t)>,
+    to_utf_view_kind::replacement, char32_t>;
+static_assert(std::ranges::input_range<to_utf_view_of_input_view>);
+static_assert(!has_member_empty<to_utf_view_of_input_view>);
+static_assert(!has_member_empty<const to_utf_view_of_input_view>);
+static_assert(!ranges_empty_works<to_utf_view_of_input_view>);
+static_assert(!ranges_empty_works<const to_utf_view_of_input_view>);
+
+// filter_view can only report emptiness when it isn't const
+using to_utf_view_of_filter_view = to_utf_view<
+    std::ranges::filter_view<std::u8string_view, bool (*)(char8_t)>,
+    to_utf_view_kind::replacement, char32_t>;
+static_assert(has_member_empty<to_utf_view_of_filter_view>);
+static_assert(!has_member_empty<const to_utf_view_of_filter_view>);
+static_assert(ranges_empty_works<to_utf_view_of_filter_view>);
+
+using to_utf_view_of_string_view =
+    to_utf_view<std::u8string_view, to_utf_view_kind::replacement, char32_t>;
+static_assert(has_member_empty<to_utf_view_of_string_view>);
+static_assert(has_member_empty<const to_utf_view_of_string_view>);
+
+constexpr bool empty_member_test() {
+  using namespace std::string_view_literals;
+  to_utf_view_of_filter_view all_filtered{std::views::filter(u8"\0\0"sv, &is_not_nul)};
+  if (!all_filtered.empty()) {
+    return false;
+  }
+  to_utf_view_of_filter_view some_filtered{std::views::filter(u8"\0a"sv, &is_not_nul)};
+  if (some_filtered.empty()) {
+    return false;
+  }
+  const to_utf_view_of_string_view nonempty{u8"a"sv};
+  if (nonempty.empty()) {
+    return false;
+  }
+  return true;
+}
+
+template <class R>
 concept to_utf_view_ctad_works = requires(R&& r) { to_utf_view{std::forward<R>(r)}; };
 
 constexpr bool explicit_construction_test() {
@@ -2378,6 +2428,9 @@ CONSTEXPR_UNLESS_MSVC bool utf_view_test() {
     return false;
   }
   if (!empty_test()) {
+    return false;
+  }
+  if (!empty_member_test()) {
     return false;
   }
   if (!explicit_construction_test()) {
