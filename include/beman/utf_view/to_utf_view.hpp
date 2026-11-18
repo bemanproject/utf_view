@@ -130,7 +130,7 @@ enum class utf_transcoding_error {
   invalid_utf8_leading_byte
 };
 
-enum class to_utf_view_kind : bool {
+enum class to_utf_view_kind : int {
   replacement,
   expected
 };
@@ -144,6 +144,11 @@ private:
 
   V exposition_only_base_ = V(); // @*exposition only*@
 
+  /* !PAPER */
+  static_assert(K == to_utf_view_kind::replacement || K == to_utf_view_kind::expected,
+                "K must be an enumerator of to_utf_view_kind");
+
+  /* PAPER */
 public:
   constexpr to_utf_view()
     requires std::default_initializable<V>
