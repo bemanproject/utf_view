@@ -1834,10 +1834,74 @@ static_assert(
   !const_iterator_conversion_exists<
     std::forward_iterator_tag, std::bidirectional_iterator_tag>);
 
+// A sentinel that is a different type depending on whether the view it came from is const
+template <class S, bool Const>
+struct tagged_sentinel {
+  tagged_sentinel() = default;
+  constexpr explicit tagged_sentinel(S s)
+      : s_(std::move(s)) { }
+  constexpr tagged_sentinel(tagged_sentinel<S, !Const> other)
+    requires Const
+      : s_(std::move(other.s_)) { }
+  template <class I>
+    requires std::sentinel_for<S, I>
+  friend constexpr bool operator==(I const& i, tagged_sentinel const& s) {
+    return i == s.s_;
+  }
+  S s_;
+};
+
+// Wraps a view so that it is no longer a simple view: its sentinel type depends on whether
+// it is const, although its iterator type doesn't.
+template <std::ranges::view V>
+struct non_simple_view : std::ranges::view_interface<non_simple_view<V>> {
+  constexpr explicit non_simple_view(V base)
+      : base_(std::move(base)) { }
+  constexpr auto begin() const { return std::ranges::begin(base_); }
+  constexpr auto end() {
+    return tagged_sentinel<std::ranges::sentinel_t<const V>, false>(
+        std::ranges::end(std::as_const(base_)));
+  }
+  constexpr auto end() const {
+    return tagged_sentinel<std::ranges::sentinel_t<const V>, true>(std::ranges::end(base_));
+  }
+  V base_;
+};
+
+static_assert(exposition_only_simple_view<std::u8string_view>);
+static_assert(!exposition_only_simple_view<non_simple_view<std::u8string_view>>);
+
+// If the underlying view is a simple view, the transcoding view only provides the const
+// overloads of begin() and end(), and so is a simple view too
+using to_utf_view_of_simple_view =
+    to_utf_view<std::u8string_view, to_utf_view_kind::replacement, char32_t>;
+static_assert(exposition_only_simple_view<to_utf_view_of_simple_view>);
+static_assert(std::same_as<std::ranges::iterator_t<to_utf_view_of_simple_view>,
+                           std::ranges::iterator_t<const to_utf_view_of_simple_view>>);
+static_assert(std::same_as<std::ranges::sentinel_t<to_utf_view_of_simple_view>,
+                           std::ranges::sentinel_t<const to_utf_view_of_simple_view>>);
+
+// A null-terminated string is a simple view that isn't a common range
+using to_utf_view_of_simple_non_common_view = to_utf_view<
+    std::ranges::subrange<const char8_t*, null_sentinel_t>, to_utf_view_kind::replacement,
+    char32_t>;
+static_assert(!std::ranges::common_range<to_utf_view_of_simple_non_common_view>);
+static_assert(exposition_only_simple_view<to_utf_view_of_simple_non_common_view>);
+
+// Otherwise it provides both, and they return different types
+using to_utf_view_of_non_simple_view = to_utf_view<
+    non_simple_view<std::u8string_view>, to_utf_view_kind::replacement, char32_t>;
+static_assert(!exposition_only_simple_view<to_utf_view_of_non_simple_view>);
+static_assert(!std::same_as<std::ranges::iterator_t<to_utf_view_of_non_simple_view>,
+                            std::ranges::iterator_t<const to_utf_view_of_non_simple_view>>);
+static_assert(!std::same_as<std::ranges::sentinel_t<to_utf_view_of_non_simple_view>,
+                            std::ranges::sentinel_t<const to_utf_view_of_non_simple_view>>);
+
 constexpr bool const_iterator_conversion_test() {
   using namespace std::string_view_literals;
   // An iterator into a view converts to an iterator into the const view, at
-  // the same position, but not the other way around
+  // the same position, but not the other way around. The underlying views
+  // aren't simple views, since otherwise the two iterator types are the same.
   constexpr auto test{
     [](auto v) {
       using view_type = decltype(v);
@@ -1868,17 +1932,17 @@ constexpr bool const_iterator_conversion_test() {
     }};
   // Transcoding to a variable-width encoding, so that the conversion happens
   // in the middle of the buffer too
-  if (!test(U"\u0051\u03D5\u5B66\x00021A87"sv | to_utf8)) {
+  if (!test(non_simple_view(U"\u0051\u03D5\u5B66\x00021A87"sv) | to_utf8)) {
     return false;
   }
-  if (!test(u8"\u0051\u03D5\xFF\u5B66"sv | to_utf16_or_error)) {
+  if (!test(non_simple_view(u8"\u0051\u03D5\xFF\u5B66"sv) | to_utf16_or_error)) {
     return false;
   }
   // An input-only range
   std::initializer_list<char8_t> const arr{u8'a', u8'b', u8'c'};
   using counted = std::counted_iterator<test_copyable_input_iterator<char8_t>>;
-  if (!test(std::ranges::subrange{counted{test_copyable_input_iterator(arr), 3},
-                                  counted{test_copyable_input_iterator(arr), 0}}
+  if (!test(non_simple_view(std::ranges::subrange{counted{test_copyable_input_iterator(arr), 3},
+                                                  counted{test_copyable_input_iterator(arr), 0}})
             | to_utf32)) {
     return false;
   }
