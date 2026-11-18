@@ -222,7 +222,12 @@ public:
     }
   }
 
-  constexpr bool empty() const {
+  constexpr bool empty()
+    requires requires { std::ranges::empty(exposition_only_base_); } {
+    return std::ranges::empty(exposition_only_base_);
+  }
+  constexpr bool empty() const
+    requires requires { std::ranges::empty(exposition_only_base_); } {
     return std::ranges::empty(exposition_only_base_);
   }
 
