@@ -147,10 +147,10 @@ private:
   /* PAPER:   template<bool> class @*iterator*@; // @*exposition only*@ */
   /* PAPER: */
   /* PAPER:   // [range.transcoding.sentinel], class template to_utf_view::@*sentinel*@ */
-  /* PAPER:   template<bool> struct @*sentinel*@; // @*exposition only*@ */
+  /* PAPER:   template<bool> class @*sentinel*@; // @*exposition only*@ */
   /* !PAPER */
   template<bool> struct exposition_only_iterator;
-  template<bool> struct exposition_only_sentinel;
+  template<bool> class exposition_only_sentinel;
   /* PAPER */
 
   V exposition_only_base_ = V(); // @*exposition only*@
@@ -1098,29 +1098,40 @@ public: // MSVC has some bug with their implementation of friendship
 template <std::ranges::input_range V, to_utf_view_kind K, exposition_only_code_unit charT>
   requires std::ranges::view<V> && exposition_only_code_unit<std::ranges::range_value_t<V>>
 template <bool Const>
-struct to_utf_view<V, K, charT>::exposition_only_sentinel {
+class to_utf_view<V, K, charT>::exposition_only_sentinel {
 private:
   using exposition_only_Base = exposition_only_maybe_const<Const, V>; // @*exposition only*@
-  std::ranges::sentinel_t<exposition_only_Base> exposition_only_end_ = std::ranges::sentinel_t<exposition_only_Base>();
-
+  std::ranges::sentinel_t<exposition_only_Base> exposition_only_end_ = std::ranges::sentinel_t<exposition_only_Base>(); // @*exposition only*@
+  /* PAPER:   constexpr explicit @*sentinel*@(sentinel_t<@*Base*@> end); // @*exposition only*@ */
   /* !PAPER */
-  template <bool>
-  friend struct exposition_only_sentinel;
+  constexpr explicit exposition_only_sentinel(std::ranges::sentinel_t<exposition_only_Base> end)
+  : exposition_only_end_(end)
+  {}
 
+  friend to_utf_view;
+
+  template <bool>
+  friend class exposition_only_sentinel;
   /* PAPER */
+
 public:
   exposition_only_sentinel() = default;
-  constexpr explicit exposition_only_sentinel(std::ranges::sentinel_t<exposition_only_Base> end)
-  : exposition_only_end_{end}
-  {}
+  /* PAPER:   constexpr @*sentinel*@(@*sentinel*@<!Const> i) */
+  /* PAPER:     requires Const && convertible_to<sentinel_t<V>, sentinel_t<@*Base*@>>; */
+  /* !PAPER */
   constexpr exposition_only_sentinel(exposition_only_sentinel<!Const> i)
     requires Const && std::convertible_to<std::ranges::sentinel_t<V>, std::ranges::sentinel_t<exposition_only_Base>>
-  : exposition_only_end_{i.exposition_only_end_}
+  : exposition_only_end_(std::move(i.exposition_only_end_))
   {}
 
+  /* PAPER: */
+  /* PAPER:   constexpr sentinel_t<@*Base*@> base() const; */
+  /* !PAPER */
   constexpr std::ranges::sentinel_t<exposition_only_Base> base() const {
     return exposition_only_end_;
   }
+
+  /* PAPER */
 
   /* EFFECTS */
   template<bool OtherConst>
