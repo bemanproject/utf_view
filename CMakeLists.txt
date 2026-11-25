@@ -54,7 +54,7 @@ include(infra/cmake/BuildTelemetryConfig.cmake)
 if(BEMAN_UTF_VIEW_USE_MODULES)
     set(BEMAN_TRANSFORM_VIEW_USE_MODULES ON)
 endif()
-find_package(beman.transform_view 0.2.2 REQUIRED)
+find_package(beman.transform_view 0.2.2 EXACT CONFIG REQUIRED)
 
 if(BEMAN_UTF_VIEW_USE_MODULES)
     add_library(beman.utf_view STATIC)
@@ -107,7 +107,7 @@ else()
     beman_install_library(
         beman.utf_view
         TARGETS beman.utf_view
-        DEPENDENCIES "[===[beman.transform_view 0.2.2]===]"
+        DEPENDENCIES "beman.transform_view 0.2.2 EXACT"
     )
 endif()
 configure_build_telemetry()
