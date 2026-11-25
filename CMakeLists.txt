@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: BSL-1.0
 
-cmake_minimum_required(VERSION 3.30...4.3)
+cmake_minimum_required(VERSION 3.30...4.5)
 
 include(infra/cmake/enable-experimental-import-std.cmake)
 
@@ -54,7 +54,7 @@ include(infra/cmake/BuildTelemetryConfig.cmake)
 if(BEMAN_UTF_VIEW_USE_MODULES)
     set(BEMAN_TRANSFORM_VIEW_USE_MODULES ON)
 endif()
-find_package(beman.transform_view REQUIRED)
+find_package(beman.transform_view 0.2.2 REQUIRED)
 
 if(BEMAN_UTF_VIEW_USE_MODULES)
     add_library(beman.utf_view STATIC)
@@ -107,7 +107,7 @@ else()
     beman_install_library(
         beman.utf_view
         TARGETS beman.utf_view
-        DEPENDENCIES "[===[beman.transform_view]===]"
+        DEPENDENCIES "[===[beman.transform_view 0.2.2]===]"
     )
 endif()
 configure_build_telemetry()

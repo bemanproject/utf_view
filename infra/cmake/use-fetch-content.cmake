@@ -139,7 +139,8 @@ function(Beman_provideDependency method package_name)
                     "${Beman_name}"
                     GIT_REPOSITORY "${Beman_repo}"
                     GIT_TAG "${Beman_tag}"
-                    EXCLUDE_FROM_ALL
+                    GIT_SHALLOW ON
+                    # XXX EXCLUDE_FROM_ALL
                 )
 
                 # Apply per-dependency cmake_args from the lockfile
@@ -194,7 +195,7 @@ function(Beman_provideDependency method package_name)
     endforeach()
 endfunction()
 
-set(BEMAN_USE_FETCH_CONTENT_ENABLED ON)
+# XXX set(BEMAN_USE_FETCH_CONTENT_ENABLED ON)
 
 cmake_language(
     SET_DEPENDENCY_PROVIDER Beman_provideDependency
