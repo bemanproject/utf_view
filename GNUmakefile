@@ -52,8 +52,9 @@ distclean: ## Remove all build artifacts
 	find . -name '*~' -delete
 
 format: distclean  ## Format all files with pre-commit
-	-pre-commit autoupdate
-	pre-commit run --all
+	git ls-files ':(top,exclude)infra/cmake/' ::cmake.in ::*.cmake ::*CMakeLists.txt | xargs gersemi -i
+	# -pre-commit autoupdate --freeze
+	# pre-commit run --all
 
 dockerbuild: ## Start docker image interactive
 	docker run -it -v $(CURDIR):/src $(IMAGE)
