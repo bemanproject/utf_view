@@ -44,6 +44,15 @@ compile_commands.json: $(_build_path)/compile_commands.json
 CMakeUserPresets.json:: cmake/CMakeUserPresets.json
 	-ln -fs $< $@
 
+find_package_test: # install  ## Test with installed cmake config package
+	cmake -S examples -B build/find_package_test -G Ninja \
+    -D CMAKE_CXX_STANDARD=26 \
+    -D CMAKE_BUILD_TYPE=Release \
+    -D CMAKE_SKIP_TEST_ALL_DEPENDENCY=OFF \
+    --debug-find-pkg=beman.utf_view --debug-find-pkg=beman.transform_view
+	ninja -C build/find_package_test test
+	ninja -C build/find_package_test ninja -t deps | egrep -w '(cmake_cxx_std|beman)'
+
 distclean: ## Remove all build artifacts
 	rm -rf build .cache
 	rm -f CMakeUserPresets.json \

@@ -32,6 +32,15 @@ option(
 )
 
 if(BEMAN_UTF_VIEW_USE_MODULES)
+    if(
+        NOT CMAKE_CXX_STDLIB_MODULES_JSON
+        AND CMAKE_VERSION VERSION_GREATER_EQUAL "4.5.0"
+    )
+        message(
+            FATAL_ERROR
+            "BEMAN_UTF_VIEW_USE_MODULES requires CMAKE_CXX_STDLIB_MODULES_JSON"
+        )
+    endif()
     set(CMAKE_CXX_SCAN_FOR_MODULES ON)
 endif()
 
