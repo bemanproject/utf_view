@@ -60,6 +60,7 @@ dockerbuild: ## Start docker image interactive
 	docker run -it -v $(CURDIR):/src $(IMAGE)
 
 vcpkg: ## Check the vcpkg config usage
+	${HOME}/vcpkg/bootstrap-vcpkg.sh
 	cmake -S triplets -B build/vcpkg-modules -G Ninja \
     -D CMAKE_CXX_STANDARD=26 \
     -D CMAKE_BUILD_TYPE=Release \
