@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 
-cmake_minimum_required(VERSION 4.5)
+cmake_minimum_required(VERSION 3.30...4.5)
 
 project(utf_view_examples LANGUAGES CXX)
 
@@ -8,7 +8,10 @@ if(${PROJECT_IS_TOP_LEVEL})
     find_package(beman.utf_view 0.3.0 EXACT CONFIG REQUIRED)
     message(STATUS "Using beman.utf_view config: ${beman.utf_view_CONFIG}")
 
-    if(CMAKE_CXX_STDLIB_MODULES_JSON)
+    if(
+        CMAKE_CXX_STDLIB_MODULES_JSON
+        AND CMAKE_VERSION VERSION_GREATER_EQUAL "4.5.0"
+    )
         set(BEMAN_UTF_VIEW_USE_MODULES ON)
         set(BEMAN_TRANSFORM_VIEW_USE_MODULES ON)
     endif()
