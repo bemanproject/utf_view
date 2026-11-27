@@ -25,9 +25,9 @@ all: .init compile_commands.json ## Make all with cmake workflow preset
 
 .init: CMakeUserPresets.json CMakePresets.json CMakeLists.txt ## Configure cmake preset in VERBOSE mode
 	cmake --version
-	cmake --preset $(PRESET) -D BEMAN_EXEMPLAR_USE_MODULES=ON \
-		-D CMAKE_CXX_STANDARD=26 \
+	cmake --preset $(PRESET) \
 		-D BEMAN_UTF_VIEW_USE_MODULES=ON \
+		-D CMAKE_CXX_STANDARD=26 \
 		-D CMAKE_PROJECT_TOP_LEVEL_INCLUDES=infra/cmake/use-fetch-content.cmake \
 		--fresh --log-level=VERBOSE
 	touch $@
@@ -44,8 +44,9 @@ compile_commands.json: $(_build_path)/compile_commands.json
 CMakeUserPresets.json:: cmake/CMakeUserPresets.json
 	-ln -fs $< $@
 
-find_package_test: # install  ## Test with installed cmake config package
+find_package_test: # XXX install  ## Test with installed cmake config package
 	cmake -S examples -B build/find_package_test -G Ninja \
+    -D BEMAN_UTF_VIEW_USE_MODULES=ON \
     -D CMAKE_CXX_STANDARD=26 \
     -D CMAKE_BUILD_TYPE=Release \
     -D CMAKE_SKIP_TEST_ALL_DEPENDENCY=OFF \

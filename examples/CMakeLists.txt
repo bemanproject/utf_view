@@ -9,10 +9,10 @@ if(${PROJECT_IS_TOP_LEVEL})
     message(STATUS "Using beman.utf_view config: ${beman.utf_view_CONFIG}")
 
     if(
-        CMAKE_CXX_STDLIB_MODULES_JSON
+        BEMAN_UTF_VIEW_USE_MODULES
+        AND CMAKE_CXX_STDLIB_MODULES_JSON
         AND CMAKE_VERSION VERSION_GREATER_EQUAL "4.5.0"
     )
-        set(BEMAN_UTF_VIEW_USE_MODULES ON)
         set(BEMAN_TRANSFORM_VIEW_USE_MODULES ON)
     endif()
 
