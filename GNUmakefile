@@ -12,6 +12,8 @@ ifeq ($(origin CXX),default)
   export CC:= gcc-16
 endif
 
+export CMAKE_PREFIX_PATH:=$(CURDIR)/stagedir:${CMAKE_PREFIX_PATH}
+
 PRESET?=gcc-release
 IMAGE?=ghcr.io/bemanproject/infra-containers-gcc:trunk
 
@@ -53,6 +55,7 @@ find_package_test: # XXX install  ## Test with installed cmake config package
     --debug-find-pkg=beman.utf_view --debug-find-pkg=beman.transform_view
 	ninja -C build/find_package_test test
 	ninja -C build/find_package_test ninja -t deps | egrep -w '(cmake_cxx_std|beman)'
+	ninja -C build/find_package_test -t commands beman.utf_view.examples.null_term_argv_environ | tail -1
 
 distclean: ## Remove all build artifacts
 	rm -rf build .cache
@@ -93,7 +96,7 @@ info: ## Show this help.
 #  Prerequisite 'GNUmakefile' is newer than target '.init'.
 #  -> Must remake target '.init'.
 # NOTE: impizit handled by gmake! GNUmakefile :: ;
-cmake/CMakeUserPresets.json :: ;
+# NO if exists TODO(CK): cmake/CMakeUserPresets.json :: ;
 
 # Anything we don't know how to build will use this rule.
 % ::
