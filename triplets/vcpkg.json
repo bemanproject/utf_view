@@ -1,0 +1,12 @@
+{
+  "dependencies": [
+    {
+      "name": "beman-utf-view",
+      "features": ["modules"]
+    },
+    {
+      "name": "beman-transform-view",
+      "features": ["modules"]
+    }
+  ]
+}

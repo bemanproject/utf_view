@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: BSL-1.0
+
 module;
 
 #include <beman/utf_view/detail/constexpr_unless_msvc.hpp>
